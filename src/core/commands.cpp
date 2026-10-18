@@ -591,6 +591,19 @@ namespace commands {
         return Source2ModCommandArgs(argc, argv, args.ArgS(), args.GetCommandString());
     }
 
+    bool HasChatCommand(const char* pchName)
+    {
+        std::string name = pchName ? pchName : "";
+        std::transform(name.begin(), name.end(), name.begin(),
+                       [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+        auto it = consoleListeners.find(name);
+        if (it == consoleListeners.end())
+            return false;
+
+        return std::any_of(it->second.begin(), it->second.end(), [](const CommandEntry& e) { return !e.command.empty(); });
+    }
+
     Action DispatchConsoleListener(const CCommandContext& engineCtx, const CCommand& engineArgs, bool post, Source2ModCommandSource source) {
         const Source2ModCommandContext ctx(engineCtx.GetPlayerSlot(), static_cast<int>(engineCtx.GetTarget()), source);
         const Source2ModCommandArgs args = Source2ModArgs(engineArgs);

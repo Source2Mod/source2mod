@@ -85,6 +85,12 @@ namespace virtualhooks
 
     static std::vector<IGameEvent*> eventStack;
 
+    // Blocked events Source2Mod frees on the next frame. Another framework
+    // that blocks the same event frees it itself (CounterStrikeSharp does,
+    // right after its own FireEvent hook): its FreeEvent takes the event off
+    // this list, so the deferred free does not free it a second time.
+    static std::unordered_set<IGameEvent*> pendingEventFrees;
+
     namespace
     {
         // What a pre hook point's answer does to the engine call: Supersede
@@ -114,6 +120,7 @@ namespace virtualhooks
         KHOOK_NEW(m_hOnServerGamePostSimulate, &IGameSystem::OnServerGamePostSimulate, this, nullptr, &Virtuals::Hook_OnServerGamePostSimulate),
         KHOOK_NEW(m_hLoadEventsFromFile, &IGameEventManager2::LoadEventsFromFile, this, &Virtuals::Hook_LoadEventsFromFilePre, &Virtuals::Hook_LoadEventsFromFile),
         KHOOK_NEW(m_hFireEvent, &IGameEventManager2::FireEvent, this, &Virtuals::Hook_FireEvent, &Virtuals::Hook_FireEventPost),
+        KHOOK_NEW(m_hFreeEvent, &IGameEventManager2::FreeEvent, this, &Virtuals::Hook_FreeEvent, nullptr),
         KHOOK_NEW(m_hSendNetMessage, &CServerSideClientBase::SendNetMessage, this, &Virtuals::Hook_SendNetMessage, nullptr),
         KHOOK_NEW(m_hFilterMessage, &INetworkMessageProcessingPreFilter::FilterMessage, this, &Virtuals::Hook_FilterMessage, nullptr),
         KHOOK_NEW(m_hCheckTransmit, &ISource2GameEntities::CheckTransmit, this, nullptr, &Virtuals::Hook_CheckTransmit)
@@ -162,6 +169,7 @@ namespace virtualhooks
         ResolveIndex(m_hOnServerGamePostSimulate, "IGameSystem::OnServerGamePostSimulate");
         ResolveIndex(m_hLoadEventsFromFile, "IGameEventManager2::LoadEventsFromFile");
         ResolveIndex(m_hFireEvent, "IGameEventManager2::FireEvent");
+        ResolveIndex(m_hFreeEvent, "IGameEventManager2::FreeEvent");
         ResolveIndex(m_hSendNetMessage, "CServerSideClientBase::SendNetMessage");
         ResolveIndex(m_hFilterMessage, "INetworkMessageProcessingPreFilter::FilterMessage");
         ResolveIndex(m_hCheckTransmit, "ISource2GameEntities::CheckTransmit");
@@ -191,6 +199,7 @@ namespace virtualhooks
         {
             m_hLoadEventsFromFile->AddGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
             m_hFireEvent->AddGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
+            m_hFreeEvent->AddGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
         }
 
         m_pCServerSideClientVTable = libengine.GetVirtualTableByName("CServerSideClient").GetPtr();
@@ -229,6 +238,7 @@ namespace virtualhooks
         {
             m_hLoadEventsFromFile->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
             m_hFireEvent->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
+            m_hFreeEvent->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
         }
 
         if (m_pCServerSideClientVTable)
@@ -253,6 +263,7 @@ namespace virtualhooks
         delete m_hOnServerGamePostSimulate;
         delete m_hLoadEventsFromFile;
         delete m_hFireEvent;
+        delete m_hFreeEvent;
         delete m_hSendNetMessage;
         delete m_hFilterMessage;
         delete m_hCheckTransmit;
@@ -274,6 +285,7 @@ namespace virtualhooks
         m_hOnServerGamePostSimulate = nullptr;
         m_hLoadEventsFromFile = nullptr;
         m_hFireEvent = nullptr;
+        m_hFreeEvent = nullptr;
         m_hSendNetMessage = nullptr;
         m_hFilterMessage = nullptr;
         m_hCheckTransmit = nullptr;
@@ -490,6 +502,13 @@ namespace virtualhooks
 
                     CCommand parsed;
                     parsed.Tokenize(cleaned.c_str());
+
+                    // A silent trigger hides the line only for a command of
+                    // ours, as SourceMod's do: "/anything else" stays in chat
+                    // and reaches the game's say -- and Host_Say, where
+                    // CounterStrikeSharp looks for its own "/css_x" commands.
+                    if (isSilent && (parsed.ArgC() == 0 || !commands::HasChatCommand(parsed.Arg(0))))
+                        isSilent = false;
 
                     if (parsed.ArgC() > 0)
                     {
@@ -799,8 +818,12 @@ namespace virtualhooks
             // pre hook crashed on the freed vtable). Free it next frame, once
             // the whole chain is done. KHook still runs the post callback, so
             // push an empty slot to keep eventStack paired with nested events.
+            // Another hook that blocks it too may free it first (see
+            // pendingEventFrees): then it is gone from the list and stays
+            // alone here.
+            pendingEventFrees.insert(event);
             scheduler::schedulerManager.NextFrame(0, std::function<void()>([event]() {
-                if (shared::g_pGameEventManager)
+                if (pendingEventFrees.erase(event) && shared::g_pGameEventManager)
                     shared::g_pGameEventManager->FreeEvent(event);
             }));
             eventStack.push_back(nullptr);
@@ -843,6 +866,16 @@ namespace virtualhooks
         }
 
         return { KHook::Action::Ignore, true };
+    }
+
+    KHook::Return<void> Virtuals::Hook_FreeEvent(IGameEventManager2* pThis, IGameEvent* event)
+    {
+        // Somebody else frees an event Source2Mod blocked: theirs is the one
+        // free, the deferred one is dropped.
+        if (!pendingEventFrees.empty())
+            pendingEventFrees.erase(event);
+
+        return { KHook::Action::Ignore };
     }
 
     KHook::Return<bool> Virtuals::Hook_FilterMessage(INetworkMessageProcessingPreFilter* pThis, const CNetMessage* pData, INetChannel* pChannel)

@@ -74,6 +74,9 @@ namespace commands {
     /// the triggers (the chat path in virtualhooks.cpp says which).
     Action DispatchConsoleListener(const CCommandContext &ctx, const CCommand &args, bool post,
                                    Source2ModCommandSource source = Source2ModCommandSource::Console);
+    /// Whether a chat command / ConCommand / chat listener of a Source2Mod
+    /// plugin has this name -- what a silent chat trigger hides the line for.
+    bool HasChatCommand(const char* name);
 
     class CommandsManager : public ISource2ModCommands
     {

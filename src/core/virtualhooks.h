@@ -95,6 +95,7 @@ namespace virtualhooks {
         KHook::Return<int>  Hook_LoadEventsFromFilePre(IGameEventManager2* pThis, const char* filename, bool bSearchAll);
         KHook::Return<bool> Hook_FireEvent(IGameEventManager2* pThis, IGameEvent* event, bool bDontBroadcast);
         KHook::Return<bool> Hook_FireEventPost(IGameEventManager2* pThis, IGameEvent* event, bool bDontBroadcast);
+        KHook::Return<void> Hook_FreeEvent(IGameEventManager2* pThis, IGameEvent* event);
         KHook::Return<bool> Hook_SendNetMessage(CServerSideClientBase* pThis, const CNetMessage* pData, NetChannelBufType_t bufType);
         KHook::Return<bool> Hook_FilterMessage(INetworkMessageProcessingPreFilter* pThis, const CNetMessage* pData, INetChannel* pChannel);
         KHook::Return<void> Hook_CheckTransmit(ISource2GameEntities* pThis, CCheckTransmitInfo** ppInfoList, int nInfoCount, CBitVec<16384>& unionTransmitEdicts, CBitVec<16384>& unionTransmitEdicts2, const Entity2Networkable_t** pNetworkables, const uint16* pEntityIndicies, int nEntities);
@@ -124,6 +125,8 @@ namespace virtualhooks {
         Source2ModKHook::Virtual<IGameEventManager2, int, const char*, bool>* m_hLoadEventsFromFile = nullptr;
         // Pre and Post on the one object.
         Source2ModKHook::Virtual<IGameEventManager2, bool, IGameEvent*, bool>* m_hFireEvent = nullptr;
+        // Pre only: who else frees an event Source2Mod blocked.
+        Source2ModKHook::Virtual<IGameEventManager2, void, IGameEvent*>* m_hFreeEvent = nullptr;
         // SendNetMessage is declared on the base, so that is what the member
         // function pointer -- and therefore the hook -- is typed against.
         Source2ModKHook::Virtual<CServerSideClientBase, bool, const CNetMessage*, NetChannelBufType_t>* m_hSendNetMessage = nullptr;

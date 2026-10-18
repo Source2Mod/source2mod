@@ -675,6 +675,12 @@
       "linux": 8
     }
   },
+  "IGameEventManager2::FreeEvent": {
+    "offsets": {
+      "windows": 10,
+      "linux": 11
+    }
+  },
   "IGameEventManager2::LoadEventsFromFile": {
     "offsets": {
       "windows": 1,
