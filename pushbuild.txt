@@ -2,3 +2,4 @@ First Source2Mod release: Source2Toolkit renamed and carried on, with SourcePawn
 Crash reports name the SourcePawn plugin and function (and dumps carry the plugin block, as Accelerator's do); SourcePawn hot reload on Windows too, debounced on both platforms; GeoLite2 City + Country shipped in shared/; source2mod.net.
 Blocked game events are freed after every plugin's FireEvent hook has run (fixes a crash in MultiAddonManager and other FireEvent hooks); CTakeDamageInfo.m_iHitGroupId natives removed.
 Drop transmit bits outside the pack unions after CheckTransmit. #2
+Menu-key fakes are no longer announced as dormant to players who never received them (everyone could lose the connection while one player spammed a menu); a menu reopened during the fake handover finishes it first.
