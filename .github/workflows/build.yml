@@ -227,17 +227,26 @@ jobs:
         env:
           VERSION: ${{ needs.version.outputs.tag }}
         run: |
-          tar -czf source2mod_${VERSION}-linux.tar.gz \
+          # The linker's incremental state is no part of a release.
+          rm -f artifacts/windows/addons/source2mod/scripting/spcomp.ilk
+
+          mkdir -p release
+          tar -czf release/source2mod_${VERSION}-linux.tar.gz \
             -C artifacts/linux .
 
-          tar -czf source2mod_${VERSION}-windows.tar.gz \
+          tar -czf release/source2mod_${VERSION}-windows.tar.gz \
             -C artifacts/windows .
+
+          # spcomp on its own as well: the SDK (SdkScripting.cmake,
+          # SdkPlugin.ambuild) fetches it from here for script plugins.
+          cp artifacts/linux/addons/source2mod/scripting/spcomp release/spcomp-linux
+          cp artifacts/windows/addons/source2mod/scripting/spcomp.exe release/spcomp-windows.exe
 
       - name: Upload release archives
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          file: source2mod_*.tar.gz
+          file: release/*
           tag: ${{ needs.version.outputs.tag }}
           file_glob: true
           overwrite: true
