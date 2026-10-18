@@ -74,6 +74,10 @@
 #include <source2mod/utils/plat.h>
 #include <steam/isteamgameserver.h>
 
+#include <bit>
+#include <string>
+#include <unordered_set>
+
 namespace virtualhooks
 {
     Virtuals virtuals;
@@ -703,7 +707,51 @@ namespace virtualhooks
 
         transmit::transmitManager.OnCheckTransmit(ppInfoList, nInfoCount, pEntityIndicies, nEntities);
 
+        DropUnpackedTransmits(ppInfoList, nInfoCount, unionTransmitEdicts, unionTransmitEdicts2);
+
         return { KHook::Action::Ignore };
+    }
+
+    // The engine packs exactly the two unions the game's CheckTransmit
+    // filled; an entity a client is sent outside them has no pack, and the
+    // engine dies on it ("FATAL ERROR: WriteEnterPVS: GetEntServerClass
+    // failed for ent N"). Drop such bits after every hook ran, and say which
+    // entity it was (once per index and class) so the source can be found.
+    void Virtuals::DropUnpackedTransmits(CCheckTransmitInfo** ppInfoList, int nInfoCount, const CBitVec<16384>& unionA, const CBitVec<16384>& unionB)
+    {
+        const uint32* a = unionA.Base();
+        const uint32* b = unionB.Base();
+        const int words = unionA.GetNumDWords();
+
+        for (int i = 0; i < nInfoCount; i++)
+        {
+            auto* info = reinterpret_cast<CCheckTransmitInfo*>(ppInfoList[i]);
+            if (!info || !info->m_pTransmitEntity || info->m_pTransmitEntity->GetNumDWords() != words)
+                continue;
+
+            uint32* sent = info->m_pTransmitEntity->Base();
+            for (int w = 0; w < words; w++)
+            {
+                uint32 extra = sent[w] & ~(a[w] | b[w]);
+                if (!extra)
+                    continue;
+                sent[w] &= ~extra;
+
+                while (extra)
+                {
+                    const int bit = std::countr_zero(extra);
+                    extra &= extra - 1;
+                    const int index = w * 32 + bit;
+
+                    CEntityInstance* entity = shared::g_pEntitySystem ? shared::g_pEntitySystem->GetEntityInstance(CEntityIndex(index)) : nullptr;
+                    const char* classname = entity ? entity->GetClassname() : "<none>";
+                    static std::unordered_set<std::string> s_reported;
+                    if (s_reported.size() < 256 && s_reported.insert(std::to_string(index) + classname).second)
+                        FP_WARN("CheckTransmit: entity {} ({}) was sent to slot {} without being packed; dropped (would end in WriteEnterPVS FATAL ERROR).",
+                                index, classname, info->m_nPlayerSlot.Get());
+                }
+            }
+        }
     }
 
     KHook::Return<void> Virtuals::Hook_OnServerGamePostSimulate(IGameSystem* pThis, const EventServerGamePostSimulate_t* const pMsg)
