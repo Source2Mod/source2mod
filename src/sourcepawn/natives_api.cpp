@@ -163,8 +163,8 @@ namespace sourcepawn
                                                                                       MakeChatHandler(fn, owner), Permission(ctx, params[3])));
         }
 
-        // RegisterConListener(name, Source2ModCommandHandler handler, bool post)
-        cell_t N_RegisterConListener(IPluginContext* ctx, const cell_t* params)
+        // HookConCommand(name, Source2ModCommandHandler handler, bool post)
+        cell_t N_HookConCommand(IPluginContext* ctx, const cell_t* params)
         {
             IPluginFunction* fn = Function(ctx, params[2]);
             if (!fn)
@@ -181,7 +181,7 @@ namespace sourcepawn
                 Invoke(fn, args, &res);
                 return static_cast<Action>(std::clamp<cell_t>(res, 0, 2));
             });
-            return static_cast<cell_t>(commands::commandsManager.RegisterConListener(owner, LocalString(ctx, params[1]), std::move(handler), params[3] != 0));
+            return static_cast<cell_t>(commands::commandsManager.HookConCommand(owner, LocalString(ctx, params[1]), std::move(handler), params[3] != 0));
         }
 
         cell_t N_Unregister(IPluginContext*, const cell_t* params)
@@ -679,8 +679,8 @@ namespace sourcepawn
             { "Source2ModCommands.UnregisterConCommand", N_Unregister },
             { "Source2ModCommands.RegisterChatListener", N_RegisterChatListener },
             { "Source2ModCommands.UnregisterChatListener", N_Unregister },
-            { "Source2ModCommands.RegisterConListener", N_RegisterConListener },
-            { "Source2ModCommands.UnregisterConListener", N_Unregister },
+            { "Source2ModCommands.HookConCommand", N_HookConCommand },
+            { "Source2ModCommands.UnhookConCommand", N_Unregister },
             { "Source2ModCommands.ReplyToCommand", N_ReplyToCommand },
             { "Source2ModCommandContext.GetPlayerSlot", N_CtxGetPlayerSlot },
             { "Source2ModCommandContext.GetCommandTarget", N_CtxGetCommandTarget },

@@ -817,7 +817,7 @@ namespace commands {
         return id;
     }
 
-    Source2ModCommandHookId CommandsManager::RegisterConListener(PluginId owner, const char* pchName, CommandHandler handler, bool post) {
+    Source2ModCommandHookId CommandsManager::HookConCommand(PluginId owner, const char* pchName, CommandHandler handler, bool post) {
         const Source2ModHookId id = ++s_lastCommandId;
         consoleListeners[pchName].push_back({ owner, id, std::move(handler), post, {}, {}, {} });
         return id;
@@ -837,7 +837,7 @@ namespace commands {
         return RemoveAliases(owner, pchName, handler);
     }
 
-    bool CommandsManager::UnregisterConListener(PluginId owner, const char* pchName, const CommandHandler& handler, bool post)
+    bool CommandsManager::UnhookConCommand(PluginId owner, const char* pchName, const CommandHandler& handler, bool post)
     {
         if (!handler.HasIdentity())
             return false;

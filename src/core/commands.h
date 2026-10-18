@@ -88,9 +88,9 @@ namespace commands {
         Source2ModCommandId RegisterConCommand(const char* pchName, ChatHandler handler, const char* pchPermission) override { const PluginId owner = hookid::OwnerOfHandler(handler); return RegisterConCommand(owner, pchName, std::move(handler), pchPermission); }
         bool UnregisterConCommand(const char* pchName, const ChatHandler& handler) override { return UnregisterConCommand(hookid::OwnerOfHandler(handler), pchName, handler); }
         bool UnregisterConCommand(Source2ModCommandId id) override { return Unregister(id); }
-        Source2ModCommandHookId RegisterConListener(const char* pchName, CommandHandler handler, bool post) override { const PluginId owner = hookid::OwnerOfHandler(handler); return RegisterConListener(owner, pchName, std::move(handler), post); }
-        bool UnregisterConListener(const char* pchName, const CommandHandler& handler, bool post) override { return UnregisterConListener(hookid::OwnerOfHandler(handler), pchName, handler, post); }
-        bool UnregisterConListener(Source2ModCommandHookId id) override { return Unregister(id); }
+        Source2ModCommandHookId HookConCommand(const char* pchName, CommandHandler handler, bool post) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookConCommand(owner, pchName, std::move(handler), post); }
+        bool UnhookConCommand(const char* pchName, const CommandHandler& handler, bool post) override { return UnhookConCommand(hookid::OwnerOfHandler(handler), pchName, handler, post); }
+        bool UnhookConCommand(Source2ModCommandHookId id) override { return Unregister(id); }
         void ReplyToCommand(const Source2ModCommandContext& ctx, const char* pszMessage) override;
 
         // The same with the owner spelled out: what the calls above resolve
@@ -99,8 +99,8 @@ namespace commands {
         bool UnregisterChatListener(PluginId owner, const char* pchName, const ChatHandler& handler);
         Source2ModCommandId RegisterConCommand(PluginId owner, const char* pchName, ChatHandler handler, const char* pchPermission = nullptr);
         bool UnregisterConCommand(PluginId owner, const char* pchName, const ChatHandler& handler);
-        Source2ModCommandHookId RegisterConListener(PluginId owner, const char* pchName, CommandHandler handler, bool post);
-        bool UnregisterConListener(PluginId owner, const char* pchName, const CommandHandler& handler, bool post);
+        Source2ModCommandHookId HookConCommand(PluginId owner, const char* pchName, CommandHandler handler, bool post);
+        bool UnhookConCommand(PluginId owner, const char* pchName, const CommandHandler& handler, bool post);
         bool Unregister(Source2ModHookId id);
     public:
         void RemoveAllForPlugin(PluginId id);
