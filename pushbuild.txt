@@ -1,4 +1,4 @@
 First Source2Mod release: Source2Toolkit renamed and carried on, with SourcePawn plugins (.smx) next to native ones on one API, plugin API 5.
 Crash reports name the SourcePawn plugin and function (and dumps carry the plugin block, as Accelerator's do); SourcePawn hot reload on Windows too, debounced on both platforms; GeoLite2 City + Country shipped in shared/; source2mod.net.
 Blocked game events are freed after every plugin's FireEvent hook has run (fixes a crash in MultiAddonManager and other FireEvent hooks); CTakeDamageInfo.m_iHitGroupId natives removed.
-Drop transmit bits outside the pack unions after CheckTransmit.
+Drop transmit bits outside the pack unions after CheckTransmit. #2
