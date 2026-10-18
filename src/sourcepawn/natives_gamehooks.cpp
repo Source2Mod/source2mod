@@ -831,19 +831,6 @@ namespace sourcepawn
 #undef S2M_INFO_BOOL
 #undef S2M_INFO_HANDLE
 
-        cell_t N_CTakeDamageInfo_get_m_iHitGroupId(IPluginContext* ctx, const cell_t* params)
-        {
-            CTakeDamageInfo* i = Lent<CTakeDamageInfo>(ctx, params[1], DamageInfoType());
-            return i ? static_cast<cell_t>(i->m_iHitGroupId) : 0;
-        }
-
-        cell_t N_CTakeDamageInfo_set_m_iHitGroupId(IPluginContext* ctx, const cell_t* params)
-        {
-            if (CTakeDamageInfo* i = Lent<CTakeDamageInfo>(ctx, params[1], DamageInfoType()))
-                i->m_iHitGroupId = static_cast<HitGroup_t>(params[2]);
-            return 0;
-        }
-
         cell_t N_CTakeDamageInfo_m_nDamageFlags(IPluginContext* ctx, const cell_t* params)
         {
             if (CTakeDamageInfo* i = Lent<CTakeDamageInfo>(ctx, params[1], DamageInfoType()))
@@ -1444,8 +1431,6 @@ namespace sourcepawn
             { "CTakeDamageInfo.m_iDamageCustom.set", N_CTakeDamageInfo_set_m_iDamageCustom },
             { "CTakeDamageInfo.m_iAmmoType.get", N_CTakeDamageInfo_get_m_iAmmoType },
             { "CTakeDamageInfo.m_iAmmoType.set", N_CTakeDamageInfo_set_m_iAmmoType },
-            { "CTakeDamageInfo.m_iHitGroupId.get", N_CTakeDamageInfo_get_m_iHitGroupId },
-            { "CTakeDamageInfo.m_iHitGroupId.set", N_CTakeDamageInfo_set_m_iHitGroupId },
             { "CTakeDamageInfo.m_bShouldBleed.get", N_CTakeDamageInfo_get_m_bShouldBleed },
             { "CTakeDamageInfo.m_bShouldBleed.set", N_CTakeDamageInfo_set_m_bShouldBleed },
             { "CTakeDamageInfo.m_bShouldSpark.get", N_CTakeDamageInfo_get_m_bShouldSpark },
