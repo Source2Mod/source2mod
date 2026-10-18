@@ -727,8 +727,23 @@ namespace slotinput {
             }
 
             CCSPlayerPawn* pawn = player->GetPlayerPawn();
-            if (s.Active && (s.Pawn.Get() != pawn || s.Handover > 0))
+            if (s.Active && s.Pawn.Get() != pawn)
                 Stop(slot);
+            // A menu reopened while the old fakes are being handed over: finish
+            // the handover first (at most kHandoverFrames). Cutting it short
+            // deleted the fakes without the owner step, so the client kept them
+            // in its slot selection, and a spammed menu churned nine entities
+            // per open.
+            if (s.Active && s.Handover > 0)
+            {
+                if (--s.Handover > 0)
+                {
+                    if (s.Handover == kHandoverOwnerAt)
+                        HandOver(s);
+                    continue;
+                }
+                Stop(slot);
+            }
 
             if (!s.Active)
             {
@@ -863,7 +878,16 @@ namespace slotinput {
 
                 const int index = weapon->GetEntityIndex().Get();
                 info->m_pTransmitEntity->Clear(index);
-                info->m_pNonTransmitEntity->Set(index);
+                // "Keep a dormant record" only for the owner, whose client was
+                // sent the fake. Everybody else never had it: a non-transmit
+                // bit tells their client to keep an entity it does not know --
+                // with fakes recreated many times a second (menu spam) the
+                // index was often one their client still held as another
+                // entity, and every other player lost the connection.
+                if (own)
+                    info->m_pNonTransmitEntity->Set(index);
+                else
+                    info->m_pNonTransmitEntity->Clear(index);
             }
         }
     }
