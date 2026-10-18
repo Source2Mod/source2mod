@@ -756,9 +756,15 @@ namespace virtualhooks
         if (!events::DispatchGameEvent(event, false, localDontBroadcast))
         {
             // FireEvent owns the event and frees it; skipping the original
-            // means we have to. KHook still runs the post callback, so push
-            // an empty slot to keep eventStack paired with nested events.
-            shared::g_pGameEventManager->FreeEvent(event);
+            // means we have to -- but not here: KHook still runs every other
+            // plugin's FireEvent hook with this pointer (MultiAddonManager's
+            // pre hook crashed on the freed vtable). Free it next frame, once
+            // the whole chain is done. KHook still runs the post callback, so
+            // push an empty slot to keep eventStack paired with nested events.
+            scheduler::schedulerManager.NextFrame(0, std::function<void()>([event]() {
+                if (shared::g_pGameEventManager)
+                    shared::g_pGameEventManager->FreeEvent(event);
+            }));
             eventStack.push_back(nullptr);
             return { KHook::Action::Supersede, false };
         }
