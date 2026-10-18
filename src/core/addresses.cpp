@@ -50,7 +50,12 @@ namespace addresses
         if (!pModule || !pszSignature)
             return {};
 
-        return pModule->FindPattern(DynLibUtils::ParsePattern(pszSignature));
+        // Into the gameconfig's cache too: an SDK helper's first call
+        // (ISource2ModFunctions::Find) resolves the same name again, and a
+        // scan of libserver takes over 10 ms.
+        DynLibUtils::CMemory address = pModule->FindPattern(DynLibUtils::ParsePattern(pszSignature));
+        shared::g_pGameConfig->RememberAddress(pszName, address.GetPtr());
+        return address;
     }
 
     bool Initialize()

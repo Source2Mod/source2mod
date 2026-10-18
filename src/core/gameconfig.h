@@ -71,6 +71,11 @@ public:
     /// Resolves a gamedata entry to an address: by exported symbol when the
     /// entry is "@"-prefixed, by pattern scan otherwise.
     ISource2ModMemory ResolveSignature(const char* pchName) override;
+
+    /// Keeps an address found by a scan of its own (addresses::FindSignature),
+    /// so a later ResolveSignature of the name does not scan again.
+    void RememberAddress(const char* pchName, void* pAddress);
+
     int GetOffset(const char* pchName) override;
 
     /// The entry's "function" object (ISource2ModFunctions.h), or null.

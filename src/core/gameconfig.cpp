@@ -282,6 +282,12 @@ ISource2ModMemory CGameConfig::ResolveSignature(const char* pchName)
     return ISource2ModMemory(pAddress);
 }
 
+void CGameConfig::RememberAddress(const char* pchName, void* pAddress)
+{
+    if (pchName && pAddress)
+        m_umAddresses.emplace(pchName, pAddress);
+}
+
 const char* CGameConfig::GetPatch(const char* pchName)
 {
     auto it = m_umPatches.find(pchName);
