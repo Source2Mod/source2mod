@@ -675,6 +675,13 @@
       "linux": 8
     }
   },
+  "Host_Say": {
+    "signatures": {
+      "library": "server",
+      "windows": "44 89 4C 24 ? 44 88 44 24",
+      "linux": "55 48 89 E5 41 57 49 89 F7 41 56 41 55 41 89 D5"
+    }
+  },
   "IGameEventManager2::FreeEvent": {
     "offsets": {
       "windows": 10,

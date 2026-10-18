@@ -42,7 +42,7 @@
 #include <vector>
 
 // The typed game-function points of ISource2ModHooks (HookPointId::TakeDamage
-// .. CheckJumpButtonModern): one detour per function, placed the first time a
+// .. PlayerChat): one detour per function, placed the first time a
 // handler is added and kept until shutdown. KHook puts a hook on a function it
 // detoured before in from a worker thread, a few milliseconds later; one taken
 // out with its last handler and put back for the next would miss the calls in
@@ -50,8 +50,8 @@
 // hooks.cpp hands them their handlers.
 namespace gamehooks
 {
-    /// HookPointId::TakeDamage .. CheckJumpButtonModern.
-    constexpr size_t kGameHookCount = static_cast<size_t>(HookPointId::CheckJumpButtonModern) + 1;
+    /// HookPointId::TakeDamage .. PlayerChat.
+    constexpr size_t kGameHookCount = static_cast<size_t>(HookPointId::PlayerChat) + 1;
 
     class IGameHook
     {

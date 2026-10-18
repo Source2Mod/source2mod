@@ -355,7 +355,7 @@ namespace hooks
         bool IsGameFunction(HookPointId p)
         {
             return static_cast<int>(p) >= static_cast<int>(HookPointId::TakeDamage)
-                && static_cast<int>(p) <= static_cast<int>(HookPointId::CheckJumpButtonModern);
+                && static_cast<int>(p) <= static_cast<int>(HookPointId::PlayerChat);
         }
 
         bool IsEngine(HookPointId p)

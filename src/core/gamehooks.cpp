@@ -131,6 +131,7 @@ namespace gamehooks
         hooks::Subject SubjectOf(const TryPlayerMoveContext& c) { return { c.services, nullptr, nullptr }; }
         hooks::Subject SubjectOf(const LegacyJumpContext& c) { return { c.jump, nullptr, nullptr }; }
         hooks::Subject SubjectOf(const ModernJumpContext& c) { return { c.jump, nullptr, nullptr }; }
+        hooks::Subject SubjectOf(const PlayerChatContext& c) { return { c.controller, c.controller, nullptr }; }
 
         // The context member the return value lives in; nothing for void.
         template <typename CONTEXT, typename RETURN>
@@ -504,6 +505,8 @@ namespace gamehooks
     using TryPlayerMoveHook = MemberGameHook<TryPlayerMoveContext, void, MoveServices, CMoveData*, Vector*, CGameTrace*, bool*>;
     using LegacyJumpHook = MemberGameHook<LegacyJumpContext, void, CCSPlayerLegacyJump, CMoveData*>;
     using ModernJumpHook = MemberGameHook<ModernJumpContext, void, CCSPlayerModernJump, CMoveData*>;
+    // Host_Say is a free function; the controller comes first, where `this` would.
+    using PlayerChatHook = MemberGameHook<PlayerChatContext, void, CEntityInstance, CCommand*, bool, int, const char*>;
 
     GameHooksManager::GameHooksManager()
     {
@@ -576,6 +579,13 @@ namespace gamehooks
             [](CCSPlayerLegacyJump* j, CMoveData* mv) { return LegacyJumpContext{ j, mv }; }, nullptr));
         slot(HookPointId::CheckJumpButtonModern, new ModernJumpHook("CCSPlayerModernJump::CheckJumpButton",
             [](CCSPlayerModernJump* j, CMoveData* mv) { return ModernJumpContext{ j, mv }; }, nullptr));
+        slot(HookPointId::PlayerChat, new PlayerChatHook("Host_Say",
+            [](CEntityInstance* controller, CCommand* args, bool teamOnly, int unk1, const char* unk2) {
+                // A client sends its line quoted (one argument); "say a b c" typed
+                // without quotes is the whole argument string.
+                const char* message = !args || args->ArgC() < 2 ? "" : args->ArgC() == 2 ? args->Arg(1) : args->ArgS();
+                return PlayerChatContext{ static_cast<CCSPlayerController*>(controller), args, message, teamOnly, unk1, unk2 };
+            }, nullptr));
     }
 
     GameHooksManager::~GameHooksManager() = default;

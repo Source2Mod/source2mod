@@ -195,6 +195,7 @@ namespace sourcepawn
         S2M_CTX(TryPlayerMoveContext, false)
         S2M_CTX(LegacyJumpContext, false)
         S2M_CTX(ModernJumpContext, false)
+        S2M_CTX(PlayerChatContext, false)
         S2M_CTX(SpawnContext, false)
         S2M_CTX(UseContext, false)
         S2M_CTX(EntityOtherContext, false)
@@ -317,6 +318,7 @@ namespace sourcepawn
                 S2M_POINT(OnJumpModern, ModernJumpContext)
                 S2M_POINT(CheckJumpButtonLegacy, LegacyJumpContext)
                 S2M_POINT(CheckJumpButtonModern, ModernJumpContext)
+                S2M_POINT(PlayerChat, PlayerChatContext)
                 S2M_POINT(Spawn, SpawnContext)
                 S2M_POINT(Use, UseContext)
                 S2M_POINT(StartTouch, EntityOtherContext)
@@ -671,6 +673,9 @@ namespace sourcepawn
         S2M_CTX_LENT(LegacyJumpContext, moveData, MoveDataType, c->moveData)
         S2M_CTX_OBJECT(ModernJumpContext, jump, c->jump)
         S2M_CTX_LENT(ModernJumpContext, moveData, MoveDataType, c->moveData)
+        S2M_CTX_ENTITY(PlayerChatContext, controller, c->controller)
+        S2M_CTX_CELL(PlayerChatContext, teamOnly, c->teamOnly)
+        S2M_CTX_STRING(PlayerChatContext, GetMessage, c->message)
 #undef S2M_CTX_MOVEMENT
 #undef S2M_CTX_FLOAT
 #undef S2M_CTX_CELL
@@ -1421,6 +1426,10 @@ namespace sourcepawn
             { "ModernJumpContext.jump.get", N_ModernJumpContext_jump },
             { "ModernJumpContext.moveData.get", N_ModernJumpContext_moveData },
             { "ModernJumpContext.CallOriginal", N_CallOriginal<ModernJumpContext> },
+            { "PlayerChatContext.controller.get", N_PlayerChatContext_controller },
+            { "PlayerChatContext.teamOnly.get", N_PlayerChatContext_teamOnly },
+            { "PlayerChatContext.GetMessage", N_PlayerChatContext_GetMessage },
+            { "PlayerChatContext.CallOriginal", N_CallOriginal<PlayerChatContext> },
             { "CTakeDamageInfo.m_flDamage.get", N_CTakeDamageInfo_get_m_flDamage },
             { "CTakeDamageInfo.m_flDamage.set", N_CTakeDamageInfo_set_m_flDamage },
             { "CTakeDamageInfo.m_flTotalledDamage.get", N_CTakeDamageInfo_get_m_flTotalledDamage },
