@@ -42,6 +42,7 @@
 // KHook, via metamod.
 #include "ISmmPlugin.h"
 #include "source2mod/ISource2ModKHook.h"
+#include "source2mod/ISource2ModHooks.h"
 
 #include "igameevents.h"
 #include "igamesystem.h"
@@ -71,6 +72,7 @@ namespace virtualhooks {
         KHook::Return<void> Hook_StartupServer(INetworkServerService* pThis, const GameSessionConfiguration_t& config, ISource2WorldSession* pWorldSession, const char* pszMapName);
         KHook::Return<void> Hook_StartupServerPre(INetworkServerService* pThis, const GameSessionConfiguration_t& config, ISource2WorldSession* pWorldSession, const char* pszMapName);
         KHook::Return<void> Hook_DispatchConCommand(ICvar* pThis, ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
+        KHook::Return<void> Hook_DispatchConCommandPost(ICvar* pThis, ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
         KHook::Return<void> Hook_ClientCommand(ISource2GameClients* pThis, CPlayerSlot slot, const CCommand& args);
         KHook::Return<void> Hook_ClientPutInServer(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, int type, uint64 xuid);
         KHook::Return<void> Hook_ClientPutInServerPre(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, int type, uint64 xuid);
@@ -159,4 +161,9 @@ namespace virtualhooks {
 
     extern Virtuals virtuals;
     extern CEntityListener entityListener;
+
+    /// Host_Say ran for a say line (the PlayerChat point, gamehooks.cpp);
+    /// @p blocked: a Source2Mod handler superseded it. Feeds the core's own
+    /// player_chat event.
+    void OnPlayerChatSaid(const PlayerChatContext& ctx, bool blocked);
 }

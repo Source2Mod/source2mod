@@ -91,6 +91,40 @@ namespace virtualhooks
     // this list, so the deferred free does not free it a second time.
     static std::unordered_set<IGameEvent*> pendingEventFrees;
 
+    // The player_chat game event. The game defines it but never fires it;
+    // CounterStrikeSharp fires it from its own Host_Say hook. Source2Mod fires
+    // it too, once per say / say_team line that Host_Say printed, unless
+    // somebody else already did: one frame per say command being dispatched,
+    // filled by the PlayerChat point (Host_Say) and by FireEvent, closed when
+    // the command's dispatch returns -- after CounterStrikeSharp's Host_Say
+    // hook has fired its own.
+    struct ChatLine
+    {
+        bool said = false;          // Host_Say ran for it and no Source2Mod handler blocked it
+        bool eventFired = false;    // a player_chat went out meanwhile
+        CEntityInstance* controller = nullptr;
+        bool teamOnly = false;
+        std::string text;
+    };
+    static std::vector<ChatLine> chatLines;
+
+    static bool IsSayCommand(const CCommand& args)
+    {
+        return args.ArgC() > 0 && (V_strcmp(args.Arg(0), "say") == 0 || V_strcmp(args.Arg(0), "say_team") == 0);
+    }
+
+    void OnPlayerChatSaid(const PlayerChatContext& ctx, bool blocked)
+    {
+        if (chatLines.empty() || blocked || !ctx.controller)
+            return;
+
+        ChatLine& line = chatLines.back();
+        line.said = true;
+        line.controller = ctx.controller;
+        line.teamOnly = ctx.teamOnly;
+        line.text = ctx.message ? ctx.message : "";
+    }
+
     namespace
     {
         // What a pre hook point's answer does to the engine call: Supersede
@@ -104,7 +138,7 @@ namespace virtualhooks
     Virtuals::Virtuals() :
         KHOOK_NEW(m_hGameFrame, &ISource2Server::GameFrame, this, &Virtuals::Hook_GameFramePre, &Virtuals::Hook_GameFrame),
         KHOOK_NEW(m_hStartupServer, &INetworkServerService::StartupServer, this, &Virtuals::Hook_StartupServerPre, &Virtuals::Hook_StartupServer),
-        KHOOK_NEW(m_hDispatchConCommand, &ICvar::DispatchConCommand, this, &Virtuals::Hook_DispatchConCommand, nullptr),
+        KHOOK_NEW(m_hDispatchConCommand, &ICvar::DispatchConCommand, this, &Virtuals::Hook_DispatchConCommand, &Virtuals::Hook_DispatchConCommandPost),
         KHOOK_NEW(m_hClientCommand, &ISource2GameClients::ClientCommand, this, &Virtuals::Hook_ClientCommand, nullptr),
         KHOOK_NEW(m_hClientPutInServer, &ISource2GameClients::ClientPutInServer, this, &Virtuals::Hook_ClientPutInServerPre, &Virtuals::Hook_ClientPutInServer),
         KHOOK_NEW(m_hClientVoice, &ISource2GameClients::ClientVoice, this, &Virtuals::Hook_ClientVoicePre, &Virtuals::Hook_ClientVoice),
@@ -177,6 +211,7 @@ namespace virtualhooks
         m_hGameFrame->Add(g_pSource2Server);
         m_hStartupServer->Add(g_pNetworkServerService);
         m_hDispatchConCommand->Add(g_pCVar);
+        gamehooks::gameHooksManager.Install(HookPointId::PlayerChat);
         m_hClientCommand->Add(g_pSource2GameClients);
         m_hClientPutInServer->Add(g_pSource2GameClients);
         m_hClientVoice->Add(g_pSource2GameClients);
@@ -460,6 +495,10 @@ namespace virtualhooks
     {
         slotinput::Eject();
 
+        // Closed in Hook_DispatchConCommandPost, which runs whatever this returns.
+        if (IsSayCommand(args))
+            chatLines.emplace_back();
+
         // "meta unload <this plugin>": metamod would call Unload() from inside
         // this very dispatch, and Unload() deleting this hook would then wait
         // for the dispatch to return -- a deadlock the watchdog ends. So the
@@ -496,20 +535,23 @@ namespace virtualhooks
                 bool isSilent =
                     shared::g_pCoreConfig->IsSilentChatTrigger(message, prefix);
 
+                std::string cleaned;
+                CCommand parsed;
                 if (isPublic || isSilent)
                 {
-                    std::string cleaned = message.substr(prefix.size());
-
-                    CCommand parsed;
+                    cleaned = message.substr(prefix.size());
                     parsed.Tokenize(cleaned.c_str());
+                }
 
-                    // A silent trigger hides the line only for a command of
-                    // ours, as SourceMod's do: "/anything else" stays in chat
-                    // and reaches the game's say -- and Host_Say, where
-                    // CounterStrikeSharp looks for its own "/css_x" commands.
-                    if (isSilent && (parsed.ArgC() == 0 || !commands::HasChatCommand(parsed.Arg(0))))
-                        isSilent = false;
+                // A silent trigger is one only for a command of ours, as
+                // SourceMod's: "/anything else" is ordinary chat -- it shows,
+                // reaches the say listeners and the game's say, and Host_Say,
+                // where CounterStrikeSharp looks for its own "/css_x" commands.
+                if (isSilent && !isPublic && (parsed.ArgC() == 0 || !commands::HasChatCommand(parsed.Arg(0))))
+                    isSilent = false;
 
+                if (isPublic || isSilent)
+                {
                     if (parsed.ArgC() > 0)
                     {
                         // Where a reply to it goes: back to chat.
@@ -541,6 +583,29 @@ namespace virtualhooks
         commands::DispatchConsoleListener(ctx, args, true);
 
         return { result };
+    }
+
+    KHook::Return<void> Virtuals::Hook_DispatchConCommandPost(ICvar* pThis, ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
+    {
+        if (!IsSayCommand(args) || chatLines.empty())
+            return { KHook::Action::Ignore };
+
+        const ChatLine line = std::move(chatLines.back());
+        chatLines.pop_back();
+
+        if (!line.said || line.eventFired || !shared::g_pGameEventManager)
+            return { KHook::Action::Ignore };
+
+        // The fields CounterStrikeSharp sets (the game's own definition).
+        if (IGameEvent* event = shared::g_pGameEventManager->CreateEvent("player_chat", true))
+        {
+            event->SetBool("teamonly", line.teamOnly);
+            event->SetInt("userid", line.controller->GetEntityIndex().Get() - 1);
+            event->SetString("text", line.text.c_str());
+            shared::g_pGameEventManager->FireEvent(event, false);
+        }
+
+        return { KHook::Action::Ignore };
     }
 
     KHook::Return<void> Virtuals::Hook_ClientCommand(ISource2GameClients* pThis, CPlayerSlot slot, const CCommand& args)
@@ -808,6 +873,10 @@ namespace virtualhooks
             shared::g_pGameEventManager = pThis;
             events::InitEvents();
         }
+
+        // Somebody fired player_chat for the say line being dispatched (see chatLines).
+        if (!chatLines.empty() && V_strcmp(event->GetName(), "player_chat") == 0)
+            chatLines.back().eventFired = true;
 
         bool localDontBroadcast = bDontBroadcast;
         if (!events::DispatchGameEvent(event, false, localDontBroadcast))

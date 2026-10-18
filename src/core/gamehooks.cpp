@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "gamehooks.h"
+#include "virtualhooks.h"
 
 #include "hookid.h"
 #include "hooks.h"
@@ -185,15 +186,25 @@ namespace gamehooks
 
             bool IsAvailable() override { return Resolve(); }
 
+            void InstallNow() override { Install(); }
+
             KHook::Return<RETURN> Pre(CLASS* pThis, ARGS... args)
             {
                 if (!m_listeners.Has(false))
+                {
+                    // The core fires player_chat for the line (virtualhooks.cpp).
+                    if constexpr (std::is_same_v<CONTEXT, PlayerChatContext>)
+                        virtualhooks::OnPlayerChatSaid(m_make(pThis, args...), false);
                     return Ignore();
+                }
 
                 CONTEXT ctx = m_make(pThis, args...);
                 const CallData call{ this, pThis, std::tuple<ARGS...>(args...) };
                 BindCallOriginal(ctx, call);
                 const Action action = m_listeners.Dispatch(ctx, false, SubjectOf(ctx), m_pszName, ApplyValue());
+
+                if constexpr (std::is_same_v<CONTEXT, PlayerChatContext>)
+                    virtualhooks::OnPlayerChatSaid(ctx, action == Action::Supersede);
 
                 if (DebugOn(m_pszName))
                 {
@@ -626,6 +637,12 @@ namespace gamehooks
 
     // The detour stays (gamehooks.h); an Unhook() may come from inside the
     // hook's own dispatch, which iterates a copy of the list.
+    void GameHooksManager::Install(HookPointId point)
+    {
+        if (InTable(point))
+            m_hooks[static_cast<size_t>(point)]->InstallNow();
+    }
+
     bool GameHooksManager::Remove(Source2ModHookId id)
     {
         for (auto& hook : m_hooks)

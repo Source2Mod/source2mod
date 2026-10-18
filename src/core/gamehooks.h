@@ -68,6 +68,8 @@ namespace gamehooks
         virtual void RemoveInstance(const void* instance) = 0;
         virtual bool Empty() const = 0;
         virtual void Uninstall() = 0;
+        /// Places the detour now, without a handler (when the function is known).
+        virtual void InstallNow() = 0;
     };
 
     class GameHooksManager final
@@ -81,6 +83,8 @@ namespace gamehooks
         PluginId OwnerOfHandler(HookPointId point, const void* handler) const;
         bool Remove(Source2ModHookId id);
         bool IsAvailable(HookPointId point);
+        /// The core's own use of a point: its detour in place from now on.
+        void Install(HookPointId point);
 
         void Shutdown();
         void RemoveAllForPlugin(PluginId id);
