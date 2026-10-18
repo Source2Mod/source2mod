@@ -3,3 +3,4 @@ Crash reports name the SourcePawn plugin and function (and dumps carry the plugi
 Blocked game events are freed after every plugin's FireEvent hook has run (fixes a crash in MultiAddonManager and other FireEvent hooks); CTakeDamageInfo.m_iHitGroupId natives removed.
 Drop transmit bits outside the pack unions after CheckTransmit. #2
 Menu-key fakes are no longer announced as dormant to players who never received them (everyone could lose the connection while one player spammed a menu); a menu reopened during the fake handover finishes it first.
+Runs side by side with CounterStrikeSharp (one free per blocked game event; "/" hides only Source2Mod's own commands); PlayerChat hook point on Host_Say and the player_chat game event, once per chat line; HookConCommand / UnhookConCommand replace RegisterConListener -- plugin API 6, plugins built against 5 need a rebuild; resolved addresses kept; SendNetMessage hooked only while something listens.
