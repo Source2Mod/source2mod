@@ -1,11 +1,11 @@
 # Gamedata validation
 
-CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manifest `8766757721818354077` · 2026-10-17T14:32:22+00:00
+CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manifest `8766757721818354077` · 2026-10-18T15:37:34+00:00
 
 | | Windows | Linux |
 |---|---|---|
-| Signatures | 🟢 67 | 🟢 67 |
-| Offsets | 🟢 44 ⚪ 4 | 🟢 44 ⚪ 4 |
+| Signatures | 🟢 68 | 🟢 68 |
+| Offsets | 🟢 45 ⚪ 4 | 🟢 45 ⚪ 4 |
 
 ## Everything resolves
 
@@ -104,8 +104,10 @@ CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manife
 - 🟢🟢 `DispatchParticleEffect`
 - 🟢🟢 `FilterWorkshopCommands`
 - 🟢🟢 `GetWeaponCSDataFromKey`
+- 🟢🟢 `Host_Say`
 - 🟢🟢 `ICvar::DispatchConCommand` — W 20/46 · L 20/46
 - 🟢🟢 `IGameEventManager2::FireEvent` — W 7/16 · L 8/17
+- 🟢🟢 `IGameEventManager2::FreeEvent` — W 10/16 · L 11/17
 - 🟢🟢 `IGameEventManager2::LoadEventsFromFile` — W 1/16 · L 2/17
 - 🟢🟢 `IGameEventSystem::PostEventAbstract` — W 16/21 · L 15/21
 - 🟢🟢 `IGameSystem::InitAllSystems->pFirst`

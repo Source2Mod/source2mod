@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-17T14:32:22+00:00",
+  "generated_at": "2026-10-18T15:37:34+00:00",
   "build": {
     "buildid": "25966348",
     "linux_manifest": "5513399157532729905",
@@ -1399,6 +1399,20 @@
       }
     },
     {
+      "name": "Host_Say",
+      "kind": "signature",
+      "windows": {
+        "matches": 1,
+        "address": "0x180cf2d80",
+        "status": "ok"
+      },
+      "linux": {
+        "matches": 1,
+        "address": "0x186bc00",
+        "status": "ok"
+      }
+    },
+    {
       "name": "ICvar::DispatchConCommand",
       "kind": "offset",
       "windows": {
@@ -1428,6 +1442,24 @@
       },
       "linux": {
         "value": 8,
+        "class": "CGameEventManager",
+        "library": "server",
+        "vtable_size": 17,
+        "status": "ok"
+      }
+    },
+    {
+      "name": "IGameEventManager2::FreeEvent",
+      "kind": "offset",
+      "windows": {
+        "value": 10,
+        "class": "CGameEventManager",
+        "library": "server",
+        "vtable_size": 16,
+        "status": "ok"
+      },
+      "linux": {
+        "value": 11,
         "class": "CGameEventManager",
         "library": "server",
         "vtable_size": 17,
