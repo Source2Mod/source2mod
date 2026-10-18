@@ -41,7 +41,7 @@
 #include "pluginapi.h"
 #include "shared.h"
 #include "sounds.h"
-#include "usercmd.h"
+#include "source2mod/schema/usercmd.h"
 #include "utils/log.h"
 
 #include <engine2/isource2server.h>
