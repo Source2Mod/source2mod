@@ -238,12 +238,21 @@ namespace virtualhooks
         }
 
         m_pCServerSideClientVTable = libengine.GetVirtualTableByName("CServerSideClient").GetPtr();
-        if (m_pCServerSideClientVTable)
-            m_hSendNetMessage->AddGlobal(reinterpret_cast<CServerSideClientBase*>(&m_pCServerSideClientVTable));
+        if (m_bWantSendNetMessage)
+            WantSendNetMessage();
 
         m_pCServerSideClientPreFilterVTable = libengine.GetVirtualTableByBase("CServerSideClient", "INetworkMessageProcessingPreFilter").GetPtr();
         if (m_pCServerSideClientPreFilterVTable)
             m_hFilterMessage->AddGlobal(reinterpret_cast<INetworkMessageProcessingPreFilter*>(&m_pCServerSideClientPreFilterVTable));
+    }
+
+    void Virtuals::WantSendNetMessage()
+    {
+        m_bWantSendNetMessage = true;
+        if (m_bSendNetMessageHooked || !m_hSendNetMessage || !m_pCServerSideClientVTable)
+            return;
+        m_hSendNetMessage->AddGlobal(reinterpret_cast<CServerSideClientBase*>(&m_pCServerSideClientVTable));
+        m_bSendNetMessageHooked = true;
     }
 
     void Virtuals::DestructListeners()
@@ -276,8 +285,9 @@ namespace virtualhooks
             m_hFreeEvent->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
         }
 
-        if (m_pCServerSideClientVTable)
+        if (m_bSendNetMessageHooked)
             m_hSendNetMessage->RemoveGlobal(reinterpret_cast<CServerSideClientBase*>(&m_pCServerSideClientVTable));
+        m_bSendNetMessageHooked = false;
         if (m_pCServerSideClientPreFilterVTable)
             m_hFilterMessage->RemoveGlobal(reinterpret_cast<INetworkMessageProcessingPreFilter*>(&m_pCServerSideClientPreFilterVTable));
 

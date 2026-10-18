@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "networkmessages.h"
+#include "virtualhooks.h"
 
 #include <engine2/igameeventsystem.h>
 #include <google/protobuf/descriptor.h>
@@ -1013,6 +1014,7 @@ namespace networkmessages
 
     Source2ModNetMessageHookId NetworkMessagesManager::HookServerInternalMessage(PluginId owner, NetMessageClientHook handler)
     {
+        virtualhooks::virtuals.WantSendNetMessage();
         return m_serverInternalHooks.Add(owner, std::move(handler));
     }
 

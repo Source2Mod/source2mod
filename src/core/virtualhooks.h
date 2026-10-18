@@ -66,6 +66,12 @@ namespace virtualhooks {
 
         void InitListeners();
         void DestructListeners();
+
+        /// The SendNetMessage hook only feeds the server-internal message
+        /// hooks, and KHook costs about a microsecond on every message the
+        /// server sends (ConVar replication is one per client per change).
+        /// It goes on with the first such hook, then stays until shutdown.
+        void WantSendNetMessage();
     public:
         KHook::Return<void> Hook_GameFrame(ISource2Server* pThis, bool simulating, bool bFirstTick, bool bLastTick);
         KHook::Return<void> Hook_GameFramePre(ISource2Server* pThis, bool simulating, bool bFirstTick, bool bLastTick);
@@ -149,6 +155,9 @@ namespace virtualhooks {
         // CServerSideClient's INetworkMessageProcessingPreFilter vtable, found by
         // the base's offset in the RTTI (+48 Linux, +8 Windows).
         void* m_pCServerSideClientPreFilterVTable = nullptr;
+
+        bool m_bWantSendNetMessage = false;
+        bool m_bSendNetMessageHooked = false;
     };
 
     class CEntityListener: public IEntityListener {
