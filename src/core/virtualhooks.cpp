@@ -707,9 +707,9 @@ namespace virtualhooks
 
         transmit::transmitManager.OnCheckTransmit(ppInfoList, nInfoCount, pEntityIndicies, nEntities);
 
-        const uint32* a = unionA.Base();
-        const uint32* b = unionB.Base();
-        const int words = unionA.GetNumDWords();
+        const uint32* a = unionTransmitEdicts.Base();
+        const uint32* b = unionTransmitEdicts2.Base();
+        const int words = unionTransmitEdicts.GetNumDWords();
 
         for (int i = 0; i < nInfoCount; i++)
         {
