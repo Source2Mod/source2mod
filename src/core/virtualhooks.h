@@ -93,7 +93,6 @@ namespace virtualhooks {
         KHook::Return<void> Hook_OnServerGamePostSimulate(IGameSystem* pThis, const EventServerGamePostSimulate_t* const pMsg);
         KHook::Return<int>  Hook_LoadEventsFromFile(IGameEventManager2* pThis, const char* filename, bool bSearchAll);
         KHook::Return<int>  Hook_LoadEventsFromFilePre(IGameEventManager2* pThis, const char* filename, bool bSearchAll);
-        static void DropUnpackedTransmits(CCheckTransmitInfo** ppInfoList, int nInfoCount, const CBitVec<16384>& unionA, const CBitVec<16384>& unionB);
         KHook::Return<bool> Hook_FireEvent(IGameEventManager2* pThis, IGameEvent* event, bool bDontBroadcast);
         KHook::Return<bool> Hook_FireEventPost(IGameEventManager2* pThis, IGameEvent* event, bool bDontBroadcast);
         KHook::Return<bool> Hook_SendNetMessage(CServerSideClientBase* pThis, const CNetMessage* pData, NetChannelBufType_t bufType);

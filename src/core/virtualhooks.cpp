@@ -707,18 +707,6 @@ namespace virtualhooks
 
         transmit::transmitManager.OnCheckTransmit(ppInfoList, nInfoCount, pEntityIndicies, nEntities);
 
-        DropUnpackedTransmits(ppInfoList, nInfoCount, unionTransmitEdicts, unionTransmitEdicts2);
-
-        return { KHook::Action::Ignore };
-    }
-
-    // The engine packs exactly the two unions the game's CheckTransmit
-    // filled; an entity a client is sent outside them has no pack, and the
-    // engine dies on it ("FATAL ERROR: WriteEnterPVS: GetEntServerClass
-    // failed for ent N"). Drop such bits after every hook ran, and say which
-    // entity it was (once per index and class) so the source can be found.
-    void Virtuals::DropUnpackedTransmits(CCheckTransmitInfo** ppInfoList, int nInfoCount, const CBitVec<16384>& unionA, const CBitVec<16384>& unionB)
-    {
         const uint32* a = unionA.Base();
         const uint32* b = unionB.Base();
         const int words = unionA.GetNumDWords();
@@ -752,6 +740,8 @@ namespace virtualhooks
                 }
             }
         }
+
+        return { KHook::Action::Ignore };
     }
 
     KHook::Return<void> Virtuals::Hook_OnServerGamePostSimulate(IGameSystem* pThis, const EventServerGamePostSimulate_t* const pMsg)
