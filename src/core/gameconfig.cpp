@@ -240,6 +240,13 @@ ISource2ModMemory CGameConfig::ResolveSignature(const char* pchName)
         return ISource2ModMemory();
     }
 
+    // Scanning a module takes milliseconds: the core resolves most entries at
+    // load, and an SDK helper's first call (ISource2ModFunctions::Find) asks
+    // for the same names again. Found addresses are kept; the gamedata is
+    // only read once.
+    if (auto it = m_umAddresses.find(pchName); it != m_umAddresses.end())
+        return ISource2ModMemory(it->second);
+
     void* pAddress = nullptr;
 
     if (IsSymbol(pchName))
@@ -271,6 +278,7 @@ ISource2ModMemory CGameConfig::ResolveSignature(const char* pchName)
         return ISource2ModMemory();
     }
 
+    m_umAddresses.emplace(pchName, pAddress);
     return ISource2ModMemory(pAddress);
 }
 
