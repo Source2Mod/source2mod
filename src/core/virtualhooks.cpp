@@ -823,34 +823,16 @@ namespace virtualhooks
         // from it is "WriteEnterPVS: GetEntServerClass failed" (FATAL ERROR).
         // The dont-transmit set holds the dormant entities, which are in no
         // union: the game fills it with the listed ones it does not transmit,
-        // so only BlockTransmit() can put an unlisted one there.
-        auto dropUnpacked = [&](CBitVec<MAX_EDICTS>* set, const char* setName, int slot, bool inUnion) {
+        // so only BlockTransmit() can put an unlisted one there. Silent: the
+        // menu-key fakes (weapon_knife) hit this all the time, and dropping is
+        // all there is to do.
+        auto dropUnpacked = [&](CBitVec<MAX_EDICTS>* set, bool inUnion) {
             if (!set || set->GetNumDWords() != words)
                 return;
 
             uint32* bits = set->Base();
             for (int w = 0; w < words; w++)
-            {
-                const uint32 allowed = inUnion ? ((a[w] | b[w]) & listed[w]) : listed[w];
-                uint32 extra = bits[w] & ~allowed;
-                if (!extra)
-                    continue;
-                bits[w] &= ~extra;
-
-                while (extra)
-                {
-                    const int bit = std::countr_zero(extra);
-                    extra &= extra - 1;
-                    const int index = w * 32 + bit;
-
-                    CEntityInstance* entity = shared::g_pEntitySystem ? shared::g_pEntitySystem->GetEntityInstance(CEntityIndex(index)) : nullptr;
-                    const char* classname = entity ? entity->GetClassname() : "<none>";
-                    static std::unordered_set<std::string> s_reported;
-                    if (s_reported.size() < 256 && s_reported.insert(std::to_string(index) + classname + setName).second)
-                        FP_WARN("CheckTransmit: entity {} ({}) was in the {} set of slot {} without being packed; dropped (would end in WriteEnterPVS FATAL ERROR).",
-                                index, classname, setName, slot);
-                }
-            }
+                bits[w] &= inUnion ? ((a[w] | b[w]) & listed[w]) : listed[w];
         };
 
         for (int i = 0; i < nInfoCount; i++)
@@ -859,10 +841,9 @@ namespace virtualhooks
             if (!info)
                 continue;
 
-            const int slot = info->m_nPlayerSlot.Get();
-            dropUnpacked(info->m_pTransmitEntity, "transmit", slot, true);
-            dropUnpacked(info->m_pTransmitOutOfPVS, "out-of-PVS", slot, true);
-            dropUnpacked(info->m_pNonTransmitEntity, "dont-transmit", slot, false);
+            dropUnpacked(info->m_pTransmitEntity, true);
+            dropUnpacked(info->m_pTransmitOutOfPVS, true);
+            dropUnpacked(info->m_pNonTransmitEntity, false);
         }
 
         return { KHook::Action::Ignore };
