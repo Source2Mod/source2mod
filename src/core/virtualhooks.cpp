@@ -805,19 +805,37 @@ namespace virtualhooks
         const uint32* b = unionTransmitEdicts2.Base();
         const int words = unionTransmitEdicts.GetNumDWords();
 
-        for (int i = 0; i < nInfoCount; i++)
-        {
-            auto* info = reinterpret_cast<CCheckTransmitInfo*>(ppInfoList[i]);
-            if (!info || !info->m_pTransmitEntity || info->m_pTransmitEntity->GetNumDWords() != words)
-                continue;
+        // What can be in this tick's snapshot: in a union (the game ORs every
+        // transmit set into the first, every out-of-PVS set into the second)
+        // and among the networkables the engine handed in. The game's
+        // CheckTransmit also marks entities by handle (a pawn's weapons and
+        // children), which can be one the engine left out of the list -- one
+        // being deleted, say -- and so never packed.
+        static CBitVec<16384> s_listed;
+        s_listed.ClearAll();
+        for (int i = 0; i < nEntities; i++)
+            s_listed.Set(pEntityIndicies[i]);
+        const uint32* listed = s_listed.Base();
 
-            uint32* sent = info->m_pTransmitEntity->Base();
+        // An entity the client does not have yet, in its transmit or out-of-PVS
+        // set, is created from the snapshot (EnterPVS / OutOfPVSCreate in
+        // WriteDeltaEntities / WriteOOPVSDeltaEntities, libengine2); one missing
+        // from it is "WriteEnterPVS: GetEntServerClass failed" (FATAL ERROR).
+        // The dont-transmit set holds the dormant entities, which are in no
+        // union: the game fills it with the listed ones it does not transmit,
+        // so only BlockTransmit() can put an unlisted one there.
+        auto dropUnpacked = [&](CBitVec<MAX_EDICTS>* set, const char* setName, int slot, bool inUnion) {
+            if (!set || set->GetNumDWords() != words)
+                return;
+
+            uint32* bits = set->Base();
             for (int w = 0; w < words; w++)
             {
-                uint32 extra = sent[w] & ~(a[w] | b[w]);
+                const uint32 allowed = inUnion ? ((a[w] | b[w]) & listed[w]) : listed[w];
+                uint32 extra = bits[w] & ~allowed;
                 if (!extra)
                     continue;
-                sent[w] &= ~extra;
+                bits[w] &= ~extra;
 
                 while (extra)
                 {
@@ -828,11 +846,23 @@ namespace virtualhooks
                     CEntityInstance* entity = shared::g_pEntitySystem ? shared::g_pEntitySystem->GetEntityInstance(CEntityIndex(index)) : nullptr;
                     const char* classname = entity ? entity->GetClassname() : "<none>";
                     static std::unordered_set<std::string> s_reported;
-                    if (s_reported.size() < 256 && s_reported.insert(std::to_string(index) + classname).second)
-                        FP_WARN("CheckTransmit: entity {} ({}) was sent to slot {} without being packed; dropped (would end in WriteEnterPVS FATAL ERROR).",
-                                index, classname, info->m_nPlayerSlot.Get());
+                    if (s_reported.size() < 256 && s_reported.insert(std::to_string(index) + classname + setName).second)
+                        FP_WARN("CheckTransmit: entity {} ({}) was in the {} set of slot {} without being packed; dropped (would end in WriteEnterPVS FATAL ERROR).",
+                                index, classname, setName, slot);
                 }
             }
+        };
+
+        for (int i = 0; i < nInfoCount; i++)
+        {
+            auto* info = reinterpret_cast<CCheckTransmitInfo*>(ppInfoList[i]);
+            if (!info)
+                continue;
+
+            const int slot = info->m_nPlayerSlot.Get();
+            dropUnpacked(info->m_pTransmitEntity, "transmit", slot, true);
+            dropUnpacked(info->m_pTransmitOutOfPVS, "out-of-PVS", slot, true);
+            dropUnpacked(info->m_pNonTransmitEntity, "dont-transmit", slot, false);
         }
 
         return { KHook::Action::Ignore };
