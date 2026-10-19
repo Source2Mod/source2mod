@@ -899,6 +899,13 @@ namespace virtualhooks
         if (!chatLines.empty() && V_strcmp(event->GetName(), "player_chat") == 0)
             chatLines.back().eventFired = true;
 
+        // Around the round restart's map cleanup, before any plugin can block
+        // the event: the menu-key fakes are owned, or the cleanup deletes them.
+        if (V_strcmp(event->GetName(), "round_prestart") == 0)
+            slotinput::OnRoundPreStart();
+        else if (V_strcmp(event->GetName(), "round_poststart") == 0)
+            slotinput::OnRoundPostStart();
+
         bool localDontBroadcast = bDontBroadcast;
         if (!events::DispatchGameEvent(event, false, localDontBroadcast))
         {

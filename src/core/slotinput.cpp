@@ -46,9 +46,11 @@
 
 #include <engine2/isource2server.h>
 #include <source2mod/schema/entity/classes/CBasePlayerWeapon.h>
+#include <source2mod/schema/entity/classes/CCSGameRules.h>
 #include <source2mod/schema/entity/classes/CCSPlayerController.h>
 #include <source2mod/schema/entity/classes/CCSPlayerPawn.h>
 #include <source2mod/schema/entity/classes/CCSPlayer_MovementServices.h>
+#include <source2mod/schema/entity/classes/CCSWeaponBase.h>
 #include <source2mod/schema/entity/classes/CCSWeaponBaseVData.h>
 #include <source2mod/schema/entity/classes/CPlayer_WeaponServices.h>
 #include <source2mod/schema/schema.h>
@@ -106,6 +108,8 @@ namespace slotinput {
             // Snapshots its owner has been sent it in; after a couple it is
             // kept dormant on the owner's client (see BlockForViewer).
             int Sent = 0;
+            // Owned by its pawn for the round restart's map cleanup only.
+            bool CleanupOwned = false;
         };
 
         // Sent this many times to its owner, a fake is not transmitted to
@@ -161,6 +165,7 @@ namespace slotinput {
         Learned g_Learned[ABSOLUTE_PLAYER_LIMIT];
         std::vector<PendingKey> g_Pending;
         bool g_bAnyInjected = false;
+        bool g_bCleanupOwned = false;
         Source2ModHookId g_RunCommandHook = 0;
 
         int TickCount()
@@ -211,6 +216,26 @@ namespace slotinput {
                 NetworkStateChangedData element(static_cast<uint32>(fieldOffset), i);
                 chainer->NetworkStateChanged(element);
             }
+        }
+
+        // The fake, unless it is gone or on its way out. UTIL_Remove only marks
+        // an entity (EF_MARKED_FOR_DELETE) and queues it; its handle resolves
+        // until the queue is flushed, and the engine leaves it out of the
+        // snapshot from the mark on. Injected into m_hMyWeapons in that window,
+        // the game's CheckTransmit marked it for its owner by handle -- an
+        // entity in the transmit set that is not packed, the "WriteEnterPVS:
+        // GetEntServerClass failed" FATAL the CheckTransmit guard now drops.
+        CBasePlayerWeapon* Alive(const Fake& fake)
+        {
+            CBasePlayerWeapon* weapon = fake.Weapon.Get();
+            if (!weapon)
+                return nullptr;
+
+            const CEntityIdentity* identity = weapon->m_pEntity;
+            if (!identity || (identity->m_flags & (EF_MARKED_FOR_DELETE | EF_DELETE_IN_PROGRESS)))
+                return nullptr;
+
+            return weapon;
         }
 
         CPlayer_WeaponServices* WeaponServicesOf(Session& s)
@@ -335,7 +360,7 @@ namespace slotinput {
 
             for (const Fake& fake : s.Fakes)
             {
-                if (CBasePlayerWeapon* weapon = fake.Weapon.Get())
+                if (CBasePlayerWeapon* weapon = Alive(fake))
                 {
                     weapon->m_hOwnerEntity() = CHandle<CBaseEntity>(pawn);
                     weapon->m_hOwnerEntity.NetworkStateChanged();
@@ -382,12 +407,22 @@ namespace slotinput {
             {
                 auto it = std::find_if(s.Fakes.begin(), s.Fakes.end(), [&](const Fake& f) { return f.Key == def.Key; });
 
-                if (it != s.Fakes.end() && !it->Weapon.Get())
+                if (it != s.Fakes.end() && !Alive(*it))
                 {
                     FP_WARN("SlotInput: the fake for key {} was deleted by someone", def.Key);
                     s.Fakes.erase(it);
                     it = s.Fakes.end();
                 }
+
+                // CCSWeaponBase::Spawn starts the "WpnCsBase_RemoveUnownedWpn"
+                // think (every 0.2 s, all but the C4) unless mp_death_drop_gun
+                // is on (in warmup: mp_warmup_items_drop_policy). With
+                // weapon_auto_cleanup_time 0 it removes a weapon that had no
+                // owner for more than 3 thinks in a row -- the ownerless fakes
+                // went a second after the menu opened. The count, reset every
+                // frame, never gets there.
+                if (it != s.Fakes.end())
+                    static_cast<CCSWeaponBase*>(it->Weapon.Get())->m_numRemoveUnownedWeaponThink() = 0;
 
                 const bool wanted = learned.Source[def.Key] != KeySource::CommandBound;
 
@@ -518,7 +553,7 @@ namespace slotinput {
             {
                 for (const Fake& fake : s.Fakes)
                 {
-                    CBasePlayerWeapon* weapon = fake.Weapon.Get();
+                    CBasePlayerWeapon* weapon = Alive(fake);
                     if (weapon && weapon->GetEntityIndex().Get() == index)
                     {
                         cmd->mutable_base()->clear_weaponselect();
@@ -705,6 +740,10 @@ namespace slotinput {
 
     void OnFrame()
     {
+        // Should round_poststart never have come (a restart that stopped
+        // half way): before anything is sent, the fakes are ownerless again.
+        OnRoundPostStart();
+
         for (int slot = 0; slot < ABSOLUTE_PLAYER_LIMIT; slot++)
         {
             CCSPlayerController* player = CCSPlayerController::FromSlot(slot);
@@ -794,7 +833,7 @@ namespace slotinput {
 
                 for (const Fake& fake : s.Fakes)
                 {
-                    if (fake.Key != def.Key || !fake.Weapon.Get())
+                    if (fake.Key != def.Key || !Alive(fake))
                         continue;
 
                     if (def.Key >= 6)
@@ -864,7 +903,7 @@ namespace slotinput {
             const bool own = slot == viewerSlot;
             for (Fake& fake : s.Fakes)
             {
-                CBasePlayerWeapon* weapon = fake.Weapon.Get();
+                CBasePlayerWeapon* weapon = Alive(fake);
                 if (!weapon)
                     continue;
 
@@ -890,5 +929,73 @@ namespace slotinput {
                     info->m_pNonTransmitEntity->Clear(index);
             }
         }
+    }
+
+    // The round restart (CCSGameRules::RestartRound) fires round_prestart,
+    // then cleans the map up -- every CCSWeaponBase without an owner is
+    // deleted (CleanUpMap: the weapon's vfunc 371, "no m_hOwnerEntity") --
+    // and fires round_poststart at its end, all in one tick. For that while
+    // the fakes have their pawn as owner, without NetworkStateChanged: no
+    // snapshot falls in between, so the client never learns of it (an owner
+    // on a fake it has is what makes it leave the client's slot selection).
+    // A complete reset (mp_restartgame, m_bCompleteReset) deletes every
+    // weapon, owned or not: the fakes go here, and OnFrame makes new ones in
+    // the same tick.
+    void OnRoundPreStart()
+    {
+        const bool completeReset = shared::g_pGameRules && shared::g_pGameRules->m_bCompleteReset();
+
+        for (Session& s : g_Sessions)
+        {
+            if (!s.Active)
+                continue;
+
+            CCSPlayerPawn* pawn = s.Pawn.Get();
+            if (!pawn)
+                continue;
+
+            if (completeReset)
+            {
+                for (const Fake& fake : s.Fakes)
+                {
+                    if (CBasePlayerWeapon* weapon = Alive(fake))
+                        weapon->Remove();
+                }
+                s.Fakes.clear();
+                continue;
+            }
+
+            for (Fake& fake : s.Fakes)
+            {
+                CBasePlayerWeapon* weapon = Alive(fake);
+                if (!weapon || weapon->m_hOwnerEntity().Get())
+                    continue;
+
+                weapon->m_hOwnerEntity() = CHandle<CBaseEntity>(pawn);
+                fake.CleanupOwned = true;
+                g_bCleanupOwned = true;
+            }
+        }
+    }
+
+    void OnRoundPostStart()
+    {
+        if (!g_bCleanupOwned)
+            return;
+
+        for (Session& s : g_Sessions)
+        {
+            for (Fake& fake : s.Fakes)
+            {
+                if (!fake.CleanupOwned)
+                    continue;
+
+                if (CBasePlayerWeapon* weapon = fake.Weapon.Get())
+                    weapon->m_hOwnerEntity() = CHandle<CBaseEntity>();
+                fake.CleanupOwned = false;
+            }
+        }
+
+        g_bCleanupOwned = false;
     }
 }

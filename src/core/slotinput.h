@@ -62,6 +62,12 @@ namespace slotinput {
     void Inject();
     void BlockForViewer(CCheckTransmitInfo* info);
 
+    // round_prestart / round_poststart, fired by the round restart around its
+    // map cleanup, which deletes every weapon without an owner: the fakes
+    // have their pawn as owner in between.
+    void OnRoundPreStart();
+    void OnRoundPostStart();
+
     // A "1".."9" command, before the menu gets it. False: the same press
     // already went to the menu through its slot key ("slotN;N" whose slot
     // half arrived first), so the menu must not get it again.
