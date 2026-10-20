@@ -190,6 +190,12 @@ namespace gamehooks
 
             KHook::Return<RETURN> Pre(CLASS* pThis, ARGS... args)
             {
+                if constexpr (std::is_same_v<CONTEXT, PlayerChatContext>)
+                {
+                    if (virtualhooks::IsChatLineHidden())
+                        return { KHook::Action::Supersede };
+                }
+
                 if (!m_listeners.Has(false))
                 {
                     // The core fires player_chat for the line (virtualhooks.cpp).
@@ -233,6 +239,12 @@ namespace gamehooks
             {
                 if (!m_listeners.Has(true))
                     return Ignore();
+
+                if constexpr (std::is_same_v<CONTEXT, PlayerChatContext>)
+                {
+                    if (virtualhooks::IsChatLineHidden())
+                        return Ignore();
+                }
 
                 CONTEXT ctx = m_make(pThis, args...);
                 const CallData call{ this, pThis, std::tuple<ARGS...>(args...) };

@@ -102,6 +102,7 @@ namespace virtualhooks
     {
         bool said = false;          // Host_Say ran for it and no Source2Mod handler blocked it
         bool eventFired = false;    // a player_chat went out meanwhile
+        bool hidden = false;        // a silent trigger for no command of ours: Host_Say is skipped
         CEntityInstance* controller = nullptr;
         bool teamOnly = false;
         std::string text;
@@ -111,6 +112,11 @@ namespace virtualhooks
     static bool IsSayCommand(const CCommand& args)
     {
         return args.ArgC() > 0 && (V_strcmp(args.Arg(0), "say") == 0 || V_strcmp(args.Arg(0), "say_team") == 0);
+    }
+
+    bool IsChatLineHidden()
+    {
+        return !chatLines.empty() && chatLines.back().hidden;
     }
 
     void OnPlayerChatSaid(const PlayerChatContext& ctx, bool blocked)
@@ -553,19 +559,15 @@ namespace virtualhooks
                     parsed.Tokenize(cleaned.c_str());
                 }
 
-                // A silent trigger for a command that is not ours: when the
-                // server has a ConCommand of that name (as is, or CounterStrikeSharp's
-                // "css_" one) it stays ordinary chat, so it reaches Host_Say, where
-                // CounterStrikeSharp runs its "/x" commands. With no such command
-                // anywhere it is a mistyped command, and hidden like one of ours.
+                // A silent trigger for a command that is not ours goes on as an
+                // ordinary say -- the say listeners and the game's say see it, and so
+                // do other Host_Say hooks, where CounterStrikeSharp runs its "/x"
+                // commands -- but Host_Say itself is skipped, so it never shows
+                // (see IsChatLineHidden).
                 if (isSilent && !isPublic && (parsed.ArgC() == 0 || !commands::HasChatCommand(parsed.Arg(0))))
                 {
-                    const bool elsewhere = parsed.ArgC() > 0 && g_pCVar &&
-                        (g_pCVar->FindConCommand(parsed.Arg(0)).IsValidRef() ||
-                         g_pCVar->FindConCommand((std::string("css_") + parsed.Arg(0)).c_str()).IsValidRef());
-
-                    if (!elsewhere)
-                        return { KHook::Action::Supersede };
+                    if (!chatLines.empty())
+                        chatLines.back().hidden = true;
 
                     isSilent = false;
                 }

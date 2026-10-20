@@ -175,4 +175,9 @@ namespace virtualhooks {
     /// @p blocked: a Source2Mod handler superseded it. Feeds the core's own
     /// player_chat event.
     void OnPlayerChatSaid(const PlayerChatContext& ctx, bool blocked);
+
+    /// The say line being dispatched is a silent trigger for no command of
+    /// Source2Mod's: Host_Say skips it before any PlayerChat handler, so
+    /// nothing prints it.
+    bool IsChatLineHidden();
 }
