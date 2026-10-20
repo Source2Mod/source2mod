@@ -79,39 +79,52 @@ namespace sourcepawn
     /// Every native the core binds, terminated by { nullptr, nullptr }.
     const sp_nativeinfo_t* GetCoreNatives();
 
-    // The tables GetCoreNatives() is made of, one per area.
-    const sp_nativeinfo_t* GetAdtNatives();          // natives_adt.cpp
-    const sp_nativeinfo_t* GetConVarNatives();       // natives_convars.cpp
-    const sp_nativeinfo_t* GetPluginSysNatives();    // pluginsys.cpp
-    const sp_nativeinfo_t* GetEntityNatives();       // natives_entities.cpp
-    const sp_nativeinfo_t* GetApiNatives();          // natives_api.cpp
-    const sp_nativeinfo_t* GetNetSoundNatives();     // natives_netsound.cpp
-    const sp_nativeinfo_t* GetGameHookNatives();     // natives_gamehooks.cpp
-    const sp_nativeinfo_t* GetEventNatives();        // natives_events.cpp
-    const sp_nativeinfo_t* GetGameConfigNatives();   // natives_gameconfig.cpp
-    const sp_nativeinfo_t* GetRawHookNatives();      // natives_rawhooks.cpp: HookFunction, FunctionContext
+    // The tables GetCoreNatives() is made of: one per file, named after the
+    // core/ system it is the SourcePawn side of.
+    const sp_nativeinfo_t* GetAddressNatives();       // natives_addresses.cpp
+    const sp_nativeinfo_t* GetAdtNatives();           // natives_adt.cpp
+    const sp_nativeinfo_t* GetApiNatives();           // natives_api.cpp
+    const sp_nativeinfo_t* GetClientNatives();        // natives_clients.cpp
+    const sp_nativeinfo_t* GetCommandNatives();       // natives_commands.cpp
+    const sp_nativeinfo_t* GetConVarNatives();        // natives_convars.cpp
+    const sp_nativeinfo_t* GetCookieNatives();        // natives_cookies.cpp
+    const sp_nativeinfo_t* GetCustomHudNatives();     // natives_customhud.cpp
+    const sp_nativeinfo_t* GetDynamicHookNatives();   // natives_dynamichooks.cpp: HookFunction, FunctionContext
+    const sp_nativeinfo_t* GetEntityNatives();        // natives_entities.cpp
+    const sp_nativeinfo_t* GetEventNatives();         // natives_events.cpp
+    const sp_nativeinfo_t* GetFeatureNatives();       // natives_features.cpp
+    const sp_nativeinfo_t* GetFileNatives();          // natives_files.cpp
+    const sp_nativeinfo_t* GetFunctionNatives();      // natives_functions.cpp
+    const sp_nativeinfo_t* GetGameConfigNatives();    // natives_gameconfig.cpp
+    const sp_nativeinfo_t* GetGameHookNatives();      // natives_gamehooks.cpp
+    const sp_nativeinfo_t* GetGameSystemNatives();    // natives_gamesystems.cpp
+    const sp_nativeinfo_t* GetGeoIPNatives();         // natives_geoip.cpp
+    const sp_nativeinfo_t* GetHttpNatives();          // natives_http.cpp
+    const sp_nativeinfo_t* GetJsonNatives();          // natives_json.cpp
+    const sp_nativeinfo_t* GetMapNatives();           // natives_maps.cpp
+    const sp_nativeinfo_t* GetMathNatives();          // natives_math.cpp
+    const sp_nativeinfo_t* GetMenuNatives();          // natives_menus.cpp
+    const sp_nativeinfo_t* GetNetworkMessageNatives();// natives_networkmessages.cpp
+    const sp_nativeinfo_t* GetPathNatives();          // natives_paths.cpp
+    const sp_nativeinfo_t* GetPermissionNatives();    // natives_permissions.cpp
+    const sp_nativeinfo_t* GetPluginSysNatives();     // pluginsys.cpp
+    const sp_nativeinfo_t* GetRaytraceNatives();      // natives_raytrace.cpp
+    const sp_nativeinfo_t* GetSchedulerNatives();     // natives_scheduler.cpp
+    const sp_nativeinfo_t* GetScriptNatives();        // natives_scripts.cpp
+    const sp_nativeinfo_t* GetSoundNatives();         // natives_sounds.cpp
+    const sp_nativeinfo_t* GetSqlNatives();           // natives_sql.cpp
+    const sp_nativeinfo_t* GetTargetingNatives();     // natives_targeting.cpp
+    const sp_nativeinfo_t* GetTranslationNatives();   // natives_translations.cpp
+    const sp_nativeinfo_t* GetTransmitNatives();      // natives_transmit.cpp
+    const sp_nativeinfo_t* GetUtilNatives();          // natives_utils.cpp
 
-    /// The core function behind a Source2ModFunction handle (natives_gameconfig.cpp).
+    /// The core function behind a Source2ModFunction handle (natives_functions.cpp).
     ISource2ModFunction* DescribedFunction(SourcePawn::IPluginContext* ctx, cell_t handle);
 
-    /// Drops the function hooks a script made (natives_rawhooks.cpp).
+    /// Drops the function hooks a script made (natives_dynamichooks.cpp).
     void ForgetFunctionHooks(PluginId id);
     void ForgetEntityListeners(PluginId id);
     bool UnhookFunctionHook(PluginId owner, Source2ModHookId id);
-    const sp_nativeinfo_t* GetWorldNatives();        // natives_world.cpp
-    const sp_nativeinfo_t* GetNetNatives();          // natives_net.cpp
-    const sp_nativeinfo_t* GetUiNatives();           // natives_ui.cpp
-    const sp_nativeinfo_t* GetMathNatives();         // natives_math.cpp
-    const sp_nativeinfo_t* GetFeatureNatives();      // natives_features.cpp
-    const sp_nativeinfo_t* GetMapNatives();          // natives_maps.cpp
-    const sp_nativeinfo_t* GetGeoIPNatives();        // natives_geoip.cpp
-    const sp_nativeinfo_t* GetCookieNatives();       // natives_cookies.cpp
-    const sp_nativeinfo_t* GetTranslationNatives();  // natives_translations.cpp
-    const sp_nativeinfo_t* GetFileNatives();         // natives_files.cpp
-    const sp_nativeinfo_t* GetUtilNatives();         // natives_utils.cpp
-    const sp_nativeinfo_t* GetClientNatives();       // natives_clients.cpp
-    const sp_nativeinfo_t* GetTargetingNatives();    // natives_targeting.cpp
-
     /// A float operator native the x64 JIT cannot inline: bound with SP_NTVFLAG_EPHEMERAL.
     bool IsEphemeralMathNative(const char* name);
 
@@ -139,10 +152,12 @@ namespace sourcepawn
     // Per-area cleanup when a plugin goes (RemoveAllForPlugin calls these).
     void ForgetEventHooks(PluginId id);     // natives.cpp
     void ForgetConVarHooks(PluginId id);    // natives_convars.cpp
-    void ForgetGameHooks(PluginId id);       // natives_gamehooks.cpp
-    void ForgetWorldHooks(PluginId id);      // natives_world.cpp
-    void ForgetUiHooks(PluginId id);         // natives_ui.cpp
-    void ForgetNetSoundHooks(PluginId id);   // natives_netsound.cpp
+    void ForgetGameHooks(PluginId id);            // natives_gamehooks.cpp
+    void ForgetPermissionHooks(PluginId id);      // natives_permissions.cpp
+    void ForgetCustomHudHooks(PluginId id);       // natives_customhud.cpp
+    void ForgetScriptHooks(PluginId id);          // natives_scripts.cpp
+    void ForgetNetworkMessageHooks(PluginId id);  // natives_networkmessages.cpp
+    void ForgetSoundHooks(PluginId id);           // natives_sounds.cpp
 
     /// ISource2ModNatives001, for native plugins (pluginsys.cpp).
     ISource2ModNatives* NativesInterface();

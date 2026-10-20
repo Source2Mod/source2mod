@@ -35,8 +35,8 @@
  */
 
 /*
- * SourcePawn natives for menus, custom HUD clicks and cs_script
- * (source2mod/menus.inc, customhud.inc, scripts.inc).
+ * SourcePawn natives for source2mod/menus.inc on the core's menus
+ * (core/menus.cpp).
  *
  * A CenterHtmlMenu handle owns its menu. Deleting it closes the menu for
  * everyone who has it open, on the next frame: the delete may come from the
@@ -47,10 +47,8 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/customhud.h"
 #include "core/menus.h"
 #include "core/scheduler.h"
-#include "core/scripts.h"
 
 #include <source2mod/schema/entity/classes/CBaseEntity.h>
 #include <source2mod/schema/entity/classes/CCSCustomHudLayout.h>
@@ -59,7 +57,6 @@
 #include <sp_callable.h>
 
 #include <functional>
-#include <map>
 #include <string>
 #include <unordered_map>
 
@@ -660,145 +657,7 @@ namespace sourcepawn
             return 0;
         }
 
-        // ---- Source2ModCustomHud -------------------------------------------------------
-
-        struct HudHook
-        {
-            PluginId owner;
-            CEntityHandle layout;
-        };
-        std::map<Source2ModHookId, HudHook> g_hudHooks;
-
-        // HookCustomHudClick(layout, handler)
-        cell_t N_HudHookCustomHudClick(IPluginContext* ctx, const cell_t* params)
-        {
-            auto* layout = TypedEntityArg<CCSCustomHudLayout>(ctx, params[1]);
-            IPluginFunction* fn = layout ? Function(ctx, params[2]) : nullptr;
-            if (!fn)
-                return 0;
-            const PluginId owner = CallerId(ctx);
-            CustomHudClickHandler handler([fn](CCSPlayerController* player, CCSCustomHudLayout* l, const char* buttonId)
-            {
-                sp::CallArgs args;
-                args.PushCell(EntityCell(player));
-                args.PushCell(EntityCell(l));
-                args.PushString(buttonId ? buttonId : "");
-                Invoke(fn, args);
-            });
-            const Source2ModCustomHudHookId id = customhud::customHudManager.HookCustomHudClick(owner, layout, std::move(handler));
-            if (id)
-                g_hudHooks[id] = { owner, layout->GetRefEHandle() };
-            return static_cast<cell_t>(id);
-        }
-
-        cell_t N_HudUnhookCustomHudClick(IPluginContext* ctx, const cell_t* params)
-        {
-            auto it = g_hudHooks.find(params[1]);
-            if (it == g_hudHooks.end() || it->second.owner != CallerId(ctx))
-                return 0;
-            g_hudHooks.erase(it);
-            return customhud::customHudManager.UnhookCustomHudClickId(params[1]);
-        }
-
-        cell_t N_HudUnhookCustomHudClickLayout(IPluginContext* ctx, const cell_t* params)
-        {
-            auto* layout = TypedEntityArg<CCSCustomHudLayout>(ctx, params[1]);
-            if (!layout)
-                return 0;
-            const PluginId owner = CallerId(ctx);
-            const CEntityHandle handle = layout->GetRefEHandle();
-            for (auto it = g_hudHooks.begin(); it != g_hudHooks.end();)
-            {
-                if (it->second.owner == owner && it->second.layout == handle)
-                {
-                    customhud::customHudManager.UnhookCustomHudClickId(it->first);
-                    it = g_hudHooks.erase(it);
-                }
-                else
-                    ++it;
-            }
-            return 0;
-        }
-
-        // ---- Source2ModScripts ---------------------------------------------------------
-
-        std::map<Source2ModHookId, PluginId> g_scriptHooks;
-
-        cell_t N_ScriptsCanRunSource(IPluginContext*, const cell_t*)
-        {
-            return scripts::scriptsManager.CanRunSource();
-        }
-
-        // LoadAsset(name, asset, persistent)
-        cell_t N_ScriptsLoadAsset(IPluginContext* ctx, const cell_t* params)
-        {
-            return EntityCell(scripts::scriptsManager.LoadAsset(CallerId(ctx), LocalString(ctx, params[1]), LocalString(ctx, params[2]), params[3] != 0));
-        }
-
-        // RunSource(name, virtualPath, source, persistent)
-        cell_t N_ScriptsRunSource(IPluginContext* ctx, const cell_t* params)
-        {
-            return EntityCell(scripts::scriptsManager.RunSource(CallerId(ctx), LocalString(ctx, params[1]), LocalString(ctx, params[2]),
-                                                             LocalString(ctx, params[3]), params[4] != 0));
-        }
-
-        // RunFile(name, filePath, persistent)
-        cell_t N_ScriptsRunFile(IPluginContext* ctx, const cell_t* params)
-        {
-            return EntityCell(scripts::scriptsManager.RunFile(CallerId(ctx), LocalString(ctx, params[1]), LocalString(ctx, params[2]), params[3] != 0));
-        }
-
-        cell_t N_ScriptsReload(IPluginContext* ctx, const cell_t* params)
-        {
-            return EntityCell(scripts::scriptsManager.Reload(LocalString(ctx, params[1])));
-        }
-
-        cell_t N_ScriptsRemove(IPluginContext* ctx, const cell_t* params)
-        {
-            scripts::scriptsManager.Remove(LocalString(ctx, params[1]));
-            return 0;
-        }
-
-        cell_t N_ScriptsFind(IPluginContext* ctx, const cell_t* params)
-        {
-            return EntityCell(scripts::scriptsManager.Find(LocalString(ctx, params[1])));
-        }
-
-        cell_t N_ScriptsFireInput(IPluginContext* ctx, const cell_t* params)
-        {
-            return scripts::scriptsManager.FireInput(LocalString(ctx, params[1]), LocalString(ctx, params[2]));
-        }
-
-        // HookScriptMessage(channel, handler)
-        cell_t N_ScriptsHookScriptMessage(IPluginContext* ctx, const cell_t* params)
-        {
-            IPluginFunction* fn = Function(ctx, params[2]);
-            if (!fn)
-                return 0;
-            const PluginId owner = CallerId(ctx);
-            ScriptMessageHandler handler([fn](const char* channel, const char* payload)
-            {
-                sp::CallArgs args;
-                args.PushString(channel ? channel : "");
-                args.PushString(payload ? payload : "");
-                Invoke(fn, args);
-            });
-            const Source2ModScriptMessageHookId id = scripts::scriptsManager.HookScriptMessage(owner, LocalString(ctx, params[1]), std::move(handler));
-            if (id)
-                g_scriptHooks[id] = owner;
-            return static_cast<cell_t>(id);
-        }
-
-        cell_t N_ScriptsUnhookScriptMessage(IPluginContext* ctx, const cell_t* params)
-        {
-            auto it = g_scriptHooks.find(params[1]);
-            if (it == g_scriptHooks.end() || it->second != CallerId(ctx))
-                return 0;
-            g_scriptHooks.erase(it);
-            return scripts::scriptsManager.UnhookScriptMessageId(params[1]);
-        }
-
-        const sp_nativeinfo_t g_uiNatives[] = {
+        const sp_nativeinfo_t g_menuNatives[] = {
             { "CenterHtmlMenu.CenterHtmlMenu", N_MenuNew },
             { "CenterHtmlMenu.SetTitle", N_MenuSetTitle },
             { "CenterHtmlMenu.GetTitle", N_MenuGetTitle },
@@ -837,37 +696,12 @@ namespace sourcepawn
             { "Source2ModMenus.RedrawActiveMenu", N_MenusRedrawActiveMenu },
             { "Source2ModMenus.ResetActiveMenu", N_MenusResetActiveMenu },
             { "Source2ModMenus.OnKeyPress", N_MenusOnKeyPress },
-
-            { "Source2ModCustomHud.HookCustomHudClick", N_HudHookCustomHudClick },
-            { "Source2ModCustomHud.UnhookCustomHudClick", N_HudUnhookCustomHudClick },
-            { "Source2ModCustomHud.UnhookCustomHudClickLayout", N_HudUnhookCustomHudClickLayout },
-
-            { "Source2ModScripts.CanRunSource", N_ScriptsCanRunSource },
-            { "Source2ModScripts.LoadAsset", N_ScriptsLoadAsset },
-            { "Source2ModScripts.RunSource", N_ScriptsRunSource },
-            { "Source2ModScripts.RunFile", N_ScriptsRunFile },
-            { "Source2ModScripts.Reload", N_ScriptsReload },
-            { "Source2ModScripts.Remove", N_ScriptsRemove },
-            { "Source2ModScripts.Find", N_ScriptsFind },
-            { "Source2ModScripts.FireInput", N_ScriptsFireInput },
-            { "Source2ModScripts.HookScriptMessage", N_ScriptsHookScriptMessage },
-            { "Source2ModScripts.UnhookScriptMessage", N_ScriptsUnhookScriptMessage },
             { nullptr, nullptr },
         };
     }
 
-    void ForgetUiHooks(PluginId id)
+    const sp_nativeinfo_t* GetMenuNatives()
     {
-        // The core has taken these down already (it unhooks by owner); only the
-        // bookkeeping is left.
-        for (auto it = g_hudHooks.begin(); it != g_hudHooks.end();)
-            it = it->second.owner == id ? g_hudHooks.erase(it) : std::next(it);
-        for (auto it = g_scriptHooks.begin(); it != g_scriptHooks.end();)
-            it = it->second == id ? g_scriptHooks.erase(it) : std::next(it);
-    }
-
-    const sp_nativeinfo_t* GetUiNatives()
-    {
-        return g_uiNatives;
+        return g_menuNatives;
     }
 }

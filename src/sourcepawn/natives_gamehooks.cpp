@@ -35,13 +35,13 @@
  */
 
 /*
- * Hooks (source2mod/hooks.inc: HookPoint, the contexts) and transmit
- * (source2mod/transmit.inc) of the SourcePawn API mirroring the C++ one, on
- * the core's ISource2ModHooks and transmit managers.
+ * Hooks (source2mod/hooks.inc: HookPoint, the contexts) of the SourcePawn API
+ * mirroring the C++ one, on the core's ISource2ModHooks (core/hooks.cpp,
+ * core/gamehooks.cpp, core/virtualpoints.cpp).
  *
- * A handler's context (TakeDamageContext, MovementContext, ..., and what
- * it lends: the damage info, the move data; the CheckTransmit viewer list)
- * is a handle made for the call and freed when the handler returns. The game hooks manager tells owners apart
+ * A handler's context (TakeDamageContext, MovementContext, ..., and what it
+ * lends: the damage info, the move data) is a handle made for the call and
+ * freed when the handler returns. The game hooks manager tells owners apart
  * by the handler's code, which for a script is the core's; the hooks a
  * script made are therefore remembered here and taken down when it unloads.
  */
@@ -50,7 +50,6 @@
 #include "scriptplugin.h"
 
 #include "core/hooks.h"
-#include "core/transmit.h"
 
 #include <source2mod/schema/movedata.h>
 #include <source2mod/schema/takedamageinfo.h>
@@ -1059,226 +1058,7 @@ namespace sourcepawn
 #undef S2M_ENTITY
 #undef S2M_HANDLE
 
-        // ---- transmit -----------------------------------------------------------------
-
-        transmit::TransmitManager& TM()
-        {
-            return transmit::transmitManager;
-        }
-
-        cell_t N_THookEntity(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().HookEntity(CallerId(ctx), e, params[2] != 0);
-        }
-
-        cell_t N_TUnhookEntity(IPluginContext* ctx, const cell_t* params)
-        {
-            if (CEntityInstance* e = EntityAt(ctx, params[1]))
-                TM().UnhookEntity(e);
-            return 0;
-        }
-
-        cell_t N_TIsEntityHooked(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().IsEntityHooked(e);
-        }
-
-        cell_t N_TSetVisible(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().SetVisible(e, CPlayerSlot(params[2]), params[3] != 0, params[4]);
-        }
-
-        cell_t N_TSetVisibleToAll(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().SetVisibleToAll(e, params[2] != 0, params[3]);
-        }
-
-        cell_t N_TIsVisible(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().IsVisible(e, CPlayerSlot(params[2]));
-        }
-
-        cell_t N_TIsHiddenOnChannel(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().IsHiddenOnChannel(e, CPlayerSlot(params[2]), params[3]);
-        }
-
-        cell_t N_TSetBlockAll(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().SetBlockAll(e, params[2] != 0);
-        }
-
-        cell_t N_TGetBlockAll(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e && TM().GetBlockAll(e);
-        }
-
-        cell_t N_TSetOwner(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            CEntityInstance* owner = params[2] == -1 ? nullptr : EntityAt(ctx, params[2]);
-            return e && (owner || params[2] == -1) && TM().SetOwner(e, owner);
-        }
-
-        cell_t N_TGetOwner(IPluginContext* ctx, const cell_t* params)
-        {
-            CEntityInstance* e = EntityAt(ctx, params[1]);
-            return e ? EntityCell(TM().GetOwner(e)) : -1;
-        }
-
-        cell_t N_TResetViewer(IPluginContext*, const cell_t* params)
-        {
-            TM().ResetViewer(CPlayerSlot(params[1]));
-            return 0;
-        }
-
-        HandleType InfoListType()
-        {
-            static const HandleType t = FrameType("ISource2ModTransmitInfoList");
-            return t;
-        }
-
-        HandleType TransmitInfoType()
-        {
-            static const HandleType t = FrameType("ISource2ModTransmitInfo");
-            return t;
-        }
-
-        struct InfoList
-        {
-            ISource2ModTransmitInfo* const* infos;
-            int count;
-            PluginId owner;
-            std::vector<cell_t> handles;    // one per viewer, made on first Get()
-        };
-
-        cell_t N_THookCheckTransmit(IPluginContext* ctx, const cell_t* params)
-        {
-            IPluginFunction* fn = Function(ctx, params[1]);
-            if (!fn)
-                return 0;
-            const PluginId owner = CallerId(ctx);
-            CheckTransmitHook handler([fn, owner](ISource2ModTransmitInfo* const* infos, int infoCount, const uint16_t* indices, int entityCount)
-            {
-                InfoList list{ infos, infoCount, owner, std::vector<cell_t>(static_cast<size_t>(std::max(infoCount, 0)), 0) };
-                const cell_t listHandle = Handles().Create(InfoListType(), &list, owner);
-
-                std::vector<cell_t> cells(indices, indices + std::max(entityCount, 0));
-                sp::CallArgs args;
-                args.PushCell(listHandle);
-                args.PushCell(infoCount);
-                args.PushArray(cells.data(), static_cast<unsigned>(cells.size()));
-                args.PushCell(entityCount);
-                Invoke(fn, args);
-
-                for (cell_t h : list.handles)
-                    if (h)
-                        Handles().Free(h, 0, true);
-                Handles().Free(listHandle, 0, true);
-            });
-            return static_cast<cell_t>(TM().HookCheckTransmit(owner, std::move(handler)));
-        }
-
-        cell_t N_TUnhookCheckTransmit(IPluginContext*, const cell_t* params)
-        {
-            return static_cast<ISource2ModTransmit&>(TM()).UnhookCheckTransmit(static_cast<Source2ModTransmitHookId>(params[1]));
-        }
-
-        cell_t N_ListGet(IPluginContext* ctx, const cell_t* params)
-        {
-            auto* list = static_cast<InfoList*>(ReadHandle(ctx, params[1], InfoListType()));
-            if (!list)
-                return 0;
-            const cell_t i = params[2];
-            if (i < 0 || i >= list->count)
-                return ctx->ThrowNativeError("Viewer %d is out of range (%d viewers)", i, list->count);
-            if (!list->handles[i])
-                list->handles[i] = Handles().Create(TransmitInfoType(), list->infos[i], list->owner);
-            return list->handles[i];
-        }
-
-        ISource2ModTransmitInfo* InfoOf(IPluginContext* ctx, cell_t handle)
-        {
-            return static_cast<ISource2ModTransmitInfo*>(ReadHandle(ctx, handle, TransmitInfoType()));
-        }
-
-        cell_t N_InfoGetPlayerSlot(IPluginContext* ctx, const cell_t* params)
-        {
-            ISource2ModTransmitInfo* i = InfoOf(ctx, params[1]);
-            return i ? i->GetPlayerSlot().Get() : -1;
-        }
-
-        cell_t N_InfoIsFullUpdate(IPluginContext* ctx, const cell_t* params)
-        {
-            ISource2ModTransmitInfo* i = InfoOf(ctx, params[1]);
-            return i && i->IsFullUpdate();
-        }
-
-        cell_t N_InfoIsTransmitting(IPluginContext* ctx, const cell_t* params)
-        {
-            ISource2ModTransmitInfo* i = InfoOf(ctx, params[1]);
-            return i && i->IsTransmitting(params[2]);
-        }
-
-        cell_t N_InfoBlockTransmit(IPluginContext* ctx, const cell_t* params)
-        {
-            if (ISource2ModTransmitInfo* i = InfoOf(ctx, params[1]))
-                i->BlockTransmit(params[2]);
-            return 0;
-        }
-
-        cell_t N_InfoAllowTransmit(IPluginContext* ctx, const cell_t* params)
-        {
-            if (ISource2ModTransmitInfo* i = InfoOf(ctx, params[1]))
-                i->AllowTransmit(params[2]);
-            return 0;
-        }
-
-        // Get/SetTransmitEntity, ...NonPlayers, ...OutOfPVS, ...Always: one bit of a set.
-        template <CBitVec<MAX_EDICTS>* (ISource2ModTransmitInfo::*SET)()>
-        CBitVec<MAX_EDICTS>* BitsOf(IPluginContext* ctx, const cell_t* params)
-        {
-            ISource2ModTransmitInfo* i = InfoOf(ctx, params[1]);
-            if (!i)
-                return nullptr;
-            if (params[2] < 0 || params[2] >= MAX_EDICTS)
-            {
-                ctx->ThrowNativeError("Entity index %d is out of range", params[2]);
-                return nullptr;
-            }
-            return (i->*SET)();
-        }
-
-        template <CBitVec<MAX_EDICTS>* (ISource2ModTransmitInfo::*SET)()>
-        cell_t N_InfoGetBit(IPluginContext* ctx, const cell_t* params)
-        {
-            CBitVec<MAX_EDICTS>* bits = BitsOf<SET>(ctx, params);
-            return bits && bits->IsBitSet(params[2]);
-        }
-
-        template <CBitVec<MAX_EDICTS>* (ISource2ModTransmitInfo::*SET)()>
-        cell_t N_InfoSetBit(IPluginContext* ctx, const cell_t* params)
-        {
-            if (CBitVec<MAX_EDICTS>* bits = BitsOf<SET>(ctx, params))
-            {
-                if (params[3])
-                    bits->Set(params[2]);
-                else
-                    bits->Clear(params[2]);
-            }
-            return 0;
-        }
-
         const sp_nativeinfo_t g_gameHookNatives[] = {
-            // source2mod/hooks.inc
             { "Source2ModHooks.Hook", N_HooksHook },
             { "Source2ModHooks.HookInstance", N_HooksHookInstance },
             { "Source2ModHooks.HookClass", N_HooksHookClass },
@@ -1569,35 +1349,6 @@ namespace sourcepawn
             { "CMoveData.SetIsLateCommand", N_CMoveData_SetIsLateCommand },
             { "CMoveData.GetSubtickMoveCount", N_CMoveData_GetSubtickMoveCount },
             { "CMoveData.GetSubtickMove", N_CMoveData_GetSubtickMove },
-            // source2mod/transmit.inc
-            { "Source2ModTransmit.HookEntity", N_THookEntity },
-            { "Source2ModTransmit.UnhookEntity", N_TUnhookEntity },
-            { "Source2ModTransmit.IsEntityHooked", N_TIsEntityHooked },
-            { "Source2ModTransmit.SetVisible", N_TSetVisible },
-            { "Source2ModTransmit.SetVisibleToAll", N_TSetVisibleToAll },
-            { "Source2ModTransmit.IsVisible", N_TIsVisible },
-            { "Source2ModTransmit.IsHiddenOnChannel", N_TIsHiddenOnChannel },
-            { "Source2ModTransmit.SetBlockAll", N_TSetBlockAll },
-            { "Source2ModTransmit.GetBlockAll", N_TGetBlockAll },
-            { "Source2ModTransmit.SetOwner", N_TSetOwner },
-            { "Source2ModTransmit.GetOwner", N_TGetOwner },
-            { "Source2ModTransmit.ResetViewer", N_TResetViewer },
-            { "Source2ModTransmit.HookCheckTransmit", N_THookCheckTransmit },
-            { "Source2ModTransmit.UnhookCheckTransmit", N_TUnhookCheckTransmit },
-            { "ISource2ModTransmitInfoList.Get", N_ListGet },
-            { "ISource2ModTransmitInfo.GetPlayerSlot", N_InfoGetPlayerSlot },
-            { "ISource2ModTransmitInfo.IsFullUpdate", N_InfoIsFullUpdate },
-            { "ISource2ModTransmitInfo.IsTransmitting", N_InfoIsTransmitting },
-            { "ISource2ModTransmitInfo.BlockTransmit", N_InfoBlockTransmit },
-            { "ISource2ModTransmitInfo.AllowTransmit", N_InfoAllowTransmit },
-            { "ISource2ModTransmitInfo.GetTransmitEntity", N_InfoGetBit<&ISource2ModTransmitInfo::GetTransmitEntity> },
-            { "ISource2ModTransmitInfo.SetTransmitEntity", N_InfoSetBit<&ISource2ModTransmitInfo::GetTransmitEntity> },
-            { "ISource2ModTransmitInfo.GetTransmitNonPlayers", N_InfoGetBit<&ISource2ModTransmitInfo::GetTransmitNonPlayers> },
-            { "ISource2ModTransmitInfo.SetTransmitNonPlayers", N_InfoSetBit<&ISource2ModTransmitInfo::GetTransmitNonPlayers> },
-            { "ISource2ModTransmitInfo.GetTransmitOutOfPVS", N_InfoGetBit<&ISource2ModTransmitInfo::GetTransmitOutOfPVS> },
-            { "ISource2ModTransmitInfo.SetTransmitOutOfPVS", N_InfoSetBit<&ISource2ModTransmitInfo::GetTransmitOutOfPVS> },
-            { "ISource2ModTransmitInfo.GetTransmitAlways", N_InfoGetBit<&ISource2ModTransmitInfo::GetTransmitAlways> },
-            { "ISource2ModTransmitInfo.SetTransmitAlways", N_InfoSetBit<&ISource2ModTransmitInfo::GetTransmitAlways> },
             { nullptr, nullptr },
         };
     }

@@ -676,7 +676,7 @@ namespace sourcepawn
         }
     }
 
-    const sp_nativeinfo_t* GetRawHookNatives()
+    const sp_nativeinfo_t* GetDynamicHookNatives()
     {
         return g_functionHookNatives;
     }

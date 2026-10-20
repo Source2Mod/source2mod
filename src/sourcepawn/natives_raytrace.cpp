@@ -35,20 +35,14 @@
  */
 
 /*
- * SourcePawn natives for the core's smaller services: Source2ModPaths,
- * Source2ModPermissions, Source2ModTrace (TraceOptions/TraceResult),
- * Source2ModGameSystems and Source2ModAddresses (source2mod/paths.inc,
- * permissions.inc, trace.inc, gamesystems.inc, addresses.inc).
+ * SourcePawn natives for source2mod/trace.inc: Source2ModTrace,
+ * TraceOptions / TraceResult and the nav mesh (CCSNavArea), on the core's
+ * ray tracing (core/raytrace.cpp).
  */
 #include "natives.h"
 #include "handles.h"
 #include "scriptplugin.h"
-#include "addresses_list.h"
 
-#include "core/addresses.h"
-#include "core/gamesystems.h"
-#include "core/paths.h"
-#include "core/permissions.h"
 #include "core/raytrace.h"
 
 #include <source2mod/schema/navarea.h>
@@ -57,7 +51,6 @@
 #include <sp_callable.h>
 
 #include <cstdlib>
-#include <map>
 #include <string>
 #include <vector>
 
@@ -71,21 +64,6 @@ namespace sourcepawn
         {
             ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
             return plugin ? plugin->Id() : 0;
-        }
-
-        IPluginFunction* Function(IPluginContext* ctx, cell_t id)
-        {
-            IPluginFunction* fn = ctx->GetFunctionById(static_cast<funcid_t>(id));
-            if (!fn)
-                ctx->ThrowNativeError("Invalid function id (%X)", id);
-            return fn;
-        }
-
-        cell_t ToBuffer(IPluginContext* ctx, cell_t addr, cell_t maxlen, const char* value)
-        {
-            size_t written = 0;
-            ctx->StringToLocalUTF8(addr, maxlen, value ? value : "", &written);
-            return static_cast<cell_t>(written);
         }
 
         /// An entity argument that may be NULL_ENTITY.
@@ -125,192 +103,6 @@ namespace sourcepawn
             ctx->LocalToPhysAddr(addr, &m);
             m[0] = static_cast<cell_t>(static_cast<uint32_t>(mask));
             m[1] = static_cast<cell_t>(static_cast<uint32_t>(mask >> 32));
-        }
-
-        // ---- Source2ModPaths -------------------------------------------------------
-
-#define S2M_PATH_NATIVE(name)                                                       \
-        cell_t N_Paths##name(IPluginContext* ctx, const cell_t* params)             \
-        {                                                                           \
-            return ToBuffer(ctx, params[1], params[2], paths::pathsManager.name()); \
-        }
-        S2M_PATH_NATIVE(GameDirectory)
-        S2M_PATH_NATIVE(RootDirectory)
-        S2M_PATH_NATIVE(ConfigsDirectory)
-        S2M_PATH_NATIVE(GamedataDirectory)
-        S2M_PATH_NATIVE(PluginsDirectory)
-        S2M_PATH_NATIVE(SharedDirectory)
-#undef S2M_PATH_NATIVE
-
-        cell_t N_PathsPluginConfigDirectory(IPluginContext* ctx, const cell_t* params)
-        {
-            return ToBuffer(ctx, params[1], params[2], paths::pathsManager.PluginConfigDirectory(CallerId(ctx)));
-        }
-
-        // ---- Source2ModPermissions -------------------------------------------------
-
-        uint64 SteamId(IPluginContext* ctx, cell_t addr)
-        {
-            return std::strtoull(LocalString(ctx, addr), nullptr, 10);
-        }
-
-        CPlayerSlot Slot(cell_t value)
-        {
-            return CPlayerSlot(value);
-        }
-
-        auto& Perms()
-        {
-            return permissions::permissionsManager;
-        }
-
-        cell_t N_PermHasPermission(IPluginContext* ctx, const cell_t* params)
-        {
-            return Perms().HasPermission(SteamId(ctx, params[1]), LocalString(ctx, params[2]));
-        }
-
-        cell_t N_PermPlayerHasPermission(IPluginContext* ctx, const cell_t* params)
-        {
-            return Perms().PlayerHasPermission(Slot(params[1]), LocalString(ctx, params[2]));
-        }
-
-        cell_t N_PermCheckAccess(IPluginContext* ctx, const cell_t* params)
-        {
-            return Perms().CheckAccess(Slot(params[1]), LocalString(ctx, params[2]), LocalString(ctx, params[3]));
-        }
-
-        cell_t N_PermInGroup(IPluginContext* ctx, const cell_t* params)
-        {
-            return Perms().InGroup(SteamId(ctx, params[1]), LocalString(ctx, params[2]));
-        }
-
-        cell_t N_PermGetImmunity(IPluginContext* ctx, const cell_t* params)
-        {
-            return Perms().GetImmunity(SteamId(ctx, params[1]));
-        }
-
-        cell_t N_PermCanTarget(IPluginContext*, const cell_t* params)
-        {
-            return Perms().CanTarget(Slot(params[1]), Slot(params[2]));
-        }
-
-        cell_t N_PermGetPlayerSteamID(IPluginContext* ctx, const cell_t* params)
-        {
-            const std::string text = std::to_string(Perms().GetPlayerSteamID(Slot(params[1])));
-            return ToBuffer(ctx, params[2], params[3], text.c_str());
-        }
-
-        cell_t N_PermIsPlayerAuthorized(IPluginContext*, const cell_t* params)
-        {
-            return Perms().IsPlayerAuthorized(Slot(params[1]));
-        }
-
-        cell_t N_PermGrantPermission(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().GrantPermission(CallerId(ctx), SteamId(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        cell_t N_PermRevokePermission(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().RevokePermission(CallerId(ctx), SteamId(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        cell_t N_PermAddToGroup(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().AddToGroup(CallerId(ctx), SteamId(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        cell_t N_PermRemoveFromGroup(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().RemoveFromGroup(CallerId(ctx), SteamId(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        cell_t N_PermSetImmunity(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().SetImmunity(CallerId(ctx), SteamId(ctx, params[1]), params[2]);
-            return 0;
-        }
-
-        cell_t N_PermClearPlayer(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().ClearPlayer(CallerId(ctx), SteamId(ctx, params[1]));
-            return 0;
-        }
-
-        cell_t N_PermCreateGroup(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().CreateGroup(CallerId(ctx), LocalString(ctx, params[1]), params[2]);
-            return 0;
-        }
-
-        cell_t N_PermDeleteGroup(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().DeleteGroup(CallerId(ctx), LocalString(ctx, params[1]));
-            return 0;
-        }
-
-        cell_t N_PermAddGroupPermission(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().AddGroupPermission(CallerId(ctx), LocalString(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        cell_t N_PermRemoveGroupPermission(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().RemoveGroupPermission(CallerId(ctx), LocalString(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        cell_t N_PermAddGroupParent(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().AddGroupParent(CallerId(ctx), LocalString(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        cell_t N_PermRemoveGroupParent(IPluginContext* ctx, const cell_t* params)
-        {
-            Perms().RemoveGroupParent(CallerId(ctx), LocalString(ctx, params[1]), LocalString(ctx, params[2]));
-            return 0;
-        }
-
-        // Access-denied handler ids per plugin; cleared when it unloads.
-        std::map<Source2ModHookId, PluginId> g_deniedHandlers;
-
-        cell_t N_PermSetAccessDeniedHandler(IPluginContext* ctx, const cell_t* params)
-        {
-            IPluginFunction* fn = Function(ctx, params[1]);
-            if (!fn)
-                return 0;
-            const PluginId owner = CallerId(ctx);
-            AccessDeniedHandler handler([fn, owner](const Source2ModCommandContext& c, const Source2ModCommandArgs& a, const char* permission)
-            {
-                const cell_t context = LendCommandContext(&c, owner);
-                const cell_t args = LendCommandArgs(&a, owner);
-                sp::CallArgs call;
-                call.PushCell(context);
-                call.PushCell(args);
-                call.PushString(permission ? permission : "");
-                Invoke(fn, call);
-                Handles().Free(args, 0, true);
-                Handles().Free(context, 0, true);
-            });
-            const Source2ModAccessDeniedHandlerId id = Perms().SetAccessDeniedHandler(std::move(handler));
-            if (id)
-                g_deniedHandlers[id] = owner;
-            return static_cast<cell_t>(id);
-        }
-
-        cell_t N_PermClearAccessDeniedHandler(IPluginContext* ctx, const cell_t* params)
-        {
-            auto it = g_deniedHandlers.find(params[1]);
-            if (it == g_deniedHandlers.end() || it->second != CallerId(ctx))
-                return 0;
-            g_deniedHandlers.erase(it);
-            return Perms().ClearAccessDeniedHandler(params[1]);
         }
 
         // ---- TraceOptions / TraceResult --------------------------------------------
@@ -785,57 +577,7 @@ namespace sourcepawn
             return raytrace::rayTrace.CheckAreaOverlappingEntity(a, entity, params[3] != 0);
         }
 
-        // ---- Source2ModGameSystems -------------------------------------------------
-
-        cell_t N_GameSystemsIsAvailable(IPluginContext*, const cell_t*)
-        {
-            return gamesystems::gameSystemsManager.IsAvailable();
-        }
-
-        cell_t N_GameSystemsFindByName(IPluginContext* ctx, const cell_t* params)
-        {
-            return SchemaObjectForPointer(gamesystems::gameSystemsManager.FindByName(LocalString(ctx, params[1])));
-        }
-
-        // ---- Source2ModAddresses ---------------------------------------------------
-
-        cell_t N_AddressesIsResolved(IPluginContext* ctx, const cell_t* params)
-        {
-            return AddressOf(ctx, params[1]) != nullptr;
-        }
-
-        const sp_nativeinfo_t g_worldNatives[] = {
-            { "Source2ModPaths.GameDirectory", N_PathsGameDirectory },
-            { "Source2ModPaths.RootDirectory", N_PathsRootDirectory },
-            { "Source2ModPaths.ConfigsDirectory", N_PathsConfigsDirectory },
-            { "Source2ModPaths.GamedataDirectory", N_PathsGamedataDirectory },
-            { "Source2ModPaths.PluginsDirectory", N_PathsPluginsDirectory },
-            { "Source2ModPaths.SharedDirectory", N_PathsSharedDirectory },
-            { "Source2ModPaths.PluginConfigDirectory", N_PathsPluginConfigDirectory },
-
-            { "Source2ModPermissions.HasPermission", N_PermHasPermission },
-            { "Source2ModPermissions.PlayerHasPermission", N_PermPlayerHasPermission },
-            { "Source2ModPermissions.CheckAccess", N_PermCheckAccess },
-            { "Source2ModPermissions.InGroup", N_PermInGroup },
-            { "Source2ModPermissions.GetImmunity", N_PermGetImmunity },
-            { "Source2ModPermissions.CanTarget", N_PermCanTarget },
-            { "Source2ModPermissions.GetPlayerSteamID", N_PermGetPlayerSteamID },
-            { "Source2ModPermissions.IsPlayerAuthorized", N_PermIsPlayerAuthorized },
-            { "Source2ModPermissions.GrantPermission", N_PermGrantPermission },
-            { "Source2ModPermissions.RevokePermission", N_PermRevokePermission },
-            { "Source2ModPermissions.AddToGroup", N_PermAddToGroup },
-            { "Source2ModPermissions.RemoveFromGroup", N_PermRemoveFromGroup },
-            { "Source2ModPermissions.SetImmunity", N_PermSetImmunity },
-            { "Source2ModPermissions.ClearPlayer", N_PermClearPlayer },
-            { "Source2ModPermissions.CreateGroup", N_PermCreateGroup },
-            { "Source2ModPermissions.DeleteGroup", N_PermDeleteGroup },
-            { "Source2ModPermissions.AddGroupPermission", N_PermAddGroupPermission },
-            { "Source2ModPermissions.RemoveGroupPermission", N_PermRemoveGroupPermission },
-            { "Source2ModPermissions.AddGroupParent", N_PermAddGroupParent },
-            { "Source2ModPermissions.RemoveGroupParent", N_PermRemoveGroupParent },
-            { "Source2ModPermissions.SetAccessDeniedHandler", N_PermSetAccessDeniedHandler },
-            { "Source2ModPermissions.ClearAccessDeniedHandler", N_PermClearAccessDeniedHandler },
-
+        const sp_nativeinfo_t g_raytraceNatives[] = {
             { "TraceOptions.TraceOptions", N_OptionsNew },
             { "TraceOptions.SetInteractsAs", N_OptionsSetInteractsAs },
             { "TraceOptions.SetInteractsWith", N_OptionsSetInteractsWith },
@@ -895,40 +637,8 @@ namespace sourcepawn
             { "CCSNavArea.GetAllNavAreas", N_NavGetAllNavAreas },
             { "CCSNavArea.GetClosestNavArea", N_NavGetClosestNavArea },
             { "CCSNavArea.IsValidNavMesh", N_NavIsValidNavMesh },
-
-            { "Source2ModGameSystems.IsAvailable", N_GameSystemsIsAvailable },
-            { "Source2ModGameSystems.FindByName", N_GameSystemsFindByName },
-
-            { "Source2ModAddresses.IsResolved", N_AddressesIsResolved },
             { nullptr, nullptr },
         };
-    }
-
-    void* AddressOf(IPluginContext* ctx, cell_t address)
-    {
-        auto& a = addresses::source2modAddresses;
-        cell_t index = 0;
-#define S2M_ADDRESS(name)                                           \
-        if (address == index++)                                     \
-            return reinterpret_cast<void*>(a.name());
-        SOURCE2MOD_SP_ADDRESSES(S2M_ADDRESS)
-#undef S2M_ADDRESS
-        ctx->ThrowNativeError("Invalid address %d", address);
-        return nullptr;
-    }
-
-    void ForgetWorldHooks(PluginId id)
-    {
-        for (auto it = g_deniedHandlers.begin(); it != g_deniedHandlers.end();)
-        {
-            if (it->second == id)
-            {
-                permissions::permissionsManager.ClearAccessDeniedHandler(it->first);
-                it = g_deniedHandlers.erase(it);
-            }
-            else
-                ++it;
-        }
     }
 
     cell_t NewTraceResult(IPluginContext* ctx, const CGameTrace* trace)
@@ -936,8 +646,8 @@ namespace sourcepawn
         return NewResult(ctx, TraceResult(trace));
     }
 
-    const sp_nativeinfo_t* GetWorldNatives()
+    const sp_nativeinfo_t* GetRaytraceNatives()
     {
-        return g_worldNatives;
+        return g_raytraceNatives;
     }
 }

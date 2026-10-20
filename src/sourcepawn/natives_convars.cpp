@@ -330,6 +330,357 @@ namespace sourcepawn
             return 0;
         }
 
+        PluginId CallerId(IPluginContext* ctx)
+        {
+            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
+            return plugin ? plugin->Id() : 0;
+        }
+
+        IPluginFunction* Function(IPluginContext* ctx, cell_t id)
+        {
+            IPluginFunction* fn = ctx->GetFunctionById(static_cast<funcid_t>(id));
+            if (!fn)
+                ctx->ThrowNativeError("Invalid function id (%X)", id);
+            return fn;
+        }
+
+        // ---- ConVars ----------------------------------------------------------------
+
+        // What ConVar_Register gives a C++ plugin's ConVars.
+        constexpr uint64 kRegisterFlags = FCVAR_RELEASE | FCVAR_GAMEDLL;
+
+        cell_t Existing(const char* name)
+        {
+            const uint16 index = convars::convarsManager.GetConvarAccessIndexByName(name);
+            return index == SOURCE2MOD_INVALID_CONVAR_INDEX ? 0 : ConVarHandle(index);
+        }
+
+        cell_t Created(IPluginContext* ctx, const char* name, uint16 index)
+        {
+            if (index == SOURCE2MOD_INVALID_CONVAR_INDEX)
+                return ctx->ThrowNativeError("Could not create ConVar \"%s\"", name);
+            return ConVarHandle(index);
+        }
+
+        // CreateInt(name, flags, help, def, hasMin = false, min = 0, hasMax = false, max = 0)
+        cell_t N_CreateInt(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = LocalString(ctx, params[1]);
+            if (cell_t h = Existing(name))
+                return h;
+            int32 def = params[4], min = params[6], max = params[8];
+            return Created(ctx, name, convars::convarsManager.CreateConVar(name, EConVarType_Int32, LocalString(ctx, params[3]),
+                                                                           static_cast<uint32_t>(params[2]) | kRegisterFlags,
+                                                                           params[5] != 0, params[7] != 0, &def, &min, &max));
+        }
+
+        cell_t N_CreateFloat(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = LocalString(ctx, params[1]);
+            if (cell_t h = Existing(name))
+                return h;
+            float def = sp_ctof(params[4]), min = sp_ctof(params[6]), max = sp_ctof(params[8]);
+            return Created(ctx, name, convars::convarsManager.CreateConVar(name, EConVarType_Float32, LocalString(ctx, params[3]),
+                                                                           static_cast<uint32_t>(params[2]) | kRegisterFlags,
+                                                                           params[5] != 0, params[7] != 0, &def, &min, &max));
+        }
+
+        cell_t N_CreateBool(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = LocalString(ctx, params[1]);
+            if (cell_t h = Existing(name))
+                return h;
+            bool def = params[4] != 0;
+            return Created(ctx, name, convars::convarsManager.CreateConVar(name, EConVarType_Bool, LocalString(ctx, params[3]),
+                                                                           static_cast<uint32_t>(params[2]) | kRegisterFlags,
+                                                                           false, false, &def, nullptr, nullptr));
+        }
+
+        cell_t N_CreateString(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = LocalString(ctx, params[1]);
+            if (cell_t h = Existing(name))
+                return h;
+            const std::string def = LocalString(ctx, params[4]);
+            return Created(ctx, name, convars::convarsManager.CreateConVar(name, EConVarType_String, LocalString(ctx, params[3]),
+                                                                           static_cast<uint32_t>(params[2]) | kRegisterFlags,
+                                                                           false, false, const_cast<char*>(def.c_str()), nullptr, nullptr));
+        }
+
+        cell_t N_RefFind(IPluginContext* ctx, const cell_t* params)
+        {
+            return Existing(LocalString(ctx, params[1]));
+        }
+
+        // The access index a ConVar handle holds (+1), as IndexOf above, without a script error.
+        bool IndexOf(cell_t handle, uint16* index)
+        {
+            void* object = Handles().Read(handle, Types().conVar);
+            if (!object)
+                return false;
+            *index = static_cast<uint16>(reinterpret_cast<uintptr_t>(object) - 1);
+            return true;
+        }
+
+        cell_t N_RefIsValidRef(IPluginContext*, const cell_t* params)
+        {
+            uint16 index;
+            return IndexOf(params[1], &index) && ConVarRefAbstract(index).IsValidRef();
+        }
+
+        cell_t N_RefIsConVarDataAvailable(IPluginContext*, const cell_t* params)
+        {
+            uint16 index;
+            if (!IndexOf(params[1], &index))
+                return 0;
+            ConVarRefAbstract ref(index);
+            return ref.IsValidRef() && ref.IsConVarDataAvailable();
+        }
+
+        // HookConVarChange(handler(ConVar convar, int slot, newValue, oldValue))
+        cell_t N_HookConVarChange(IPluginContext* ctx, const cell_t* params)
+        {
+            IPluginFunction* fn = Function(ctx, params[1]);
+            if (!fn)
+                return 0;
+            ConVarChangeHandler handler([fn](ConVarRefAbstract* ref, CSplitScreenSlot slot, const char* newValue, const char* oldValue)
+            {
+                if (!ref)
+                    return;
+                sp::CallArgs args;
+                args.PushCell(ConVarHandle(ref->GetAccessIndex()));
+                args.PushCell(slot.Get());
+                args.PushString(newValue ? newValue : "");
+                args.PushString(oldValue ? oldValue : "");
+                Invoke(fn, args);
+            });
+            return static_cast<cell_t>(convars::convarsManager.HookConVarChange(CallerId(ctx), std::move(handler)));
+        }
+
+        cell_t N_UnhookConVarChange(IPluginContext*, const cell_t* params)
+        {
+            return convars::convarsManager.UnhookConVarChangeId(static_cast<Source2ModHookId>(params[1]));
+        }
+
+        // ---- the rest of ISource2ModConVars: typed values, flags, create, delete -------
+
+        bool IndexArg(IPluginContext* ctx, cell_t handle, uint16* index)
+        {
+            if (IndexOf(handle, index))
+                return true;
+            ctx->ThrowNativeError("Invalid ConVar handle %x", handle);
+            return false;
+        }
+
+        cell_t N_CVGetType(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            return IndexArg(ctx, params[1], &index) ? CV().GetType(index) : EConVarType_Invalid;
+        }
+
+        // GetFlags(ConVar, int flags[2]) / SetFlags(ConVar, const int flags[2]): all 64 bits.
+        cell_t N_CVGetFlags(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (!IndexArg(ctx, params[1], &index))
+                return 0;
+            const uint64 flags = CV().GetFlags(index);
+            cell_t* out;
+            ctx->LocalToPhysAddr(params[2], &out);
+            out[0] = static_cast<cell_t>(flags & 0xFFFFFFFFu);
+            out[1] = static_cast<cell_t>(flags >> 32);
+            return 0;
+        }
+
+        cell_t N_CVSetFlags(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (!IndexArg(ctx, params[1], &index))
+                return 0;
+            cell_t* in;
+            ctx->LocalToPhysAddr(params[2], &in);
+            CV().SetFlags(index, static_cast<uint32_t>(in[0]) | (static_cast<uint64>(static_cast<uint32_t>(in[1])) << 32));
+            return 0;
+        }
+
+        cell_t N_CVGetDouble(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            return IndexArg(ctx, params[1], &index) ? sp_ftoc(static_cast<float>(CV().GetDouble(index))) : 0;
+        }
+
+        cell_t N_CVSetDouble(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (IndexArg(ctx, params[1], &index))
+                CV().SetDouble(index, sp_ctof(params[2]));
+            return 0;
+        }
+
+        void FloatsOut(IPluginContext* ctx, cell_t addr, const float* v, int n)
+        {
+            cell_t* out;
+            ctx->LocalToPhysAddr(addr, &out);
+            for (int i = 0; i < n; i++)
+                out[i] = sp_ftoc(v[i]);
+        }
+
+        void FloatsIn(IPluginContext* ctx, cell_t addr, float* v, int n)
+        {
+            cell_t* in;
+            ctx->LocalToPhysAddr(addr, &in);
+            for (int i = 0; i < n; i++)
+                v[i] = sp_ctof(in[i]);
+        }
+
+        // GetVector2 / GetVector3 / GetVector4 / GetQAngle (ConVar, float[N])
+        template <typename V, int N, V (ISource2ModConVars::*GET)(uint16, CSplitScreenSlot)>
+        cell_t N_CVGetFloats(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (!IndexArg(ctx, params[1], &index))
+                return 0;
+            const V v = (CV().*GET)(index, CSplitScreenSlot(-1));
+            FloatsOut(ctx, params[2], reinterpret_cast<const float*>(&v), N);
+            return 0;
+        }
+
+        template <typename V, int N, void (ISource2ModConVars::*SET)(uint16, const V&, CSplitScreenSlot)>
+        cell_t N_CVSetFloats(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (!IndexArg(ctx, params[1], &index))
+                return 0;
+            V v;
+            FloatsIn(ctx, params[2], reinterpret_cast<float*>(&v), N);
+            (CV().*SET)(index, v, CSplitScreenSlot(-1));
+            return 0;
+        }
+
+        cell_t N_CVGetColor(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (!IndexArg(ctx, params[1], &index))
+                return 0;
+            const Color c = CV().GetColor(index);
+            cell_t* out;
+            ctx->LocalToPhysAddr(params[2], &out);
+            out[0] = c.r();
+            out[1] = c.g();
+            out[2] = c.b();
+            out[3] = c.a();
+            return 0;
+        }
+
+        cell_t N_CVSetColor(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (!IndexArg(ctx, params[1], &index))
+                return 0;
+            cell_t* in;
+            ctx->LocalToPhysAddr(params[2], &in);
+            CV().SetColor(index, Color(in[0], in[1], in[2], in[3]));
+            return 0;
+        }
+
+        cell_t N_CVDeleteConVar(IPluginContext* ctx, const cell_t* params)
+        {
+            uint16 index;
+            if (IndexArg(ctx, params[1], &index))
+                CV().DeleteConVar(index);
+            return 0;
+        }
+
+        // A ConVar value of `type` read from text, laid out as CreateConVar wants it.
+        struct ConVarValue
+        {
+            alignas(16) uint8_t bytes[32] = {};
+            std::string text;
+
+            bool Parse(EConVarType type, const char* s)
+            {
+                float f[4] = {};
+                switch (type)
+                {
+                case EConVarType_Bool:
+                    *reinterpret_cast<bool*>(bytes) = std::strtol(s, nullptr, 10) != 0 || std::strcmp(s, "true") == 0;
+                    return true;
+                case EConVarType_Int16:
+                    *reinterpret_cast<int16*>(bytes) = static_cast<int16>(std::strtol(s, nullptr, 10));
+                    return true;
+                case EConVarType_UInt16:
+                    *reinterpret_cast<uint16*>(bytes) = static_cast<uint16>(std::strtoul(s, nullptr, 10));
+                    return true;
+                case EConVarType_Int32:
+                    *reinterpret_cast<int32*>(bytes) = static_cast<int32>(std::strtol(s, nullptr, 10));
+                    return true;
+                case EConVarType_UInt32:
+                    *reinterpret_cast<uint32*>(bytes) = static_cast<uint32>(std::strtoul(s, nullptr, 10));
+                    return true;
+                case EConVarType_Int64:
+                    *reinterpret_cast<int64*>(bytes) = std::strtoll(s, nullptr, 10);
+                    return true;
+                case EConVarType_UInt64:
+                    *reinterpret_cast<uint64*>(bytes) = std::strtoull(s, nullptr, 10);
+                    return true;
+                case EConVarType_Float32:
+                    *reinterpret_cast<float*>(bytes) = std::strtof(s, nullptr);
+                    return true;
+                case EConVarType_Float64:
+                    *reinterpret_cast<double*>(bytes) = std::strtod(s, nullptr);
+                    return true;
+                case EConVarType_String:
+                    text = s;
+                    return true;
+                case EConVarType_Color:
+                {
+                    int c[4] = { 0, 0, 0, 255 };
+                    std::sscanf(s, "%d %d %d %d", &c[0], &c[1], &c[2], &c[3]);
+                    *reinterpret_cast<Color*>(bytes) = Color(c[0], c[1], c[2], c[3]);
+                    return true;
+                }
+                case EConVarType_Vector2:
+                case EConVarType_Vector3:
+                case EConVarType_Vector4:
+                case EConVarType_Qangle:
+                case EConVarType_VectorWS:
+                    std::sscanf(s, "%f %f %f %f", &f[0], &f[1], &f[2], &f[3]);
+                    std::memcpy(bytes, f, sizeof(f));
+                    return true;
+                default:
+                    return false;
+                }
+            }
+
+            void* Pointer()
+            {
+                return text.empty() ? static_cast<void*>(bytes) : static_cast<void*>(text.data());
+            }
+        };
+
+        // CConVar.Create(name, type, flags, help, defaultValue, hasMin, min, hasMax, max): any
+        // EConVarType, the values as text ("1 2 3" for a vector, "r g b a" for a color).
+        cell_t N_CVCreate(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = LocalString(ctx, params[1]);
+            if (cell_t h = Existing(name))
+                return h;
+            const auto type = static_cast<EConVarType>(params[2]);
+            ConVarValue def, min, max;
+            if (!def.Parse(type, LocalString(ctx, params[5])))
+                return ctx->ThrowNativeError("Invalid ConVar type %d", params[2]);
+            const bool hasMin = params[6] != 0 && type != EConVarType_String;
+            const bool hasMax = params[8] != 0 && type != EConVarType_String;
+            if (hasMin)
+                min.Parse(type, LocalString(ctx, params[7]));
+            if (hasMax)
+                max.Parse(type, LocalString(ctx, params[9]));
+            // An empty string default still needs a valid char*.
+            void* defValue = type == EConVarType_String ? static_cast<void*>(def.text.data()) : def.Pointer();
+            return Created(ctx, name, CV().CreateConVar(name, type, LocalString(ctx, params[4]), static_cast<uint32_t>(params[3]) | kRegisterFlags,
+                                                        hasMin, hasMax, defValue, hasMin ? min.Pointer() : nullptr, hasMax ? max.Pointer() : nullptr));
+        }
+
         const sp_nativeinfo_t g_conVarNatives[] = {
             { "Source2ModConVars.AutoExecConfig", N_AutoExecConfig },
             { "ConVar.BoolValue.get", N_GetBool },
@@ -352,6 +703,33 @@ namespace sourcepawn
             { "ConVar.GetDescription", N_GetDescription },
             { "ConVar.AddChangeHook", N_AddChangeHook },
             { "ConVar.RemoveChangeHook", N_RemoveChangeHook },
+
+            { "CConVar.CreateInt", N_CreateInt },
+            { "CConVar.CreateFloat", N_CreateFloat },
+            { "CConVar.CreateBool", N_CreateBool },
+            { "CConVar.CreateString", N_CreateString },
+            { "CConVarRef.Find", N_RefFind },
+            { "CConVarRef.IsValidRef", N_RefIsValidRef },
+            { "CConVarRef.IsConVarDataAvailable", N_RefIsConVarDataAvailable },
+            { "Source2ModConVars.HookConVarChange", N_HookConVarChange },
+            { "Source2ModConVars.UnhookConVarChange", N_UnhookConVarChange },
+            { "CConVar.Create", N_CVCreate },
+            { "Source2ModConVars.GetType", N_CVGetType },
+            { "Source2ModConVars.GetFlags", N_CVGetFlags },
+            { "Source2ModConVars.SetFlags", N_CVSetFlags },
+            { "Source2ModConVars.GetDouble", N_CVGetDouble },
+            { "Source2ModConVars.SetDouble", N_CVSetDouble },
+            { "Source2ModConVars.GetVector2", N_CVGetFloats<Vector2D, 2, &ISource2ModConVars::GetVector2> },
+            { "Source2ModConVars.GetVector3", N_CVGetFloats<Vector, 3, &ISource2ModConVars::GetVector3> },
+            { "Source2ModConVars.GetVector4", N_CVGetFloats<Vector4D, 4, &ISource2ModConVars::GetVector4> },
+            { "Source2ModConVars.GetQAngle", N_CVGetFloats<QAngle, 3, &ISource2ModConVars::GetQAngle> },
+            { "Source2ModConVars.GetColor", N_CVGetColor },
+            { "Source2ModConVars.SetVector2", N_CVSetFloats<Vector2D, 2, &ISource2ModConVars::SetVector2> },
+            { "Source2ModConVars.SetVector3", N_CVSetFloats<Vector, 3, &ISource2ModConVars::SetVector3> },
+            { "Source2ModConVars.SetVector4", N_CVSetFloats<Vector4D, 4, &ISource2ModConVars::SetVector4> },
+            { "Source2ModConVars.SetQAngle", N_CVSetFloats<QAngle, 3, &ISource2ModConVars::SetQAngle> },
+            { "Source2ModConVars.SetColor", N_CVSetColor },
+            { "Source2ModConVars.DeleteConVar", N_CVDeleteConVar },
             { nullptr, nullptr },
         };
     }
