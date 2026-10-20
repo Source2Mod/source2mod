@@ -48,8 +48,6 @@
 
 #include "crashhandler.h"
 
-#include "schema/minidump.h"
-
 #include "http.h"
 #include "shared.h"
 #include "sourcepawn/crashinfo.h"
@@ -60,6 +58,7 @@
 #include "networksystem/inetworksystem.h"
 #include "tier0/icommandline.h"
 #include "tier0/memalloc.h"
+#include "tier0/minidump.h"
 #include "tier0/netadr.h"
 
 #if defined(__linux__)
@@ -146,7 +145,7 @@ namespace crashhandler
             size_t length;
         };
         AppMemory s_appMemory[16];
-        CMiniDumpComment s_MiniDumpComment(95000);
+        CMiniDumpComment s_MiniDumpComment(95000, MemAllocAttribute_Unk0);
 
         // The crash is processed during Init(), long before the Steam API
         // activates, so the report waits here until OnSteamAPIActivated().
