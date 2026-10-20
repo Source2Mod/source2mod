@@ -1,11 +1,11 @@
 # Gamedata validation
 
-CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manifest `8766757721818354077` · 2026-10-18T15:37:34+00:00
+CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manifest `8766757721818354077` · 2026-10-20T18:14:08+00:00
 
 | | Windows | Linux |
 |---|---|---|
 | Signatures | 🟢 68 | 🟢 68 |
-| Offsets | 🟢 45 ⚪ 4 | 🟢 45 ⚪ 4 |
+| Offsets | 🟢 46 ⚪ 4 | 🟢 46 ⚪ 4 |
 
 ## Everything resolves
 
@@ -39,6 +39,7 @@ CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manife
 - 🟢🟢 `CCSPlayerController::Respawn` — W 274/277 · L 276/279
 - 🟢🟢 `CCSPlayerController::SetClan`
 - 🟢🟢 `CCSPlayerController::SwitchTeam`
+- 🟢🟢 `CCSPlayerInventory::GetItemInLoadout` — W 8/24 · L 9/25
 - 🟢🟢 `CCSPlayerLegacyJump::CheckJumpButton`
 - 🟢🟢 `CCSPlayerLegacyJump::OnJump`
 - 🟢🟢 `CCSPlayerModernJump::CheckJumpButton`

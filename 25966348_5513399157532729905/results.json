@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-18T15:37:34+00:00",
+  "generated_at": "2026-10-20T18:14:08+00:00",
   "build": {
     "buildid": "25966348",
     "linux_manifest": "5513399157532729905",
@@ -437,6 +437,24 @@
       "linux": {
         "matches": 1,
         "address": "0x157e280",
+        "status": "ok"
+      }
+    },
+    {
+      "name": "CCSPlayerInventory::GetItemInLoadout",
+      "kind": "offset",
+      "windows": {
+        "value": 8,
+        "class": "CCSPlayerInventory",
+        "library": "server",
+        "vtable_size": 24,
+        "status": "ok"
+      },
+      "linux": {
+        "value": 9,
+        "class": "CCSPlayerInventory",
+        "library": "server",
+        "vtable_size": 25,
         "status": "ok"
       }
     },
@@ -1831,6 +1849,7 @@
       "CBasePlayerPawn": 400,
       "CCSGameRules": 130,
       "CCSPlayerController": 277,
+      "CCSPlayerInventory": 24,
       "CCSPlayer_ItemServices": 28,
       "CCSPlayer_WeaponServices": 45,
       "CGameRules": 118,
@@ -1852,6 +1871,7 @@
       "CBasePlayerPawn": 401,
       "CCSGameRules": 131,
       "CCSPlayerController": 279,
+      "CCSPlayerInventory": 25,
       "CCSPlayer_ItemServices": 29,
       "CCSPlayer_WeaponServices": 48,
       "CGameRules": 119,
