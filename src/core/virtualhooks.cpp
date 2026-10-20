@@ -553,12 +553,22 @@ namespace virtualhooks
                     parsed.Tokenize(cleaned.c_str());
                 }
 
-                // A silent trigger is one only for a command of ours, as
-                // SourceMod's: "/anything else" is ordinary chat -- it shows,
-                // reaches the say listeners and the game's say, and Host_Say,
-                // where CounterStrikeSharp looks for its own "/css_x" commands.
+                // A silent trigger for a command that is not ours: when the
+                // server has a ConCommand of that name (as is, or CounterStrikeSharp's
+                // "css_" one) it stays ordinary chat, so it reaches Host_Say, where
+                // CounterStrikeSharp runs its "/x" commands. With no such command
+                // anywhere it is a mistyped command, and hidden like one of ours.
                 if (isSilent && !isPublic && (parsed.ArgC() == 0 || !commands::HasChatCommand(parsed.Arg(0))))
+                {
+                    const bool elsewhere = parsed.ArgC() > 0 && g_pCVar &&
+                        (g_pCVar->FindConCommand(parsed.Arg(0)).IsValidRef() ||
+                         g_pCVar->FindConCommand((std::string("css_") + parsed.Arg(0)).c_str()).IsValidRef());
+
+                    if (!elsewhere)
+                        return { KHook::Action::Supersede };
+
                     isSilent = false;
+                }
 
                 if (isPublic || isSilent)
                 {
