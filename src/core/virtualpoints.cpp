@@ -34,11 +34,15 @@
  */
 #include "virtualpoints.h"
 
+#include "source2mod/schema/entity/classes/CCSPlayerController.h"
+#include "source2mod/schema/entity/classes/CCSPlayerController_InventoryServices.h"
+
 #include "dynamichooks.h"
 #include "functions.h"
 #include "hookid.h"
 #include "utils/log.h"
 
+#include <cstdint>
 #include <type_traits>
 
 namespace virtualpoints
@@ -65,6 +69,7 @@ namespace virtualpoints
             { HookPointId::Killed, "Killed", "CBaseEntity::Event_Killed", nullptr },
             { HookPointId::WeaponPickup, "WeaponPickup", "CCSPlayer_WeaponServices::BumpWeapon", "CCSPlayer_WeaponServices" },
             { HookPointId::WeaponSwitch, "WeaponSwitch", "CCSPlayer_WeaponServices::SelectItem", "CCSPlayer_WeaponServices" },
+            { HookPointId::GetItemInLoadout, "GetItemInLoadout", "CCSPlayerInventory::GetItemInLoadout", "CCSPlayerInventory" },
         };
 
         const Def* DefOf(HookPointId point)
@@ -103,6 +108,45 @@ namespace virtualpoints
         WeaponSwitchContext Make(FunctionContext& f, WeaponSwitchContext*)
         {
             return { f.GetArg<CCSPlayer_WeaponServices*>(0), f.GetArg<CBasePlayerWeapon*>(1), f.GetArg<std::int32_t>(2), false };
+        }
+
+        // A player's CCSPlayerInventory is embedded in their
+        // CCSPlayerController_InventoryServices, right after the schema field
+        // m_nPersonaDataXpTrailLevel (an int32; the inventory starts with a
+        // vtable, so 8-aligned). SwiftlyS2 finds the owner the same way.
+        std::ptrdiff_t InventoryOffset(CCSPlayerController_InventoryServices* services)
+        {
+            static std::ptrdiff_t offset = -1;
+            if (offset < 0 && services)
+            {
+                const auto field = reinterpret_cast<std::uintptr_t>(&services->m_nPersonaDataXpTrailLevel.Get());
+                const auto base = reinterpret_cast<std::uintptr_t>(services);
+                if (field > base && field - base < 0x10000)
+                    offset = static_cast<std::ptrdiff_t>((field - base + sizeof(std::int32_t) + 7) & ~std::uintptr_t(7));
+            }
+            return offset;
+        }
+
+        CCSPlayerController* InventoryOwner(const CCSPlayerInventory* inventory)
+        {
+            if (!inventory)
+                return nullptr;
+            for (int slot = 0; slot < 64; slot++)
+            {
+                CCSPlayerController* controller = CCSPlayerController::FromSlot(slot);
+                CCSPlayerController_InventoryServices* services = controller ? controller->m_pInventoryServices() : nullptr;
+                const std::ptrdiff_t offset = InventoryOffset(services);
+                if (services && offset > 0
+                    && reinterpret_cast<const std::uint8_t*>(services) + offset == reinterpret_cast<const std::uint8_t*>(inventory))
+                    return controller;
+            }
+            return nullptr;
+        }
+
+        GetItemInLoadoutContext Make(FunctionContext& f, GetItemInLoadoutContext*)
+        {
+            auto* inventory = f.GetArg<CCSPlayerInventory*>(0);
+            return { inventory, InventoryOwner(inventory), f.GetArg<std::int32_t>(1), f.GetArg<std::int32_t>(2), nullptr };
         }
 
         template <typename R>
@@ -159,6 +203,7 @@ namespace virtualpoints
             case HookPointId::Think: return visit(static_cast<ThinkContext*>(nullptr));
             case HookPointId::Killed: return visit(static_cast<KilledContext*>(nullptr));
             case HookPointId::WeaponPickup: return visit(static_cast<WeaponPickupContext*>(nullptr));
+            case HookPointId::GetItemInLoadout: return visit(static_cast<GetItemInLoadoutContext*>(nullptr));
             default: return visit(static_cast<WeaponSwitchContext*>(nullptr));
             }
         }

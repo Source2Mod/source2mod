@@ -203,6 +203,7 @@ namespace sourcepawn
         S2M_CTX(KilledContext, true)
         S2M_CTX(WeaponPickupContext, true)
         S2M_CTX(WeaponSwitchContext, true)
+        S2M_CTX(GetItemInLoadoutContext, true)
         S2M_CTX(GameFrameContext, false)
         S2M_CTX(StartupServerContext, false)
         S2M_CTX(ClientConnectContext, true)
@@ -235,7 +236,11 @@ namespace sourcepawn
             cell_t result = 0;
             if constexpr (CtxTraits<C>::byRef)
             {
-                result = static_cast<cell_t>(c.result);
+                // An object answer (GetItemInLoadout's item) goes as a SchemaObject.
+                if constexpr (std::is_pointer_v<R>)
+                    result = SchemaObjectForPointer(c.result);
+                else
+                    result = static_cast<cell_t>(c.result);
                 args.PushCellByRef(&result);
             }
             cell_t res = 0;
@@ -255,6 +260,8 @@ namespace sourcepawn
                     return action;
                 if constexpr (std::is_same_v<R, bool>)
                     return HookReturn<R>(action, result != 0);
+                else if constexpr (std::is_pointer_v<R>)
+                    return HookReturn<R>(action, result ? static_cast<R>(SchemaObjectPointer(fn->GetParentContext(), result)) : nullptr);
                 else
                     return HookReturn<R>(action, static_cast<R>(result));
             }
@@ -328,6 +335,7 @@ namespace sourcepawn
                 S2M_POINT(Killed, KilledContext)
                 S2M_POINT(WeaponPickup, WeaponPickupContext)
                 S2M_POINT(WeaponSwitch, WeaponSwitchContext)
+                S2M_POINT(GetItemInLoadout, GetItemInLoadoutContext)
                 S2M_POINT(GameFrame, GameFrameContext)
                 S2M_POINT(StartupServer, StartupServerContext)
                 S2M_POINT(ClientConnect, ClientConnectContext)
@@ -438,6 +446,8 @@ namespace sourcepawn
                 c->CallOriginal();
                 return 0;
             }
+            else if constexpr (std::is_same_v<R, CEconItemView*>)
+                return SchemaObjectForPointer(c->CallOriginal());
             else if constexpr (std::is_pointer_v<R>)
                 return c->CallOriginal() != nullptr;
             else
@@ -636,6 +646,10 @@ namespace sourcepawn
         S2M_CTX_OBJECT(WeaponPickupContext, services, c->services)
         S2M_CTX_ENTITY(WeaponPickupContext, pawn, PawnOf(c->services))
         S2M_CTX_ENTITY(WeaponPickupContext, weapon, c->weapon)
+        S2M_CTX_OBJECT(GetItemInLoadoutContext, inventory, c->inventory)
+        S2M_CTX_ENTITY(GetItemInLoadoutContext, controller, c->controller)
+        S2M_CTX_CELL(GetItemInLoadoutContext, team, c->team)
+        S2M_CTX_CELL(GetItemInLoadoutContext, slot, c->slot)
         S2M_CTX_OBJECT(WeaponSwitchContext, services, c->services)
         S2M_CTX_ENTITY(WeaponSwitchContext, pawn, PawnOf(c->services))
         S2M_CTX_ENTITY(WeaponSwitchContext, weapon, c->weapon)
@@ -1358,6 +1372,11 @@ namespace sourcepawn
             { "WeaponPickupContext.pawn.get", N_WeaponPickupContext_pawn },
             { "WeaponPickupContext.weapon.get", N_WeaponPickupContext_weapon },
             { "WeaponPickupContext.CallOriginal", N_CallOriginal<WeaponPickupContext> },
+            { "GetItemInLoadoutContext.inventory.get", N_GetItemInLoadoutContext_inventory },
+            { "GetItemInLoadoutContext.controller.get", N_GetItemInLoadoutContext_controller },
+            { "GetItemInLoadoutContext.team.get", N_GetItemInLoadoutContext_team },
+            { "GetItemInLoadoutContext.slot.get", N_GetItemInLoadoutContext_slot },
+            { "GetItemInLoadoutContext.CallOriginal", N_CallOriginal<GetItemInLoadoutContext> },
             { "WeaponSwitchContext.services.get", N_WeaponSwitchContext_services },
             { "WeaponSwitchContext.pawn.get", N_WeaponSwitchContext_pawn },
             { "WeaponSwitchContext.weapon.get", N_WeaponSwitchContext_weapon },

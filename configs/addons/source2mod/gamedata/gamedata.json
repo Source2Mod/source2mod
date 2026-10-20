@@ -407,6 +407,13 @@
     },
     "function": { "this": "entity", "return": "void", "params": [ "int32" ] }
   },
+  "CCSPlayerInventory::GetItemInLoadout": {
+    "offsets": {
+      "windows": 8,
+      "linux": 9
+    },
+    "function": {"this": "object", "return": "pointer", "params": ["int32", "int32"]}
+  },
   "CCSPlayerLegacyJump::CheckJumpButton": {
     "signatures": {
       "library": "server",
