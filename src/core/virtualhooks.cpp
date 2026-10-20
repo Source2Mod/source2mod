@@ -591,7 +591,8 @@ namespace virtualhooks
                     if (isSilent)
                         return { KHook::Action::Supersede };
 
-                    return { KHook::Action::Ignore };
+                    // A public trigger shows in chat: it goes on as an ordinary say
+                    // too, so the say listeners see it, as SourceMod's do.
                 }
             }
         }
