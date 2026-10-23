@@ -1,14 +1,16 @@
 # Gamedata validation
 
-CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manifest `8766757721818354077` · 2026-10-20T18:14:08+00:00
+CS2 build **26144732** · Linux manifest `5491505037461703699` · Windows manifest `5751660862748360256` · 2026-10-23T06:44:18+00:00
 
 | | Windows | Linux |
 |---|---|---|
 | Signatures | 🟢 68 | 🟢 68 |
-| Offsets | 🟢 46 ⚪ 4 | 🟢 46 ⚪ 4 |
+| Offsets | 🟢 45 🟡 1 ⚪ 4 | 🟢 45 🟡 1 ⚪ 4 |
 
-## Everything resolves
+## Needs attention
 
+- 🟡 **CSoundSystem::TakeGuid** (windows): CSoundSystem changed from 134 to 135 functions -- check the index
+- 🟡 **CSoundSystem::TakeGuid** (linux): CSoundSystem changed from 135 to 136 functions -- check the index
 
 <details><summary>All entries (Windows, Linux)</summary>
 
@@ -97,7 +99,7 @@ CS2 build **25966348** · Linux manifest `5513399157532729905` · Windows manife
 - 🟢🟢 `CSScript::RunScript`
 - 🟢🟢 `CServerSideClientBase::SendNetMessage` — W 15/79 · L 16/81
 - 🟢🟢 `CSmokeGrenadeProjectile::EmitGrenade`
-- 🟢🟢 `CSoundSystem::TakeGuid` — W 76/134 · L 75/135
+- 🟡🟡 `CSoundSystem::TakeGuid` — W 76/135 · L 75/136
 - 🟢🟢 `CSource2Server::GetNavMeshData`
 - 🟢🟢 `CTakeDamageInfo::Constructor`
 - ⚪⚪ `CTakeDamageInfo::HitGroup`
