@@ -168,6 +168,10 @@ private:
     // late load and is told so through ISource2ModPlugin::Load's `late`.
     bool m_bStartupLoadDone = false;
 
+    // Set once Metamod's AllPluginsLoaded has been passed on: a plugin loaded
+    // after it still hears OnAllMetamodPluginsLoaded, from AddPlugin().
+    bool m_bMetamodAllLoaded = false;
+
     // OwnerOf(): module base per address seen, dropped when the list changes.
     std::unordered_map<const void*, int> m_ownerCache;
     size_t m_listGeneration = 0;        // bumped on every add / remove

@@ -459,6 +459,26 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
             l->OnPluginLoad(newId, m_plugins.back()->api->GetName());
     }
 
+    // A late plugin missed the startup "all loaded" calls, and plugins fetch
+    // other plugins' interfaces there (FUNPLAY's g_pCoreApi): without them a
+    // reloaded plugin ran with those still null. SourceMod does the same for
+    // a late-loaded plugin's OnAllPluginsLoaded. Only this one is told; the
+    // others have heard it already. A copy of the list, since a listener may
+    // add more. A script plugin does this itself in its Load().
+    if (late && lib)
+    {
+        const auto listeners = m_plugins.back()->listeners;
+
+        for (auto* l : listeners)
+            l->OnAllSource2ModPluginsLoaded();
+
+        if (m_bMetamodAllLoaded)
+        {
+            for (auto* l : listeners)
+                l->OnAllMetamodPluginsLoaded();
+        }
+    }
+
     FP_INFO("{} plugin {}", hotReload ? "Hot reloaded" : "Loaded", std::filesystem::path(fullPath).stem().string());
     return true;
 }
@@ -655,8 +675,6 @@ bool PluginManager::LoadMissing()
 
     char error[256];
 
-    int loaded = 0;
-
     for (const auto& entry : fs::directory_iterator(dir))
     {
         if (!entry.is_regular_file())
@@ -672,14 +690,10 @@ bool PluginManager::LoadMissing()
         if (IsPluginLoaded(fullPath))
             continue;
 
-        if (LoadPlugin(path.stem().string().c_str(), error, sizeof(error)))
-        {
-            loaded++;
-        }
+        // Late loads: each new plugin hears the "all loaded" calls from
+        // AddPlugin(); the ones already running heard them at startup.
+        LoadPlugin(path.stem().string().c_str(), error, sizeof(error));
     }
-
-    if (loaded > 0)
-        SetAllLoaded();
 
     return true;
 }
@@ -1034,6 +1048,8 @@ void PluginManager::SetAllLoaded()
 
 void PluginManager::FireMetamodLoaded()
 {
+    m_bMetamodAllLoaded = true;
+
     for (auto& p : m_plugins)
     {
         for (auto* l : p->listeners)
