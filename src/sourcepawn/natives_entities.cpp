@@ -273,14 +273,14 @@ namespace sourcepawn
 
             Field f;
             f.name = fieldName;
-            for (CSchemaClassInfo* c = FindClass(className); c && !f.found; c = c->m_nBaseClassCount ? c->m_pBaseClasses[0].m_pClass : nullptr)
+            for (CSchemaClassInfo* c = FindClass(className); c && !f.found; c = c->m_nNumBaseClasses ? c->m_pBaseClasses[0].m_pClass : nullptr)
             {
-                for (uint16 i = 0; i < c->m_nFieldCount; i++)
+                for (uint16 i = 0; i < c->m_nNumFields; i++)
                 {
-                    if (strcmp(c->m_pFields[i].m_pszName, fieldName) == 0)
+                    if (strcmp(c->m_pFields[i].m_pName, fieldName) == 0)
                     {
                         f.found = true;
-                        f.declClass = c->m_pszName;
+                        f.declClass = c->m_pName;
                         f.offset = c->m_pFields[i].m_nSingleInheritanceOffset;
                         Classify(c->m_pFields[i].m_pType, f);
                         break;

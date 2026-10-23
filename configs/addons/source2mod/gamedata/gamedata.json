@@ -445,8 +445,8 @@
   "CCSPlayerPawn::PostThink": {
     "signatures": {
       "library": "server",
-      "windows": "40 55 56 41 54 48 8B EC 48 83 EC ? 4C 89 AC 24",
-      "linux": "55 48 89 E5 41 56 41 55 41 54 53 48 89 FB 48 83 EC ? E8 ? ? ? ? 80 BB"
+      "windows": "40 55 53 56 57 41 54 48 8B EC 48 83 EC 50 4C 89 AC 24",
+      "linux": "55 48 89 E5 41 57 41 56 41 55 41 54 53 48 89 FB 48 83 EC 18 E8 ? ? ? ? 80 BB ? ? ? ? 00 74 ? C6 83 ? ? ? ? 00"
     },
     "function": {"this": "entity", "return": "void", "params": []}
   },
@@ -467,7 +467,7 @@
   "CDecoyProjectile::EmitGrenade": {
     "signatures": {
       "library": "server",
-      "windows": "48 8B C4 55 56 48 81 EC ? ? ? ? 48 89 58 ? 48 8B D9",
+      "windows": "40 55 56 48 83 EC 58 48 89 5C 24",
       "linux": "55 4C 89 C1 48 89 E5 41 57 45 89 CF 41 56 49 89 FE 41 55 49 89 D5 48 89 F2 48 89 FE 41 54 48 8D 3D ? ? ? ? 4D 89 C4 53 48 83 EC ? E8 ? ? ? ? 45 31 C0"
     },
     "function": {"return": "entity", "params": ["vector", "vector", "vector", "vector", "entity", "int32"]}
@@ -601,8 +601,8 @@
   "CSmokeGrenadeProjectile::EmitGrenade": {
     "signatures": {
       "library": "server",
-      "windows": "48 8B C4 48 89 58 ? 48 89 68 ? 48 89 70 ? 57 41 56 41 57 48 81 EC ? ? ? ? 48 8B B4 24 ? ? ? ? 4D 8B F8",
-      "linux": "55 4C 89 C1 48 89 E5 41 57 49 89 FF 41 56 45 89 CE"
+      "windows": "48 89 5C 24 ? 48 89 6C 24 ? 48 89 74 24 ? 57 41 56 41 57 48 83 EC 50 48 8B B4 24",
+      "linux": "55 4C 89 C1 48 89 E5 41 57 41 56"
     },
     "function": {"return": "entity", "params": ["vector", "vector", "vector", "vector", "entity", "int32", "int32"]}
   },
@@ -666,7 +666,7 @@
     "signatures": {
       "library": "server",
       "windows": "48 89 5C 24 ? 57 48 83 EC ? 33 FF 4C 8B CA 8B D9",
-      "linux": "48 85 F6 0F 84 ? ? ? ? 55 48 89 E5 41 57 41 56 41 55 49 89 F5 41 54 53 48 81 EC ? ? ? ? 80 3E ? 75 ? 31 C0 48 81 C4 ? ? ? ? 5B 41 5C 41 5D 41 5E 41 5F 5D C3 0F 1F 80 ? ? ? ? 4C 8D A5 ? ? ? ? 89 FB"
+      "linux": "55 31 D2 48 89 E5 41 57 41 56 41 55 41 54 41 89 FC"
     },
     "function": { "return": "object", "params": [ "int32", "string" ] }
   },
