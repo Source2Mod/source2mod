@@ -218,6 +218,31 @@ else ()
     add_definitions(-DSEMVER="Local")
 endif ()
 
+# plugin-metadata.json is the one place the core's name, author and version
+# live, as for a native plugin: tools/version_gen.py turns it into
+# version_gen.h (SEMVER / GITHUB_SHA_SHORT above go into the version).
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+set(VERSION_GEN_DIR "${CMAKE_BINARY_DIR}/versioning")
+
+execute_process(
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_SOURCE_DIR}/tools/version_gen.py
+                --metadata ${CMAKE_SOURCE_DIR}/plugin-metadata.json
+                --output ${VERSION_GEN_DIR}/version_gen.h
+        RESULT_VARIABLE VERSION_GEN_RESULT
+)
+
+if (NOT VERSION_GEN_RESULT EQUAL 0)
+    message(FATAL_ERROR "version_gen.py failed (${VERSION_GEN_RESULT})")
+endif ()
+
+# Re-run cmake when the metadata changes.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        ${CMAKE_SOURCE_DIR}/plugin-metadata.json)
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${VERSION_GEN_DIR})
+
 include(${CMAKE_CURRENT_LIST_DIR}/makefiles/metamod/configure_metamod.cmake)
 
 find_package(Git QUIET)

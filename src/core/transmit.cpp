@@ -170,7 +170,8 @@ namespace transmit
 
         // The entity the hook was made for may be gone and its index handed
         // to another one. Compare the handle rather than trust the index.
-        CEntityInstance* live = shared::g_pEntitySystem ? shared::g_pEntitySystem->GetEntityInstance(CEntityIndex(index)) : nullptr;
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
+        CEntityInstance* live = pEntitySystem ? pEntitySystem->GetEntityInstance(CEntityIndex(index)) : nullptr;
         if (!live || live->GetRefEHandle() != hook->handle)
         {
             m_hooks[index].reset();
@@ -326,10 +327,11 @@ namespace transmit
     CEntityInstance* TransmitManager::GetOwner(CEntityInstance* entity)
     {
         EntityHook* hook = Find(entity);
-        if (!hook || hook->ownerEntity < 0 || !shared::g_pEntitySystem)
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
+        if (!hook || hook->ownerEntity < 0 || !pEntitySystem)
             return nullptr;
 
-        return shared::g_pEntitySystem->GetEntityInstance(CEntityIndex(hook->ownerEntity));
+        return pEntitySystem->GetEntityInstance(CEntityIndex(hook->ownerEntity));
     }
 
     void TransmitManager::ResetViewer(CPlayerSlot viewer)
@@ -373,6 +375,7 @@ namespace transmit
             return;
 
         const int maxClients = MaxClients();
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
         int viewCount = 0;
 
         for (int i = 0; i < infoCount && viewCount < ABSOLUTE_PLAYER_LIMIT; i++)
@@ -406,7 +409,7 @@ namespace transmit
                     if (!hook || hook->IsVisible(viewerSlot))
                         continue;
 
-                    auto* controller = static_cast<CCSPlayerController*>(shared::g_pEntitySystem->GetEntityInstance(CEntityIndex(c)));
+                    auto* controller = static_cast<CCSPlayerController*>(pEntitySystem->GetEntityInstance(CEntityIndex(c)));
                     if (!controller)
                         continue;
 

@@ -1,0 +1,39 @@
+{
+    "name": "source2mod",
+    "alias": "source2mod",
+    "display_name": "Source2Mod",
+    "description": "Source2Mod",
+    "author": "Michal \"Slynx (˙·٠● S l y n x ●٠·˙)\" Přikryl",
+    "url": "https://www.slynxdev.cz",
+    "log_tag": "Source2Mod",
+    "license": "Source2Mod (GPLv3 with exceptions)",
+    "version": "{{semver}} @ {{github-sha}}",
+    "website": "https://www.source2mod.net",
+    "repository": "https://github.com/Source2Mod/source2mod",
+    "credits": [
+        {
+            "role": "Core, plugin system and SDK",
+            "name": "Michal \"Slynx (˙·٠● S l y n x ●٠·˙)\" Přikryl"
+        },
+        {
+            "role": "Metamod:Source",
+            "name": "David \"BAILOPAN\" Anderson, Scott \"DS\" Ehlert"
+        },
+        {
+            "role": "KHook",
+            "name": "Benoist \"Kenzzer\" André"
+        },
+        {
+            "role": "SourceMod (plugin API, include set)",
+            "name": "AlliedModders LLC."
+        },
+        {
+            "role": "SourcePawn (language, compiler, VM)",
+            "name": "AlliedModders LLC."
+        },
+        {
+            "role": "HL2SDK and engine research",
+            "name": "AlliedModders LLC."
+        }
+    ]
+}

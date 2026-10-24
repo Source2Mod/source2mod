@@ -73,7 +73,9 @@
 
 #include <source2mod/utils/plat.h>
 
-#define VERSION_STRING SEMVER " @ " GITHUB_SHA
+// Name, author, version ...: plugin-metadata.json, through tools/version_gen.py.
+#include "version_gen.h"
+
 #define BUILD_TIMESTAMP __DATE__ " " __TIME__
 
 Source2ModCore g_Source2ModCore;
@@ -254,8 +256,8 @@ bool Source2ModCore::Unload(char* error, size_t maxlen)
     maps::mapsManager.Shutdown();
     geoip::geoIpManager.Shutdown();
 
-    if (shared::g_pEntitySystem)
-        shared::g_pEntitySystem->RemoveListenerEntity(&virtualhooks::entityListener);
+    if (CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem())
+        pEntitySystem->RemoveListenerEntity(&virtualhooks::entityListener);
 
     ConVar_Unregister();
 
@@ -339,11 +341,11 @@ void Source2ModCore::OnLevelShutdown()
     scripts::scriptsManager.OnLevelShutdown();
 }
 
-const char* Source2ModCore::GetAuthor() { return reinterpret_cast<const char*>(u8"Michal \"Slynx (˙·٠● S l y n x ●٠·˙)\" Přikryl"); }
-const char* Source2ModCore::GetName() { return "Source2Mod"; }
-const char* Source2ModCore::GetDescription() { return "Source2Mod"; }
-const char* Source2ModCore::GetURL() { return "https://www.slynxdev.cz"; }
-const char* Source2ModCore::GetLicense() { return "Source2Mod (GPLv3 with exceptions)"; }
-const char* Source2ModCore::GetVersion() { return VERSION_STRING; }
+const char* Source2ModCore::GetAuthor() { return PLUGIN_AUTHOR; }
+const char* Source2ModCore::GetName() { return PLUGIN_DISPLAY_NAME; }
+const char* Source2ModCore::GetDescription() { return PLUGIN_DESCRIPTION; }
+const char* Source2ModCore::GetURL() { return PLUGIN_URL; }
+const char* Source2ModCore::GetLicense() { return PLUGIN_LICENSE; }
+const char* Source2ModCore::GetVersion() { return PLUGIN_FULL_VERSION; }
 const char* Source2ModCore::GetDate() { return BUILD_TIMESTAMP; }
-const char* Source2ModCore::GetLogTag() { return "Source2Mod"; }
+const char* Source2ModCore::GetLogTag() { return PLUGIN_LOGTAG; }

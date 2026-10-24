@@ -40,6 +40,7 @@
 #include "events.h"
 #include "inlinehooks.h"
 #include "gameconfig.h"
+#include "pluginapi.h"
 #include "shared.h"
 
 #include <source2mod/schema/entity/classes/CBaseEntity.h>
@@ -73,18 +74,20 @@ namespace entities
     CBaseEntity* EntitiesManager::FindEntityByClassname(CEntityInstance* pStart, const char* name)
     {
         // Nothing to search before the first StartupServer.
-        if (!shared::g_pEntitySystem)
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
+        if (!pEntitySystem)
             return nullptr;
 
-        return addresses::source2modAddresses.CGameEntitySystem_FindEntityByClassName()(shared::g_pEntitySystem, pStart, name);
+        return addresses::source2modAddresses.CGameEntitySystem_FindEntityByClassName()(pEntitySystem, pStart, name);
     }
 
     CBaseEntity* EntitiesManager::FindEntityByName(CEntityInstance* pStartEntity, const char* szName, CEntityInstance* pSearchingEntity, CEntityInstance* pActivator, CEntityInstance* pCaller, IEntityFindFilter* pFilter)
     {
-        if (!shared::g_pEntitySystem)
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
+        if (!pEntitySystem)
             return nullptr;
 
-        return addresses::source2modAddresses.CGameEntitySystem_FindEntityByName()(shared::g_pEntitySystem, pStartEntity, szName, pSearchingEntity, pActivator, pCaller, pFilter);
+        return addresses::source2modAddresses.CGameEntitySystem_FindEntityByName()(pEntitySystem, pStartEntity, szName, pSearchingEntity, pActivator, pCaller, pFilter);
     }
 
     CBaseEntity* EntitiesManager::CreateEntityByName(const char* pszClassName)
@@ -100,7 +103,7 @@ namespace entities
     std::vector<CBaseEntity*> EntitiesManager::FindAllEntitiesByDesignerName(const char* pszDesignerName)
     {
         std::vector<CBaseEntity*> results;
-        CGameEntitySystem* pEntitySystem = shared::g_pEntitySystem;
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
         if (!pszDesignerName || !pEntitySystem)
             return results;
 
@@ -115,10 +118,11 @@ namespace entities
 
     void EntitiesManager::AddEntityIOEvent(CEntityInstance* pTarget, const char* pszInput, CEntityInstance* pActivator, CEntityInstance* pCaller, const char* pszValue, float flDelay)
     {
-        if (!shared::g_pEntitySystem)
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
+        if (!pEntitySystem)
             return;
 
-        addresses::source2modAddresses.CEntitySystem_AddEntityIOEvent()(shared::g_pEntitySystem, pTarget, pszInput, pActivator, pCaller, variant_t(pszValue), flDelay, nullptr, nullptr);
+        addresses::source2modAddresses.CEntitySystem_AddEntityIOEvent()(pEntitySystem, pTarget, pszInput, pActivator, pCaller, variant_t(pszValue), flDelay, nullptr, nullptr);
     }
 
     namespace

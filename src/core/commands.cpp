@@ -57,12 +57,14 @@
 
 #include <cstdarg>
 
-#define VERSION_STRING SEMVER " @ " GITHUB_SHA
+// PLUGIN_FULL_VERSION: plugin-metadata.json, through tools/version_gen.py.
+#include "version_gen.h"
+
 #define BUILD_TIMESTAMP __DATE__ " " __TIME__
 #define BUILD_ID SEMVER ":" GITHUB_SHA
 
-#define SOURCE2MOD_WEBSITE "https://www.source2mod.net"
-#define SOURCE2MOD_REPO    "https://github.com/Source2Mod/source2mod"
+#define SOURCE2MOD_WEBSITE PLUGIN_WEBSITE
+#define SOURCE2MOD_REPO    PLUGIN_REPOSITORY
 
 // The console colours of the "s2m" command, FUNPLAY's log style: the
 // thing in question picked out, the rest plain or dim.
@@ -479,7 +481,7 @@ namespace commands {
             char buf[128];
             consoletable::Table version = consoletable::KeyValue(C_HEAD "Source2Mod Version Information");
 
-            version.AddRow({ C_LABEL "Source2Mod version", C_NAME VERSION_STRING });
+            version.AddRow({ C_LABEL "Source2Mod version", C_NAME PLUGIN_FULL_VERSION });
             V_snprintf(buf, sizeof(buf), C_NAME "%d" C_DIM " (%s)", SOURCE2MOD_PLAPI_VERSION, SOURCE2MOD_INTERFACE_NAME);
             version.AddRow({ C_LABEL "Plugin API version", buf });
             version.AddRow({ C_LABEL "Hooks", std::string(C_NAME "KHook" C_DIM ", served to plugins as ") + SOURCE2MOD_KHOOK_INTERFACE });
@@ -506,15 +508,13 @@ namespace commands {
 
         else if (strcmp(cmd, "credits") == 0)
         {
-            // Keep this in step with ACKNOWLEDGEMENTS.md -- it is the same
-            // list, short enough to read in a console.
+            // "credits" in plugin-metadata.json. Keep it in step with
+            // ACKNOWLEDGEMENTS.md -- it is the same list, short enough to read
+            // in a console.
             consoletable::Table credits = consoletable::KeyValue(C_HEAD "Source2Mod was developed by");
-            credits.AddRow({ C_LABEL "Core, plugin system and SDK", C_NAME + std::string(reinterpret_cast<const char*>(u8"Michal \"Slynx (˙·٠● S l y n x ●٠·˙)\" Přikryl")) });
-            credits.AddRow({ C_LABEL "Metamod:Source", C_NAME "David \"BAILOPAN\" Anderson, Scott \"DS\" Ehlert" });
-            credits.AddRow({ C_LABEL "KHook", C_NAME + std::string(reinterpret_cast<const char*>(u8"Benoist \"Kenzzer\" André")) });
-            credits.AddRow({ C_LABEL "SourceMod (plugin API, include set)", C_NAME "AlliedModders LLC." });
-            credits.AddRow({ C_LABEL "SourcePawn (language, compiler, VM)", C_NAME "AlliedModders LLC." });
-            credits.AddRow({ C_LABEL "HL2SDK and engine research", C_NAME "AlliedModders LLC." });
+            static constexpr struct { const char* role; const char* name; } kCredits[] = { PLUGIN_CREDITS };
+            for (const auto& credit : kCredits)
+                credits.AddRow({ std::string(C_LABEL) + credit.role, std::string(C_NAME) + credit.name });
             credits.AddSeparator();
             credits.AddRow({ C_LABEL "Full list", C_DIM "ACKNOWLEDGEMENTS.md" });
             credits.AddRow({ C_LABEL "Website", C_LINK SOURCE2MOD_WEBSITE });

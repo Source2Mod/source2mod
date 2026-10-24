@@ -41,6 +41,7 @@
 #include "gameconfig.h"
 #include "hookid.h"
 #include "paths.h"
+#include "pluginapi.h"
 #include "shared.h"
 #include "utils/log.h"
 
@@ -297,10 +298,11 @@ namespace scripts
 
     CBaseEntity* ScriptsManager::GetEntity(const Script& script)
     {
-        if (!shared::g_pEntitySystem || !script.handle.IsValid())
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
+        if (!pEntitySystem || !script.handle.IsValid())
             return nullptr;
 
-        return static_cast<CBaseEntity*>(shared::g_pEntitySystem->GetEntityInstance(script.handle));
+        return static_cast<CBaseEntity*>(pEntitySystem->GetEntityInstance(script.handle));
     }
 
     CEntityHandle ScriptsManager::Spawn(const std::string& name, Script& script)
@@ -309,7 +311,7 @@ namespace scripts
         script.pending = false;
 
         // No world to put it in yet; the next simulating frame does it.
-        if (!shared::g_pEntitySystem || m_bLevelShutdown)
+        if (!pluginApi.GetEntitySystem() || m_bLevelShutdown)
         {
             script.pending = true;
             return {};
@@ -565,7 +567,7 @@ namespace scripts
 
     void ScriptsManager::OnGameFrame(bool simulating)
     {
-        if (!simulating || m_bLevelShutdown || !shared::g_pEntitySystem || m_scripts.empty())
+        if (!simulating || m_bLevelShutdown || m_scripts.empty() || !pluginApi.GetEntitySystem())
             return;
 
         for (auto& [name, script] : m_scripts)

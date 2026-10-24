@@ -664,6 +664,11 @@ IGameEventManager2* PluginApi::GetGameEventManager()
 
 CGameEntitySystem* PluginApi::GetEntitySystem()
 {
+    // Like the global vars: read from the game resource service every time
+    // (null until the first StartupServer), so a stale pointer is never
+    // returned.
+    shared::g_pEntitySystem = GameEntitySystem();
+
     return shared::g_pEntitySystem;
 }
 

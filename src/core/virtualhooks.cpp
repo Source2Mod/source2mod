@@ -449,11 +449,14 @@ namespace virtualhooks
         // entity system for the next map, and CS2Fixes refreshes it on every
         // StartupServer for the same reason. Keeping the first one would mean
         // a stale pointer and listeners attached to a system nothing uses.
-        CGameEntitySystem* pEntitySystem = GameEntitySystem();
+        // The pointer itself is PluginApi::GetEntitySystem()'s; this only
+        // remembers which system the listener went onto.
+        static CGameEntitySystem* s_pListenedEntitySystem = nullptr;
+        CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem();
 
-        if (pEntitySystem && pEntitySystem != shared::g_pEntitySystem)
+        if (pEntitySystem && pEntitySystem != s_pListenedEntitySystem)
         {
-            shared::g_pEntitySystem = pEntitySystem;
+            s_pListenedEntitySystem = pEntitySystem;
             pEntitySystem->AddListenerEntity(&entityListener);
         }
 
