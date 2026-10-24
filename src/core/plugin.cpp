@@ -262,7 +262,10 @@ bool Source2ModCore::Unload(char* error, size_t maxlen)
     // Last: a crash anywhere in the teardown above is still worth a dump.
     crashhandler::Shutdown();
 
-    FP_INFO("Unload() success!");
+    // A refused late load returned before log::Init(), and Metamod still calls
+    // Unload() on a plugin whose Load() failed: no logger to write to then.
+    if (log::GetLogger())
+        FP_INFO("Unload() success!");
 
     log::Close();
 
