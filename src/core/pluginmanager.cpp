@@ -240,14 +240,25 @@ static void* GetSymbol(LibHandle lib, const char* name)
 #endif
 }
 
-static std::string FindPluginBinary(const std::string& name)
+// The plugin "s2m load <name>" means: the file named exactly that (with or
+// without ".smx"), else the one file whose name contains it. Several partial
+// matches are ambiguous rather than whichever the directory lists first --
+// "s2mt_cpp" must not load s2mt_cpp_scriptapi.smx.
+static std::string FindPluginBinary(std::string name, std::string& ambiguous)
 {
     namespace fs = std::filesystem;
+
+    ambiguous.clear();
 
     auto dir = paths::GetPluginsDirectory();
 
     if (!fs::exists(dir) || !fs::is_directory(dir))
         return "";
+
+    if (name.size() > 4 && name.compare(name.size() - 4, 4, ".smx") == 0)
+        name.resize(name.size() - 4);
+
+    std::vector<fs::path> partial;
 
     for (const auto& entry : fs::directory_iterator(dir))
     {
@@ -259,11 +270,19 @@ static std::string FindPluginBinary(const std::string& name)
         if (path.extension() != ".smx")
             continue;
 
-        if (path.stem().string().find(name) != std::string::npos)
-        {
+        const std::string stem = path.stem().string();
+        if (stem == name)
             return path.string();
-        }
+
+        if (stem.find(name) != std::string::npos)
+            partial.push_back(path);
     }
+
+    if (partial.size() == 1)
+        return partial.front().string();
+
+    for (const auto& path : partial)
+        ambiguous += (ambiguous.empty() ? "" : ", ") + path.filename().string();
 
     return "";
 }
@@ -487,12 +506,18 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
 
 bool PluginManager::LoadPlugin(const char* name, char* error, size_t maxlen)
 {
-    std::string fullPath = FindPluginBinary(name);
+    std::string ambiguous;
+    std::string fullPath = FindPluginBinary(name, ambiguous);
 
     if (fullPath.empty())
     {
         if (error && maxlen)
-            snprintf(error, maxlen, "Plugin '%s' not found", name);
+        {
+            if (ambiguous.empty())
+                snprintf(error, maxlen, "Plugin '%s' not found", name);
+            else
+                snprintf(error, maxlen, "'%s' matches several plugins (%s); give the full name", name, ambiguous.c_str());
+        }
 
         return false;
     }
