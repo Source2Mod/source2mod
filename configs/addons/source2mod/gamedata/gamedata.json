@@ -580,12 +580,6 @@
     },
     "function": {"return": "entity", "params": ["vector", "vector", "vector", "vector", "entity", "int32"]}
   },
-  "CNetworkGameServer::ClientList": {
-    "offsets": {
-      "windows": 616,
-      "linux": 616
-    }
-  },
   "CPlayer_MovementServices::RunCommand": {
     "offsets": {
       "windows": 25,

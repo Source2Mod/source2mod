@@ -9,7 +9,6 @@
 
   "field_offsets": [
     "CCSPointScriptEntity::ScriptComponent",
-    "CNetworkGameServer::ClientList",
     "CTakeDamageInfo::HitGroup",
     "*::m_*",
     "*::sizeof"
