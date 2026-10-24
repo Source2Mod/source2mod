@@ -266,38 +266,56 @@ namespace virtualhooks
 
     void Virtuals::DestructListeners()
     {
-        m_hGameFrame->Remove(g_pSource2Server);
-        m_hStartupServer->Remove(g_pNetworkServerService);
+        // Every pointer can be null: a second call, or an Init that stopped part way.
+        if (m_hGameFrame)
+            m_hGameFrame->Remove(g_pSource2Server);
+        if (m_hStartupServer)
+            m_hStartupServer->Remove(g_pNetworkServerService);
         // Already gone when this is the second half of a console "meta unload".
         if (m_hDispatchConCommand)
             m_hDispatchConCommand->Remove(g_pCVar);
-        m_hClientCommand->Remove(g_pSource2GameClients);
-        m_hClientPutInServer->Remove(g_pSource2GameClients);
-        m_hClientVoice->Remove(g_pSource2GameClients);
-        m_hClientSettingsChanged->Remove(g_pSource2GameClients);
-        m_hClientSvcUserMessage->Remove(g_pSource2GameClients);
-        m_hClientDisconnect->Remove(g_pSource2GameClients);
-        m_hClientConnect->Remove(g_pSource2GameClients);
-        m_hOnClientConnected->Remove(g_pSource2GameClients);
-        m_hSteamAPIActivated->Remove(g_pSource2Server);
-        m_hSteamAPIDeactivated->Remove(g_pSource2Server);
-        m_hPostEventAbstract->Remove(shared::g_pGameEventSystem);
-        m_hCheckTransmit->Remove(g_pSource2GameEntities);
+        if (m_hClientCommand)
+            m_hClientCommand->Remove(g_pSource2GameClients);
+        if (m_hClientPutInServer)
+            m_hClientPutInServer->Remove(g_pSource2GameClients);
+        if (m_hClientVoice)
+            m_hClientVoice->Remove(g_pSource2GameClients);
+        if (m_hClientSettingsChanged)
+            m_hClientSettingsChanged->Remove(g_pSource2GameClients);
+        if (m_hClientSvcUserMessage)
+            m_hClientSvcUserMessage->Remove(g_pSource2GameClients);
+        if (m_hClientDisconnect)
+            m_hClientDisconnect->Remove(g_pSource2GameClients);
+        if (m_hClientConnect)
+            m_hClientConnect->Remove(g_pSource2GameClients);
+        if (m_hOnClientConnected)
+            m_hOnClientConnected->Remove(g_pSource2GameClients);
+        if (m_hSteamAPIActivated)
+            m_hSteamAPIActivated->Remove(g_pSource2Server);
+        if (m_hSteamAPIDeactivated)
+            m_hSteamAPIDeactivated->Remove(g_pSource2Server);
+        if (m_hPostEventAbstract)
+            m_hPostEventAbstract->Remove(shared::g_pGameEventSystem);
+        if (m_hCheckTransmit)
+            m_hCheckTransmit->Remove(g_pSource2GameEntities);
 
-        if (m_pCEntityDebugGameSystemVTable)
+        if (m_pCEntityDebugGameSystemVTable && m_hOnServerGamePostSimulate)
             m_hOnServerGamePostSimulate->RemoveGlobal(reinterpret_cast<IGameSystem*>(&m_pCEntityDebugGameSystemVTable));
 
         if (m_pCGameEventManagerVTable)
         {
-            m_hLoadEventsFromFile->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
-            m_hFireEvent->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
-            m_hFreeEvent->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
+            if (m_hLoadEventsFromFile)
+                m_hLoadEventsFromFile->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
+            if (m_hFireEvent)
+                m_hFireEvent->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
+            if (m_hFreeEvent)
+                m_hFreeEvent->RemoveGlobal(reinterpret_cast<IGameEventManager2*>(&m_pCGameEventManagerVTable));
         }
 
-        if (m_bSendNetMessageHooked)
+        if (m_bSendNetMessageHooked && m_hSendNetMessage)
             m_hSendNetMessage->RemoveGlobal(reinterpret_cast<CServerSideClientBase*>(&m_pCServerSideClientVTable));
         m_bSendNetMessageHooked = false;
-        if (m_pCServerSideClientPreFilterVTable)
+        if (m_pCServerSideClientPreFilterVTable && m_hFilterMessage)
             m_hFilterMessage->RemoveGlobal(reinterpret_cast<INetworkMessageProcessingPreFilter*>(&m_pCServerSideClientPreFilterVTable));
 
         delete m_hGameFrame;
@@ -408,7 +426,8 @@ namespace virtualhooks
             // Here it is another function's dispatch, so this is a plain
             // synchronous removal, and the re-issued command then reaches
             // metamod with no hook of ours on the stack.
-            m_hDispatchConCommand->Remove(g_pCVar);
+            if (m_hDispatchConCommand)
+                m_hDispatchConCommand->Remove(g_pCVar);
             delete m_hDispatchConCommand;
             m_hDispatchConCommand = nullptr;
 
