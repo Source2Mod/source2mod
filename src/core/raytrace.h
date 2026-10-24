@@ -39,11 +39,12 @@
 #include <engine2/ivengineserver2.h>
 #include <entitysystem.h>
 #include <source2mod/ISource2ModTrace.h>
+#include <source2mod/schema/tracefilter.h>
 #include <source2mod/schema/entity/classes/CBaseEntity.h>
 #include <source2mod/schema/entity/classes/CCollisionProperty.h>
 
-// CTraceFilterEx now lives in the SDK (ISource2ModTrace.h) so plugins calling
-// TraceShapeEx can build one too.
+// The filters are the SDK's (source2mod/schema/tracefilter.h), so plugins
+// calling TraceShapeEx build the same ones.
 
 namespace raytrace
 {

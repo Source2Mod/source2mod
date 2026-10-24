@@ -40,6 +40,7 @@
  * ray tracing (core/raytrace.cpp).
  */
 #include "natives.h"
+#include <source2mod/schema/tracefilter.h>
 #include "handles.h"
 #include "scriptplugin.h"
 
@@ -288,11 +289,11 @@ namespace sourcepawn
 
         // TraceShapeEx's filter: the ignore entity as TraceEndShape's, then the
         // script's function for every entity the ray touches.
-        class ScriptTraceFilter final : public CTraceFilterEx
+        class ScriptTraceFilter final : public CTraceFilterSimple
         {
         public:
             ScriptTraceFilter(CBaseEntity* ignore, IPluginFunction* fn, cell_t data)
-                : CTraceFilterEx(ignore), m_fn(fn), m_data(data)
+                : CTraceFilterSimple(ignore), m_fn(fn), m_data(data)
             {
                 m_bIterateEntities = fn != nullptr;
             }

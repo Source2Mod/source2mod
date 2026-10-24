@@ -56,7 +56,7 @@ namespace raytrace
     TraceResult RayTrace::TraceShape(const Vector& vecStart, const QAngle& angAngles, CBaseEntity* pIgnoreEntity,
                                      TraceOptions* pTraceOptions)
     {
-        CTraceFilterEx filter = pIgnoreEntity ? CTraceFilterEx(pIgnoreEntity) : CTraceFilterEx();
+        CTraceFilterSimple filter(pIgnoreEntity);
 
         filter.m_nInteractsAs = CONTENTS_EMPTY;
         filter.m_nInteractsWith = MASK_ALL;
@@ -90,7 +90,7 @@ namespace raytrace
     TraceResult RayTrace::TraceEndShape(const Vector& vecStart, const Vector& vecEnd, CBaseEntity* pIgnoreEntity,
                                         TraceOptions* pTraceOptions)
     {
-        CTraceFilterEx filter = pIgnoreEntity ? CTraceFilterEx(pIgnoreEntity) : CTraceFilterEx();
+        CTraceFilterSimple filter(pIgnoreEntity);
 
         filter.m_nInteractsAs = CONTENTS_EMPTY;
         filter.m_nInteractsWith = MASK_ALL;
@@ -116,7 +116,7 @@ namespace raytrace
     TraceResult RayTrace::TraceHullShape(const Vector& vecStart, const Vector& vecEnd, const Vector& vecMins,
                                          const Vector& vecMaxs, CBaseEntity* pIgnoreEntity, TraceOptions* pTraceOptions)
     {
-        CTraceFilterEx filter = pIgnoreEntity ? CTraceFilterEx(pIgnoreEntity) : CTraceFilterEx();
+        CTraceFilterSimple filter(pIgnoreEntity);
 
         filter.m_nInteractsAs = CONTENTS_EMPTY;
         filter.m_nInteractsWith = MASK_ALL;
