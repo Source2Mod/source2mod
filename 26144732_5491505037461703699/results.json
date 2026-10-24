@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-23T06:44:18+00:00",
+  "generated_at": "2026-10-24T10:02:54+00:00",
   "build": {
     "buildid": "26144732",
     "linux_manifest": "5491505037461703699",
@@ -1209,20 +1209,6 @@
       }
     },
     {
-      "name": "CNetworkGameServer::ClientList",
-      "kind": "offset",
-      "windows": {
-        "status": "unchecked",
-        "detail": "field offset",
-        "value": 616
-      },
-      "linux": {
-        "status": "unchecked",
-        "detail": "field offset",
-        "value": 616
-      }
-    },
-    {
       "name": "CPlayer_MovementServices::RunCommand",
       "kind": "offset",
       "windows": {
@@ -1308,16 +1294,14 @@
         "class": "CSoundSystem",
         "library": "soundsystem",
         "vtable_size": 135,
-        "status": "changed",
-        "detail": "CSoundSystem changed from 134 to 135 functions -- check the index"
+        "status": "ok"
       },
       "linux": {
         "value": 75,
         "class": "CSoundSystem",
         "library": "soundsystem",
         "vtable_size": 136,
-        "status": "changed",
-        "detail": "CSoundSystem changed from 135 to 136 functions -- check the index"
+        "status": "ok"
       }
     },
     {
