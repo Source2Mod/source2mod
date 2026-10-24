@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "commands.h"
+#include "configs.h"
 
 #include "hooks.h"
 #include "hookid.h"
@@ -56,6 +57,7 @@
 #include <source2mod/schema/entity/classes/CCSPlayerPawn.h>
 
 #include <cstdarg>
+#include <sstream>
 
 // PLUGIN_FULL_VERSION: plugin-metadata.json, through tools/version_gen.py.
 #include "version_gen.h"
@@ -232,6 +234,7 @@ namespace commands {
                 help.AddRow({ C_CMD "s2m refresh", "", "Load the plugins that are not loaded yet" });
                 help.AddRow({ C_CMD "s2m hookdebug", C_DIM "<game hook|all|off>", "Log every call of matching game hooks" });
                 help.AddRow({ C_CMD "s2m admins", C_DIM "<list|reload|info <slot|steamid>>", "Players' permissions" });
+                help.AddRow({ C_CMD "s2m config", C_DIM "<list|reload|dump|upgrade> [core|id|name] [config]", "JSON configs of the core and plugins" });
             }
             help.AddRow({ C_CMD "s2m version", "", "Build, API and Metamod versions" });
             help.AddRow({ C_CMD "s2m credits", "", "Who made Source2Mod" });
@@ -397,6 +400,100 @@ namespace commands {
 
             hooks::SetHookDebug(args.Arg(2));
             REPLY_OK("hookdebug: " C_NAME "%s", hooks::GetHookDebug());
+        }
+
+        else if (strcmp(cmd, "config") == 0)
+        {
+            const char* sub = argc >= 3 ? args.Arg(2) : "list";
+            const auto& all = configs::configsManager.All();
+
+            // "core", a plugin id or a plugin name; -1 when none matches.
+            auto ownerOf = [](const char* who) -> int
+            {
+                if (strcmp(who, "core") == 0)
+                    return 0;
+                if (*who && strspn(who, "0123456789") == strlen(who))
+                    return atoi(who);
+                for (auto& p : pluginManager.m_plugins)
+                {
+                    if (p && p->api && V_stricmp(p->api->GetName(), who) == 0)
+                        return p->id;
+                }
+                return -1;
+            };
+
+            if (strcmp(sub, "list") == 0)
+            {
+                using consoletable::Table;
+                Table table({ { "Owner" }, { "Config" }, { "Gen" }, { "Path", consoletable::Align::Left }, { "Last read", consoletable::Align::Left, 50 } });
+                table.SetTitle(C_HEAD "Configs");
+                for (const auto& config : all)
+                {
+                    const char* error = config->GetLastError();
+                    table.AddRow({ config->Owner() ? std::string(C_NAME) + pluginManager.NameOf(config->Owner()) : C_DIM "core",
+                                   std::string(C_NAME) + config->GetName(), std::to_string(config->GetGeneration()),
+                                   std::string(C_DIM) + config->GetPath(), *error ? std::string(C_WARN) + error : C_OK "ok" });
+                }
+                ReplyTable(ctx, table);
+                return;
+            }
+
+            if (strcmp(sub, "reload") != 0 && strcmp(sub, "dump") != 0 && strcmp(sub, "upgrade") != 0)
+            {
+                REPLY_ERROR("Usage: s2m config <list|reload|dump|upgrade> [core|id|name] [config]");
+                return;
+            }
+
+            if (argc < 4)
+            {
+                REPLY_ERROR("Usage: s2m config %s <core|id|name> [config]", sub);
+                return;
+            }
+
+            const int owner = ownerOf(args.Arg(3));
+            const char* only = argc >= 5 ? args.Arg(4) : nullptr;
+            if (owner < 0)
+            {
+                REPLY_ERROR("No plugin '" C_NAME "%s" C_ERR "'.", args.Arg(3));
+                return;
+            }
+
+            // By index: a reload callback may register or drop configs.
+            int matched = 0;
+            for (size_t i = 0; i < all.size(); i++)
+            {
+                configs::ConfigFile* config = all[i].get();
+                if (config->Owner() != owner || (only && strcmp(config->GetName(), only) != 0))
+                    continue;
+                matched++;
+
+                char error[512] = "";
+                if (strcmp(sub, "dump") == 0)
+                {
+                    REPLY_INFO(C_LABEL "%s" C_DIM " (generation %u)", config->GetPath(), config->GetGeneration());
+                    std::istringstream lines(config->Data().dump(2));
+                    for (std::string line; std::getline(lines, line);)
+                        REPLY_INFO("%s", line.c_str());
+                }
+                else if (strcmp(sub, "upgrade") == 0)
+                {
+                    if (config->Save(error, sizeof(error)))
+                        REPLY_OK("%s rewritten with every current setting (old file: .bak).", config->GetPath());
+                    else
+                        REPLY_ERROR("%s not written: %s", config->GetPath(), error);
+                }
+                else if (config->ReloadFromCommand(error, sizeof(error)))
+                {
+                    REPLY_OK("%s reloaded.", config->GetPath());
+                }
+                else
+                {
+                    REPLY_ERROR("%s not reloaded: %s", config->GetPath(), error);
+                }
+            }
+
+            if (!matched)
+                REPLY_ERROR("No config matches.");
         }
 
         else if (strcmp(cmd, "admins") == 0)

@@ -43,6 +43,7 @@
 
 #include "addresses.h"
 #include "commands.h"
+#include "configs.h"
 #include "convars.h"
 #include "cookies.h"
 #include "core/paths.h"
@@ -298,6 +299,7 @@ namespace
         static const CurrentInterface s_current[] = {
             { SOURCE2MOD_ADDRESSES_INTERFACE, &addresses::source2modAddresses },
             { SOURCE2MOD_COMMANDS_INTERFACE, &commands::commandsManager },
+            { SOURCE2MOD_CONFIGS_INTERFACE, &configs::configsManager },
             { SOURCE2MOD_CONVARS_INTERFACE, &convars::convarsManager },
             { SOURCE2MOD_COOKIES_INTERFACE, &cookies::cookiesManager },
             { SOURCE2MOD_CUSTOMHUD_INTERFACE, &customhud::customHudManager },

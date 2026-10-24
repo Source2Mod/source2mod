@@ -37,6 +37,7 @@
 
 #include "addresses.h"
 #include "commands.h"
+#include "configs.h"
 #include "convars.h"
 #include "cookies.h"
 #include "core/paths.h"
@@ -214,6 +215,7 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
     }
 
     pluginManager.StartFileWatcher();
+    configs::configsManager.StartWatching();
 
     return true;
 }
@@ -238,6 +240,8 @@ bool Source2ModCore::Unload(char* error, size_t maxlen)
     inlinehooks::inlines.DestructListeners();
     virtualhooks::virtuals.DestructListeners();
     scripts::scriptsManager.Shutdown();
+    // Before the scheduler: it kills its poll timer there.
+    configs::configsManager.Shutdown();
     // Only Source2Mod's own are left by now.
     scheduler::Shutdown();
     // After the scheduler: a next-frame close still holding a script runtime

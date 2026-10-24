@@ -41,8 +41,11 @@
 #include <sqlite3.h>
 #include <fstream>
 
+#include "configs.h"
 #include "pluginapi.h"
 #include "utils/log.h"
+
+#include "config_defaults_gen.h"
 
 #include <algorithm>
 
@@ -1284,14 +1287,18 @@ namespace mysql
             // { "default": { "driver": "sqlite", "database": "source2mod" },
             //   "stats": { "driver": "mysql", "host": ..., "user": ..., "pass": ..., "database": ...,
             //              "port": 3306, "timeout": 60 } }
-            const std::string path = std::string(paths::pathsManager.ConfigsDirectory()) + "/databases.json";
-            std::ifstream file(path);
-            if (file)
+            // configs/databases.json, seeded from the shipped example on first
+            // use and read as written (no example entries merged back in).
+            std::string error;
+            auto* config = static_cast<configs::ConfigFile*>(configs::configsManager.Get(0, "databases"));
+            if (!config)
+                config = configs::configsManager.RegisterCore("databases", kDatabasesConfigDefaults,
+                                                              SOURCE2MOD_CONFIG_NO_MERGE | SOURCE2MOD_CONFIG_NO_WATCH, nullptr, error);
+            if (!config)
+                FP_ERROR("SQL: {}", error);
+            else
             {
-                const auto json = nlohmann::json::parse(file, nullptr, false, true);
-                if (!json.is_object())
-                    FP_ERROR("SQL: {} is not a JSON object", path);
-                else
+                const auto& json = config->Data();
                 {
                     for (const auto& [key, value] : json.items())
                     {

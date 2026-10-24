@@ -36,6 +36,7 @@
 #include "pluginmanager.h"
 
 #include "commands.h"
+#include "configs.h"
 #include "convars.h"
 #include "cookies.h"
 #include "core/hooks.h"
@@ -565,6 +566,7 @@ bool PluginManager::ReloadPlugin(int id)
 
         events::eventManager.RemoveAllForPlugin(id);
         commands::commandsManager.RemoveAllForPlugin(id);
+        configs::configsManager.RemoveAllForPlugin(id);
         customhud::customHudManager.RemoveAllForPlugin(id);
         convars::convarsManager.RemoveAllForPlugin(id);
         networkmessages::networkMessagesManager.RemoveAllForPlugin(id);
@@ -634,6 +636,7 @@ bool PluginManager::UnloadPlugin(PluginId id)
 
         events::eventManager.RemoveAllForPlugin(id);
         commands::commandsManager.RemoveAllForPlugin(id);
+        configs::configsManager.RemoveAllForPlugin(id);
         customhud::customHudManager.RemoveAllForPlugin(id);
         convars::convarsManager.RemoveAllForPlugin(id);
         networkmessages::networkMessagesManager.RemoveAllForPlugin(id);

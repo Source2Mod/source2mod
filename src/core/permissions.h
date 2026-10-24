@@ -39,6 +39,7 @@
 
 #include <const.h>
 #include <playerslot.h>
+#include <source2mod/ISource2ModConfigs.h>
 #include <source2mod/ISource2ModPermissions.h>
 #include <steam/steam_gameserver.h>
 
@@ -62,7 +63,7 @@ namespace permissions
 
     SteamAuthMode ParseSteamAuthMode(const std::string& mode);
 
-    class PermissionsManager : public ISource2ModPermissions
+    class PermissionsManager : public ISource2ModPermissions, public ISource2ModConfigListener
     {
     public:
         // ISource2ModPermissions
@@ -98,6 +99,8 @@ namespace permissions
 
         /// Re-reads permissions.json into the file's layer. False with `error` when it does not parse.
         bool LoadFile(std::string& error);
+        /// Re-reads SteamAuthMode and AccessDeniedMessage from core.json.
+        void ApplyCoreConfig();
 
         /// The permission a command needs: its "Overrides" entry, else what it was registered with.
         std::string CommandPermission(const std::string& command, const std::string& registered) const;
@@ -176,6 +179,18 @@ namespace permissions
 
         std::map<PluginId, Layer> m_layers;
         std::unordered_map<std::string, std::string> m_overrides;
+
+        // permissions.json, on the configs manager. Validate builds the layer
+        // (a file that does not build is refused and the old one stays),
+        // Changed commits it.
+        bool OnConfigValidate(ISource2ModConfig* config, const ISource2ModJSONValue* root, char* error, size_t maxlen) override;
+        void OnConfigChanged(ISource2ModConfig* config, ConfigChange reason) override;
+        bool Build(const ISource2ModJSONValue* root, Layer& layer, std::unordered_map<std::string, std::string>& overrides,
+                   std::string& error);
+
+        ISource2ModConfig* m_pConfig = nullptr;
+        Layer m_pendingLayer;
+        std::unordered_map<std::string, std::string> m_pendingOverrides;
         std::unordered_map<uint64, Effective> m_cache;
         bool m_bNotifyAll = false;
 

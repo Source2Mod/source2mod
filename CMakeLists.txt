@@ -243,6 +243,34 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${VERSION_GEN_DIR})
 
+# The core's own configs (core.json, permissions.json, databases.json) are
+# registered with the shipped examples as their defaults: compiled in from the
+# same files, so the defaults and the examples cannot drift apart.
+set(CONFIG_EXAMPLES_DIR "${CMAKE_SOURCE_DIR}/configs/addons/source2mod/configs")
+set(CONFIG_EXAMPLES
+        Core=${CONFIG_EXAMPLES_DIR}/core.example.json
+        Permissions=${CONFIG_EXAMPLES_DIR}/permissions.example.json
+        Databases=${CONFIG_EXAMPLES_DIR}/databases.example.json
+)
+
+execute_process(
+        COMMAND ${Python3_EXECUTABLE}
+                ${CMAKE_SOURCE_DIR}/tools/config_defaults_gen.py
+                --output ${VERSION_GEN_DIR}/config_defaults_gen.h
+                ${CONFIG_EXAMPLES}
+        RESULT_VARIABLE CONFIG_DEFAULTS_GEN_RESULT
+)
+
+if (NOT CONFIG_DEFAULTS_GEN_RESULT EQUAL 0)
+    message(FATAL_ERROR "config_defaults_gen.py failed (${CONFIG_DEFAULTS_GEN_RESULT})")
+endif ()
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+        ${CONFIG_EXAMPLES_DIR}/core.example.json
+        ${CONFIG_EXAMPLES_DIR}/permissions.example.json
+        ${CONFIG_EXAMPLES_DIR}/databases.example.json
+        ${CMAKE_SOURCE_DIR}/tools/config_defaults_gen.py)
+
 include(${CMAKE_CURRENT_LIST_DIR}/makefiles/metamod/configure_metamod.cmake)
 
 find_package(Git QUIET)

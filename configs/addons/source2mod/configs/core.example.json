@@ -3,6 +3,7 @@
   "SilentChatTrigger": [ "/" ],
   "PluginHotReloadEnabled": true,
   "PluginAutoLoadEnabled": true,
+  "ConfigHotReloadEnabled": true,
   "UnlockConCommands": true,
   "UnlockConVars": true,
   "CrashHandlerEnabled": true,

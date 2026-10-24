@@ -36,11 +36,14 @@
 
 #include "core/coreconfig.h"
 
+#include "core/configs.h"
+#include "core/permissions.h"
+#include "core/slowguard.h"
 #include "utils/log.h"
 
 #include <tier0_strtools.h>
 
-#include <fstream>
+#include "config_defaults_gen.h"
 
 namespace coreconfig
 {
@@ -50,54 +53,65 @@ namespace coreconfig
     {
         m_sPath = path;
 
-        std::ifstream ifs(std::string(m_sPath + ".json"));
-
-        if (!ifs)
+        std::string error;
+        if (!configs::configsManager.RegisterCore("core", kCoreConfigDefaults, SOURCE2MOD_CONFIG_DEFAULT, this, error))
         {
-            std::ifstream exampleIfs(std::string(m_sPath + ".example.json"));
-
-            if (!exampleIfs)
-            {
-                V_snprintf(conf_error, conf_error_size, "CoreConfig file not found.");
-                return false;
-            }
-
-            FP_INFO("CoreConfig file not found, creating one from example.");
-            std::ofstream ofs(std::string(m_sPath + ".json"));
-            ofs << exampleIfs.rdbuf();
-            ofs.close();
-
-            return Init(path, conf_error, conf_error_size);
-        }
-
-        try
-        {
-            // Comments allowed: it is a file people edit by hand.
-            m_json = json::parse(ifs, nullptr, true, true);
-
-
-            PublicChatTrigger = m_json.value("PublicChatTrigger", PublicChatTrigger);
-            SilentChatTrigger = m_json.value("SilentChatTrigger", SilentChatTrigger);
-            PluginHotReloadEnabled = m_json.value("PluginHotReloadEnabled", PluginHotReloadEnabled);
-            PluginAutoLoadEnabled = m_json.value("PluginAutoLoadEnabled", PluginAutoLoadEnabled);
-            UnlockConCommands = m_json.value("UnlockConCommands", UnlockConCommands);
-            UnlockConVars = m_json.value("UnlockConVars", UnlockConVars);
-            CrashHandlerEnabled = m_json.value("CrashHandlerEnabled", CrashHandlerEnabled);
-            CrashDiscordWebhook = m_json.value("CrashDiscordWebhook", CrashDiscordWebhook);
-            SlowCallbackWarnMs = m_json.value("SlowCallbackWarnMs", SlowCallbackWarnMs);
-            SteamAuthMode = m_json.value("SteamAuthMode", SteamAuthMode);
-            AccessDeniedMessage = m_json.value("AccessDeniedMessage", AccessDeniedMessage);
-            GeoIPDatabase = m_json.value("GeoIPDatabase", GeoIPDatabase);
-            ClientPrefsDatabase = m_json.value("ClientPrefsDatabase", ClientPrefsDatabase);
-            ServerLang = m_json.value("ServerLang", ServerLang);
-        }
-        catch (const std::exception& ex)
-        {
-            V_snprintf(conf_error, conf_error_size, "Failed to parse CoreConfig file: %s", ex.what());
+            V_snprintf(conf_error, conf_error_size, "%s", error.c_str());
             return false;
         }
 
         return true;
+    }
+
+    void CoreConfig::Apply(const nlohmann::ordered_json& data)
+    {
+        PublicChatTrigger = data.value("PublicChatTrigger", PublicChatTrigger);
+        SilentChatTrigger = data.value("SilentChatTrigger", SilentChatTrigger);
+        PluginHotReloadEnabled = data.value("PluginHotReloadEnabled", PluginHotReloadEnabled);
+        PluginAutoLoadEnabled = data.value("PluginAutoLoadEnabled", PluginAutoLoadEnabled);
+        ConfigHotReloadEnabled = data.value("ConfigHotReloadEnabled", ConfigHotReloadEnabled);
+        UnlockConCommands = data.value("UnlockConCommands", UnlockConCommands);
+        UnlockConVars = data.value("UnlockConVars", UnlockConVars);
+        CrashHandlerEnabled = data.value("CrashHandlerEnabled", CrashHandlerEnabled);
+        CrashDiscordWebhook = data.value("CrashDiscordWebhook", CrashDiscordWebhook);
+        SlowCallbackWarnMs = data.value("SlowCallbackWarnMs", SlowCallbackWarnMs);
+        SteamAuthMode = data.value("SteamAuthMode", SteamAuthMode);
+        AccessDeniedMessage = data.value("AccessDeniedMessage", AccessDeniedMessage);
+        GeoIPDatabase = data.value("GeoIPDatabase", GeoIPDatabase);
+        ClientPrefsDatabase = data.value("ClientPrefsDatabase", ClientPrefsDatabase);
+        ServerLang = data.value("ServerLang", ServerLang);
+    }
+
+    void CoreConfig::OnConfigChanged(ISource2ModConfig* config, ConfigChange reason)
+    {
+        const auto& data = static_cast<configs::ConfigFile*>(config)->Data();
+
+        try
+        {
+            if (reason == ConfigChange::Loaded)
+            {
+                Apply(data);
+                return;
+            }
+
+            // Read once at startup: a change waits for the next start.
+            const CoreConfig before = *this;
+            Apply(data);
+
+            if (PluginHotReloadEnabled != before.PluginHotReloadEnabled || PluginAutoLoadEnabled != before.PluginAutoLoadEnabled ||
+                ConfigHotReloadEnabled != before.ConfigHotReloadEnabled || UnlockConCommands != before.UnlockConCommands ||
+                UnlockConVars != before.UnlockConVars || CrashHandlerEnabled != before.CrashHandlerEnabled ||
+                CrashDiscordWebhook != before.CrashDiscordWebhook || GeoIPDatabase != before.GeoIPDatabase ||
+                ClientPrefsDatabase != before.ClientPrefsDatabase || ServerLang != before.ServerLang)
+                FP_WARN("core.json: some of the changed settings take effect after a restart");
+
+            slow::g_flWarnMs = SlowCallbackWarnMs;
+            permissions::permissionsManager.ApplyCoreConfig();
+        }
+        catch (const std::exception& ex)
+        {
+            FP_ERROR("core.json: {}", ex.what());
+        }
     }
 
     const std::string CoreConfig::GetPath() const { return m_sPath; }

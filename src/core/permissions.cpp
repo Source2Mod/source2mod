@@ -39,6 +39,7 @@
 #include "cookies.h"
 #include "pluginmanager.h"
 #include "coreconfig.h"
+#include "configs.h"
 #include "shared.h"
 #include "utils/log.h"
 #include "utils/paths.h"
@@ -46,6 +47,9 @@
 #include <nlohmann/json.hpp>
 #include <tier0/convar.h>
 #include <tier0/icommandline.h>
+#include <tier0_strtools.h>
+
+#include "config_defaults_gen.h"
 
 #include <algorithm>
 #include <cctype>
@@ -436,84 +440,105 @@ namespace permissions
         return value > kSteamID64Base ? value : 0;
     }
 
-    bool PermissionsManager::LoadFile(std::string& error)
+    bool PermissionsManager::Build(const ISource2ModJSONValue* rootValue, Layer& layer,
+                                   std::unordered_map<std::string, std::string>& overrides, std::string& error)
     {
-        namespace fs = std::filesystem;
         using json = nlohmann::json;
 
-        const std::string path = paths::GetConfigsDirectory() + "/permissions.json";
-        const std::string example = paths::GetConfigsDirectory() + "/permissions.example.json";
-
-        std::error_code ec;
-        if (!fs::exists(path, ec) && fs::exists(example, ec))
+        try
         {
-            fs::copy_file(example, path, ec);
-            if (!ec)
-                FP_INFO("permissions.json not found, created it from the example.");
-        }
+            const json root = json::parse(rootValue->Dump());
 
-        Layer layer;
-        std::unordered_map<std::string, std::string> overrides;
-
-        std::ifstream ifs(path);
-        if (ifs)
-        {
-            try
+            if (auto it = root.find("Groups"); it != root.end() && it->is_object())
             {
-                // Comments allowed: it is a file people edit by hand.
-                const json root = json::parse(ifs, nullptr, true, true);
-
-                if (auto it = root.find("Groups"); it != root.end() && it->is_object())
+                for (const auto& [name, def] : it->items())
                 {
-                    for (const auto& [name, def] : it->items())
-                    {
-                        GroupDef& g = layer.groups[Lower(name.c_str())];
-                        for (const auto& p : def.value("Permissions", json::array()))
-                            g.permissions.insert(Lower(p.get<std::string>().c_str()));
-                        for (const auto& p : def.value("Inherits", json::array()))
-                            g.parents.insert(Lower(p.get<std::string>().c_str()));
-                        if (def.contains("Immunity"))
-                            g.immunity = def["Immunity"].get<int>();
-                    }
-                }
-
-                if (auto it = root.find("Admins"); it != root.end() && it->is_object())
-                {
-                    for (const auto& [key, def] : it->items())
-                    {
-                        const uint64 steamId = ParseSteamID(key);
-                        if (!steamId)
-                        {
-                            FP_WARN("permissions.json: '{}' under Admins is not a SteamID, skipped", key);
-                            continue;
-                        }
-
-                        PlayerDef& p = layer.players[steamId];
-                        for (const auto& perm : def.value("Permissions", json::array()))
-                            p.permissions.insert(Lower(perm.get<std::string>().c_str()));
-                        for (const auto& group : def.value("Groups", json::array()))
-                            p.groups.insert(Lower(group.get<std::string>().c_str()));
-                        if (def.contains("Immunity"))
-                            p.immunity = def["Immunity"].get<int>();
-                    }
-                }
-
-                if (auto it = root.find("Overrides"); it != root.end() && it->is_object())
-                {
-                    for (const auto& [command, permission] : it->items())
-                        overrides[Lower(command.c_str())] = Lower(permission.get<std::string>().c_str());
+                    GroupDef& g = layer.groups[Lower(name.c_str())];
+                    for (const auto& p : def.value("Permissions", json::array()))
+                        g.permissions.insert(Lower(p.get<std::string>().c_str()));
+                    for (const auto& p : def.value("Inherits", json::array()))
+                        g.parents.insert(Lower(p.get<std::string>().c_str()));
+                    if (def.contains("Immunity"))
+                        g.immunity = def["Immunity"].get<int>();
                 }
             }
-            catch (const std::exception& ex)
+
+            if (auto it = root.find("Admins"); it != root.end() && it->is_object())
             {
-                error = ex.what();
-                return false;
+                for (const auto& [key, def] : it->items())
+                {
+                    const uint64 steamId = ParseSteamID(key);
+                    if (!steamId)
+                    {
+                        FP_WARN("permissions.json: '{}' under Admins is not a SteamID, skipped", key);
+                        continue;
+                    }
+
+                    PlayerDef& p = layer.players[steamId];
+                    for (const auto& perm : def.value("Permissions", json::array()))
+                        p.permissions.insert(Lower(perm.get<std::string>().c_str()));
+                    for (const auto& group : def.value("Groups", json::array()))
+                        p.groups.insert(Lower(group.get<std::string>().c_str()));
+                    if (def.contains("Immunity"))
+                        p.immunity = def["Immunity"].get<int>();
+                }
+            }
+
+            if (auto it = root.find("Overrides"); it != root.end() && it->is_object())
+            {
+                for (const auto& [command, permission] : it->items())
+                    overrides[Lower(command.c_str())] = Lower(permission.get<std::string>().c_str());
             }
         }
+        catch (const std::exception& ex)
+        {
+            error = ex.what();
+            return false;
+        }
 
-        m_layers[0] = std::move(layer);
-        m_overrides = std::move(overrides);
+        return true;
+    }
+
+    bool PermissionsManager::OnConfigValidate(ISource2ModConfig* config, const ISource2ModJSONValue* root, char* error, size_t maxlen)
+    {
+        m_pendingLayer = Layer();
+        m_pendingOverrides.clear();
+
+        std::string why;
+        if (!Build(root, m_pendingLayer, m_pendingOverrides, why))
+        {
+            V_snprintf(error, maxlen, "%s", why.c_str());
+            return false;
+        }
+        return true;
+    }
+
+    void PermissionsManager::OnConfigChanged(ISource2ModConfig* config, ConfigChange reason)
+    {
+        m_layers[0] = std::move(m_pendingLayer);
+        m_overrides = std::move(m_pendingOverrides);
+        m_pendingLayer = Layer();
+        m_pendingOverrides.clear();
         ChangedAll();
+    }
+
+    bool PermissionsManager::LoadFile(std::string& error)
+    {
+        if (!m_pConfig)
+        {
+            // configs/permissions.json, seeded from the shipped example and
+            // read as written: the example's groups are not merged back in.
+            m_pConfig = configs::configsManager.RegisterCore("permissions", kPermissionsConfigDefaults,
+                                                             SOURCE2MOD_CONFIG_NO_MERGE, this, error);
+            return m_pConfig != nullptr;
+        }
+
+        char why[512] = "";
+        if (!m_pConfig->Reload(why, sizeof(why)))
+        {
+            error = why;
+            return false;
+        }
         return true;
     }
 
@@ -521,10 +546,15 @@ namespace permissions
     Lifecycle
     ========================= */
 
-    void PermissionsManager::Init()
+    void PermissionsManager::ApplyCoreConfig()
     {
         m_authMode = ParseSteamAuthMode(coreconfig::coreConfig.SteamAuthMode);
         m_deniedMessage = coreconfig::coreConfig.AccessDeniedMessage.empty() ? kDefaultDeniedMessage : coreconfig::coreConfig.AccessDeniedMessage;
+    }
+
+    void PermissionsManager::Init()
+    {
+        ApplyCoreConfig();
 
         std::string error;
         if (!LoadFile(error))

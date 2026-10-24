@@ -36,19 +36,25 @@
 
 #pragma once
 
+#include <source2mod/ISource2ModConfigs.h>
+
 #include <nlohmann/json.hpp>
 
 #include <string>
 
 namespace coreconfig
 {
-    class CoreConfig
+    /// configs/core.json, on the configs manager like any plugin's config.
+    class CoreConfig final : public ISource2ModConfigListener
     {
     public:
         std::vector<std::string> PublicChatTrigger = { std::string("!") };
         std::vector<std::string> SilentChatTrigger = { std::string("/") };
         bool PluginHotReloadEnabled = true;
         bool PluginAutoLoadEnabled = true;
+        /// Configs (core.json, permissions.json, plugins' configs) reload
+        /// when their file changes on disk.
+        bool ConfigHotReloadEnabled = true;
         bool UnlockConCommands = true;
         bool UnlockConVars = true;
 
@@ -86,10 +92,12 @@ namespace coreconfig
         /// paths are under addons/source2mod.
         std::string ClientPrefsDatabase = "data/clientprefs.sq3";
 
-        using json = nlohmann::json;
-        /// Reads <path>.json, or <path>.example.json the first time.
+        /// Registers <path>.json (configs/core.json) with the shipped
+        /// core.example.json as its defaults; reads it now and on every change.
         bool Init(const std::string& path, char* conf_error, int conf_error_size);
         const std::string GetPath() const;
+
+        void OnConfigChanged(ISource2ModConfig* config, ConfigChange reason) override;
 
         bool IsSilentChatTrigger(const std::string& message, std::string& prefix) const;
         bool IsPublicChatTrigger(const std::string& message, std::string& prefix) const;
@@ -98,8 +106,9 @@ namespace coreconfig
         bool IsTriggerInternal(std::vector<std::string> triggers, const std::string& message, std::string& prefix) const;
 
     private:
+        void Apply(const nlohmann::ordered_json& data);
+
         std::string m_sPath;
-        json m_json;
     };
 
     extern CoreConfig coreConfig;
