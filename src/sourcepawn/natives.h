@@ -86,6 +86,7 @@ namespace sourcepawn
     const sp_nativeinfo_t* GetApiNatives();           // natives_api.cpp
     const sp_nativeinfo_t* GetClientNatives();        // natives_clients.cpp
     const sp_nativeinfo_t* GetCommandNatives();       // natives_commands.cpp
+    const sp_nativeinfo_t* GetConfigNatives();        // natives_configs.cpp
     const sp_nativeinfo_t* GetConVarNatives();        // natives_convars.cpp
     const sp_nativeinfo_t* GetCookieNatives();        // natives_cookies.cpp
     const sp_nativeinfo_t* GetCustomHudNatives();     // natives_customhud.cpp
