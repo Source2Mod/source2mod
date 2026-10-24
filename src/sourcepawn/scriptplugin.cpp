@@ -19,6 +19,7 @@
 #include "core/convars.h"
 #include "core/pluginmanager.h"
 #include "core/scheduler.h"
+#include "core/pluginapi.h"
 #include "core/shared.h"
 #include "utils/log.h"
 #include "utils/paths.h"
@@ -437,7 +438,7 @@ namespace sourcepawn
         if (late)
         {
             CallForward("Source2Mod_OnAllSource2ModPluginsLoaded");
-            if (shared::getGlobalVars())
+            if (pluginApi.GetGlobalVars())
             {
                 ExecAutoConfig();
                 CallForward("OnAutoConfigsBuffered");

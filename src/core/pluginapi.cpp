@@ -51,6 +51,7 @@
 #include "entities.h"
 #include "events.h"
 #include "features.h"
+#include "gameconfig.h"
 #include "hooks.h"
 #include "gamesystems.h"
 #include "geoip.h"
@@ -303,7 +304,7 @@ namespace
             { SOURCE2MOD_ENTITIES_INTERFACE, &entities::entitiesManager },
             { SOURCE2MOD_EVENTS_INTERFACE, &events::eventManager },
             { SOURCE2MOD_FEATURES_INTERFACE, &features::featuresManager },
-            { SOURCE2MOD_GAMECONFIG_INTERFACE, shared::g_pGameConfig },
+            { SOURCE2MOD_GAMECONFIG_INTERFACE, &gameconfig::gameConfig },
             { SOURCE2MOD_GAMESYSTEMS_INTERFACE, &gamesystems::gameSystemsManager },
             { SOURCE2MOD_GEOIP_INTERFACE, &geoip::geoIpManager },
             { SOURCE2MOD_HOOKS_INTERFACE, &hooks::hooksManager },
@@ -511,7 +512,7 @@ ISource2ModEvents* PluginApi::Events()
 
 ISource2ModGameConfig* PluginApi::GameConfig()
 {
-    return shared::g_pGameConfig;
+    return &gameconfig::gameConfig;
 }
 
 ISource2ModGameSystems* PluginApi::GameSystems()
@@ -668,7 +669,13 @@ CGameEntitySystem* PluginApi::GetEntitySystem()
 
 CGlobalVars* PluginApi::GetGlobalVars()
 {
-    return shared::getGlobalVars();
+    // The engine owns it and hands out a new one when the server is
+    // created again (map change, server restart): asked every time, so a
+    // stale pointer is never returned.
+    if (g_pEngineServer)
+        shared::g_pGlobalVars = g_pEngineServer->GetServerGlobals();
+
+    return shared::g_pGlobalVars;
 }
 
 const char* PluginApi::GetBaseDir()

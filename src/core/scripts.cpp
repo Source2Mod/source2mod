@@ -240,7 +240,7 @@ namespace scripts
         if (m_bComponentChecked)
             return m_nComponentOffset >= 0;
 
-        return m_pComponentVTable || shared::g_pGameConfig->GetOffset("CCSPointScriptEntity::ScriptComponent") >= 0;
+        return m_pComponentVTable || gameconfig::gameConfig.GetOffset("CCSPointScriptEntity::ScriptComponent") >= 0;
     }
 
     void* ScriptsManager::GetScriptComponent(CBaseEntity* pEntity)
@@ -249,7 +249,7 @@ namespace scripts
         {
             m_bComponentChecked = true;
 
-            const int gamedataOffset = shared::g_pGameConfig->GetOffset("CCSPointScriptEntity::ScriptComponent");
+            const int gamedataOffset = gameconfig::gameConfig.GetOffset("CCSPointScriptEntity::ScriptComponent");
 
             if (!m_pComponentVTable)
             {

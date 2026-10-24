@@ -48,6 +48,7 @@
 #include "core/permissions.h"
 #include "core/plugin.h"
 #include "core/scheduler.h"
+#include "core/coreconfig.h"
 #include "core/shared.h"
 #include "customhud.h"
 #include "entities.h"
@@ -702,7 +703,7 @@ bool PluginManager::LoadAll()
 {
     namespace fs = std::filesystem;
 
-    if (!shared::g_pCoreConfig->PluginAutoLoadEnabled)
+    if (!coreconfig::coreConfig.PluginAutoLoadEnabled)
     {
         m_bStartupLoadDone = true;
         return true;
@@ -883,7 +884,7 @@ namespace
 
 void PluginManager::StartFileWatcher()
 {
-    if (!shared::g_pCoreConfig->PluginHotReloadEnabled)
+    if (!coreconfig::coreConfig.PluginHotReloadEnabled)
         return;
 
     m_stopWatcher = false;

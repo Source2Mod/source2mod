@@ -54,6 +54,9 @@
 #include "plugin.h"
 #include "pluginmanager.h"
 #include "scripts.h"
+#include "gameconfig.h"
+#include "coreconfig.h"
+#include "pluginapi.h"
 #include "shared.h"
 #include "slotinput.h"
 #include "sounds.h"
@@ -173,7 +176,7 @@ namespace virtualhooks
     template <typename HOOK>
     static void ResolveIndex(HOOK* hook, const char* pszName)
     {
-        const int index = shared::g_pGameConfig ? shared::g_pGameConfig->GetOffset(pszName) : -1;
+        const int index = gameconfig::gameConfig.GetOffset(pszName);
 
         if (index < 0)
         {
@@ -379,7 +382,7 @@ namespace virtualhooks
         // change) are spawned again here, never inside the deletion itself.
         scripts::scriptsManager.OnGameFrame(simulating);
 
-        if (shared::getGlobalVars())
+        if (pluginApi.GetGlobalVars())
             g_bHasTicked = true;
 
         // Players Steam validated since the last frame, and permission changes
@@ -546,10 +549,10 @@ namespace virtualhooks
                 std::string prefix;
 
                 bool isPublic =
-                    shared::g_pCoreConfig->IsPublicChatTrigger(message, prefix);
+                    coreconfig::coreConfig.IsPublicChatTrigger(message, prefix);
 
                 bool isSilent =
-                    shared::g_pCoreConfig->IsSilentChatTrigger(message, prefix);
+                    coreconfig::coreConfig.IsSilentChatTrigger(message, prefix);
 
                 std::string cleaned;
                 CCommand parsed;

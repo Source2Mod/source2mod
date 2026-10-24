@@ -256,7 +256,7 @@ namespace slotinput {
         UpdateSubclassVData_t GetUpdateSubclassVData()
         {
             static UpdateSubclassVData_t fn = [] {
-                UpdateSubclassVData_t found = shared::g_pGameConfig ? shared::g_pGameConfig->ResolveSignature("CBaseEntity::UpdateSubclassVData").RCast<UpdateSubclassVData_t>() : nullptr;
+                UpdateSubclassVData_t found = gameconfig::gameConfig.ResolveSignature("CBaseEntity::UpdateSubclassVData").RCast<UpdateSubclassVData_t>();
                 if (!found)
                     FP_ERROR("SlotInput: gamedata signature CBaseEntity::UpdateSubclassVData not found; menu keys need binds");
                 return found;

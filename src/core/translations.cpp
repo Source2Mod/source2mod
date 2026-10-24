@@ -181,7 +181,7 @@ namespace translations
             if (LanguageByCode(code.c_str()) < 0)
                 m_languages.push_back({ code, name });
 
-        const std::string serverLang = shared::g_pCoreConfig ? shared::g_pCoreConfig->ServerLang : std::string("en");
+        const std::string serverLang = coreconfig::coreConfig.ServerLang;
         m_serverLanguage = std::max(0, LanguageByCode(serverLang.c_str()));
     }
 

@@ -35,6 +35,7 @@
  */
 #include "addresses.h"
 
+#include "gameconfig.h"
 #include "shared.h"
 
 namespace addresses
@@ -45,8 +46,8 @@ namespace addresses
     {
         // The module comes from the entry's "library" field, so tier0 and
         // engine2 entries need no interface pointer to stand in for them.
-        DynLibUtils::CModule* pModule = shared::g_pGameConfig->GetModule(pszName);
-        const char* pszSignature = shared::g_pGameConfig->GetSignature(pszName);
+        DynLibUtils::CModule* pModule = gameconfig::gameConfig.GetModule(pszName);
+        const char* pszSignature = gameconfig::gameConfig.GetSignature(pszName);
         if (!pModule || !pszSignature)
             return {};
 
@@ -54,7 +55,7 @@ namespace addresses
         // (ISource2ModFunctions::Find) resolves the same name again, and a
         // scan of libserver takes over 10 ms.
         DynLibUtils::CMemory address = pModule->FindPattern(DynLibUtils::ParsePattern(pszSignature));
-        shared::g_pGameConfig->RememberAddress(pszName, address.GetPtr());
+        gameconfig::gameConfig.RememberAddress(pszName, address.GetPtr());
         return address;
     }
 

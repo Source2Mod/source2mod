@@ -49,6 +49,7 @@
 #include "crashhandler.h"
 
 #include "http.h"
+#include "coreconfig.h"
 #include "shared.h"
 #include "sourcepawn/crashinfo.h"
 #include "utils/log.h"
@@ -1185,7 +1186,7 @@ namespace crashhandler
 
     void Init()
     {
-        if (!shared::g_pCoreConfig->CrashHandlerEnabled)
+        if (!coreconfig::coreConfig.CrashHandlerEnabled)
         {
             FP_INFO("Crash handler disabled by CrashHandlerEnabled.");
             return;
@@ -1215,7 +1216,7 @@ namespace crashhandler
         snprintf(s_szPendingCrashPath, sizeof(s_szPendingCrashPath), "%s/pending.state", s_szDumpStoragePath);
         snprintf(s_szSessionStatePath, sizeof(s_szSessionStatePath), "%s/session.state", s_szDumpStoragePath);
 
-        strncpy(s_szDiscordWebhook, shared::g_pCoreConfig->CrashDiscordWebhook.c_str(), sizeof(s_szDiscordWebhook) - 1);
+        strncpy(s_szDiscordWebhook, coreconfig::coreConfig.CrashDiscordWebhook.c_str(), sizeof(s_szDiscordWebhook) - 1);
 
         if (!s_szDiscordWebhook[0])
             FP_INFO("CrashDiscordWebhook is empty, Discord crash reporting disabled.");

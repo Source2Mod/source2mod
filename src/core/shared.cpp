@@ -48,13 +48,6 @@ namespace shared
     IGameEventManager2* g_pGameEventManager = nullptr;
 
     CGlobalVars* g_pGlobalVars = nullptr;
-    CCoreConfig* g_pCoreConfig = nullptr;
-    CGameConfig* g_pGameConfig = nullptr;
     CCSGameRules* g_pGameRules = nullptr;
 
-    CGlobalVars *getGlobalVars() {
-        if (!g_pEngineServer) return g_pGlobalVars;
-        g_pGlobalVars = g_pEngineServer->GetServerGlobals();
-        return g_pGlobalVars;
-    }
 }

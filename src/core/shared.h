@@ -34,9 +34,6 @@
  * Project: Source2Mod
  */
 #pragma once
-#include "coreconfig.h"
-#include "gameconfig.h"
-
 #include <engine2/igameeventsystem.h>
 #include <engine2/isource2server.h>
 #include <engine2/ivengineserver2.h>
@@ -67,9 +64,6 @@ namespace shared
     extern IGameEventManager2* g_pGameEventManager;
 
     extern CGlobalVars* g_pGlobalVars;
-    extern CCoreConfig* g_pCoreConfig;
-    extern CGameConfig* g_pGameConfig;
     extern CCSGameRules* g_pGameRules;
 
-    CGlobalVars* getGlobalVars();
 }

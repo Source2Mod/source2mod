@@ -144,7 +144,7 @@ namespace geoip
 
     void GeoIPManager::Init()
     {
-        std::string configured = shared::g_pCoreConfig ? shared::g_pCoreConfig->GeoIPDatabase : std::string();
+        std::string configured = coreconfig::coreConfig.GeoIPDatabase;
         if (configured.empty())
             configured = "shared/GeoLite2-City.mmdb";
 

@@ -193,9 +193,7 @@ namespace sourcepawn
         // FromGameConfig(const char[] name, Source2ModType returnType)
         cell_t N_FnFromGameConfig(IPluginContext* ctx, const cell_t* params)
         {
-            if (!shared::g_pGameConfig)
-                return 0;
-            const uintptr_t addr = shared::g_pGameConfig->ResolveSignature(LocalString(ctx, params[1])).GetAddr();
+            const uintptr_t addr = gameconfig::gameConfig.ResolveSignature(LocalString(ctx, params[1])).GetAddr();
             return addr ? NewFunction(ctx, reinterpret_cast<void*>(addr), nullptr, -1, params[2]) : 0;
         }
 

@@ -98,32 +98,32 @@ namespace sourcepawn
 
         cell_t N_GCGetLibrary(IPluginContext* ctx, const cell_t* params)
         {
-            return shared::g_pGameConfig ? ToBuffer(ctx, params[2], params[3], shared::g_pGameConfig->GetLibrary(LocalString(ctx, params[1]))) : 0;
+            return ToBuffer(ctx, params[2], params[3], gameconfig::gameConfig.GetLibrary(LocalString(ctx, params[1])));
         }
 
         cell_t N_GCGetSignature(IPluginContext* ctx, const cell_t* params)
         {
-            return shared::g_pGameConfig ? ToBuffer(ctx, params[2], params[3], shared::g_pGameConfig->GetSignature(LocalString(ctx, params[1]))) : 0;
+            return ToBuffer(ctx, params[2], params[3], gameconfig::gameConfig.GetSignature(LocalString(ctx, params[1])));
         }
 
         cell_t N_GCGetSymbol(IPluginContext* ctx, const cell_t* params)
         {
-            return shared::g_pGameConfig ? ToBuffer(ctx, params[2], params[3], shared::g_pGameConfig->GetSymbol(LocalString(ctx, params[1]))) : 0;
+            return ToBuffer(ctx, params[2], params[3], gameconfig::gameConfig.GetSymbol(LocalString(ctx, params[1])));
         }
 
         cell_t N_GCGetPatch(IPluginContext* ctx, const cell_t* params)
         {
-            return shared::g_pGameConfig ? ToBuffer(ctx, params[2], params[3], shared::g_pGameConfig->GetPatch(LocalString(ctx, params[1]))) : 0;
+            return ToBuffer(ctx, params[2], params[3], gameconfig::gameConfig.GetPatch(LocalString(ctx, params[1])));
         }
 
         cell_t N_GCGetOffset(IPluginContext* ctx, const cell_t* params)
         {
-            return shared::g_pGameConfig ? shared::g_pGameConfig->GetOffset(LocalString(ctx, params[1])) : -1;
+            return gameconfig::gameConfig.GetOffset(LocalString(ctx, params[1]));
         }
 
         cell_t N_GCIsSymbol(IPluginContext* ctx, const cell_t* params)
         {
-            return shared::g_pGameConfig && shared::g_pGameConfig->IsSymbol(LocalString(ctx, params[1]));
+            return gameconfig::gameConfig.IsSymbol(LocalString(ctx, params[1]));
         }
 
         cell_t N_GCGetPlatform(IPluginContext*, const cell_t*)
@@ -138,7 +138,7 @@ namespace sourcepawn
         // Resolves(const char[] name): the entry's signature or symbol is found.
         cell_t N_GCResolves(IPluginContext* ctx, const cell_t* params)
         {
-            return shared::g_pGameConfig && shared::g_pGameConfig->ResolveSignature(LocalString(ctx, params[1])).GetAddr() != 0;
+            return gameconfig::gameConfig.ResolveSignature(LocalString(ctx, params[1])).GetAddr() != 0;
         }
 
         // SignatureMatches(const char[] module, const char[] signature, const char[] section = "")

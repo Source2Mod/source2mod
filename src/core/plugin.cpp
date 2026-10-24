@@ -61,6 +61,7 @@
 #include "raytrace.h"
 #include "scripts.h"
 #include "slotinput.h"
+#include "coreconfig.h"
 #include "shared.h"
 #include "slowguard.h"
 #include "sounds.h"
@@ -130,12 +131,11 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
     paths::EnsureLayout();
 
     auto coreconfig_path = std::string(paths::GetConfigsDirectory() + "/core");
-    shared::g_pCoreConfig = new CCoreConfig(coreconfig_path);
     char coreconfig_error[255] = "";
 
-    if (!shared::g_pCoreConfig->Init(coreconfig_error, sizeof(coreconfig_error)))
+    if (!coreconfig::coreConfig.Init(coreconfig_path, coreconfig_error, sizeof(coreconfig_error)))
     {
-        FP_ERROR("Failed to load CCoreConfig. Could not read \'{}\'. Error: {}", coreconfig_path, coreconfig_error);
+        FP_ERROR("Failed to load the core config. Could not read \'{}\'. Error: {}", coreconfig_path, coreconfig_error);
         return false;
     }
 
@@ -144,12 +144,11 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
     crashhandler::Init();
 
     auto gamedata_folder = paths::GetGamedataDirectory();
-    shared::g_pGameConfig = new CGameConfig(gamedata_folder);
     char conf_error[255] = {};
 
-    if (!shared::g_pGameConfig->InitAll(gamedata_folder, conf_error, sizeof(conf_error)))
+    if (!gameconfig::gameConfig.InitAll(gamedata_folder, conf_error, sizeof(conf_error)))
     {
-        FP_ERROR("Failed to load CGameConfig. Error: {}", conf_error);
+        FP_ERROR("Failed to load the gamedata. Error: {}", conf_error);
         return false;
     }
 
@@ -185,7 +184,7 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
 
     commands::InitCommands();
     slotinput::Init();
-    slow::g_flWarnMs = shared::g_pCoreConfig->SlowCallbackWarnMs;
+    slow::g_flWarnMs = coreconfig::coreConfig.SlowCallbackWarnMs;
 
     // Before plugins load: their Load() may already grant and check.
     permissions::permissionsManager.Init();

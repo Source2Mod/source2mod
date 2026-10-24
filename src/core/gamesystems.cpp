@@ -62,7 +62,7 @@ namespace gamesystems
         // the address of the next instruction.
         auto& mod = addresses::source2modAddresses.GetOrLoadModule(g_pSource2Server);
         auto addr = mod.FindPattern(
-            DynLibUtils::ParsePattern(shared::g_pGameConfig->GetSignature("IGameSystem::InitAllSystems->pFirst")));
+            DynLibUtils::ParsePattern(gameconfig::gameConfig.GetSignature("IGameSystem::InitAllSystems->pFirst")));
 
         auto* pInstruction = addr.RCast<uint8*>();
 

@@ -35,6 +35,7 @@
  */
 #include "scheduler.h"
 
+#include "pluginapi.h"
 #include "shared.h"
 #include "slowguard.h"
 #include "tkvprof.h"
@@ -218,7 +219,7 @@ namespace scheduler
         // goes back. curtime starts again at every map while timers outlive
         // maps, so a step backwards (or the first frame) counts as one frame.
         // g_dLastTickTime is the curtime of the last frame, 0 before the first.
-        CGlobalVars* globals = shared::getGlobalVars();
+        CGlobalVars* globals = pluginApi.GetGlobalVars();
         if (simulating && globals)
         {
             const double now = globals->curtime;

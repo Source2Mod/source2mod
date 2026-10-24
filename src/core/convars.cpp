@@ -37,6 +37,7 @@
 
 #include "hookid.h"
 #include "pluginapi.h"
+#include "coreconfig.h"
 #include "shared.h"
 #include "utils/log.h"
 
@@ -518,7 +519,7 @@ namespace convars
 
     void ConVarsManager::UnlockConVars()
     {
-        if (shared::g_pCoreConfig->UnlockConVars)
+        if (coreconfig::coreConfig.UnlockConVars)
         {
             for (ConVarRefAbstract ref(ConVarRef((uint16)0)); ref.IsValidRef(); ref = ConVarRefAbstract(ConVarRef(ref.GetAccessIndex() + 1)))
             {

@@ -42,85 +42,88 @@
 
 #include <fstream>
 
-CCoreConfig::CCoreConfig(const std::string& path) { m_sPath = path; }
-
-CCoreConfig::~CCoreConfig() = default;
-
-bool CCoreConfig::Init(char* conf_error, int conf_error_size)
+namespace coreconfig
 {
-    std::ifstream ifs(std::string(m_sPath + ".json"));
+    CoreConfig coreConfig;
 
-    if (!ifs)
+    bool CoreConfig::Init(const std::string& path, char* conf_error, int conf_error_size)
     {
-        std::ifstream exampleIfs(std::string(m_sPath + ".example.json"));
+        m_sPath = path;
 
-        if (!exampleIfs)
+        std::ifstream ifs(std::string(m_sPath + ".json"));
+
+        if (!ifs)
         {
-            V_snprintf(conf_error, conf_error_size, "CoreConfig file not found.");
+            std::ifstream exampleIfs(std::string(m_sPath + ".example.json"));
+
+            if (!exampleIfs)
+            {
+                V_snprintf(conf_error, conf_error_size, "CoreConfig file not found.");
+                return false;
+            }
+
+            FP_INFO("CoreConfig file not found, creating one from example.");
+            std::ofstream ofs(std::string(m_sPath + ".json"));
+            ofs << exampleIfs.rdbuf();
+            ofs.close();
+
+            return Init(path, conf_error, conf_error_size);
+        }
+
+        try
+        {
+            // Comments allowed: it is a file people edit by hand.
+            m_json = json::parse(ifs, nullptr, true, true);
+
+
+            PublicChatTrigger = m_json.value("PublicChatTrigger", PublicChatTrigger);
+            SilentChatTrigger = m_json.value("SilentChatTrigger", SilentChatTrigger);
+            PluginHotReloadEnabled = m_json.value("PluginHotReloadEnabled", PluginHotReloadEnabled);
+            PluginAutoLoadEnabled = m_json.value("PluginAutoLoadEnabled", PluginAutoLoadEnabled);
+            UnlockConCommands = m_json.value("UnlockConCommands", UnlockConCommands);
+            UnlockConVars = m_json.value("UnlockConVars", UnlockConVars);
+            CrashHandlerEnabled = m_json.value("CrashHandlerEnabled", CrashHandlerEnabled);
+            CrashDiscordWebhook = m_json.value("CrashDiscordWebhook", CrashDiscordWebhook);
+            SlowCallbackWarnMs = m_json.value("SlowCallbackWarnMs", SlowCallbackWarnMs);
+            SteamAuthMode = m_json.value("SteamAuthMode", SteamAuthMode);
+            AccessDeniedMessage = m_json.value("AccessDeniedMessage", AccessDeniedMessage);
+            GeoIPDatabase = m_json.value("GeoIPDatabase", GeoIPDatabase);
+            ClientPrefsDatabase = m_json.value("ClientPrefsDatabase", ClientPrefsDatabase);
+            ServerLang = m_json.value("ServerLang", ServerLang);
+        }
+        catch (const std::exception& ex)
+        {
+            V_snprintf(conf_error, conf_error_size, "Failed to parse CoreConfig file: %s", ex.what());
             return false;
         }
 
-        FP_INFO("CoreConfig file not found, creating one from example.");
-        std::ofstream ofs(std::string(m_sPath + ".json"));
-        ofs << exampleIfs.rdbuf();
-        ofs.close();
-
-        return Init(conf_error, conf_error_size);
+        return true;
     }
 
-    try
-    {
-        // Comments allowed: it is a file people edit by hand.
-        m_json = json::parse(ifs, nullptr, true, true);
+    const std::string CoreConfig::GetPath() const { return m_sPath; }
 
-
-        PublicChatTrigger = m_json.value("PublicChatTrigger", PublicChatTrigger);
-        SilentChatTrigger = m_json.value("SilentChatTrigger", SilentChatTrigger);
-        PluginHotReloadEnabled = m_json.value("PluginHotReloadEnabled", PluginHotReloadEnabled);
-        PluginAutoLoadEnabled = m_json.value("PluginAutoLoadEnabled", PluginAutoLoadEnabled);
-        UnlockConCommands = m_json.value("UnlockConCommands", UnlockConCommands);
-        UnlockConVars = m_json.value("UnlockConVars", UnlockConVars);
-        CrashHandlerEnabled = m_json.value("CrashHandlerEnabled", CrashHandlerEnabled);
-        CrashDiscordWebhook = m_json.value("CrashDiscordWebhook", CrashDiscordWebhook);
-        SlowCallbackWarnMs = m_json.value("SlowCallbackWarnMs", SlowCallbackWarnMs);
-        SteamAuthMode = m_json.value("SteamAuthMode", SteamAuthMode);
-        AccessDeniedMessage = m_json.value("AccessDeniedMessage", AccessDeniedMessage);
-        GeoIPDatabase = m_json.value("GeoIPDatabase", GeoIPDatabase);
-        ClientPrefsDatabase = m_json.value("ClientPrefsDatabase", ClientPrefsDatabase);
-        ServerLang = m_json.value("ServerLang", ServerLang);
-    }
-    catch (const std::exception& ex)
+    bool CoreConfig::IsTriggerInternal(std::vector<std::string> triggers, const std::string& message,
+                                        std::string& prefix) const
     {
-        V_snprintf(conf_error, conf_error_size, "Failed to parse CoreConfig file: %s", ex.what());
+        for (std::string& trigger : triggers)
+        {
+            if (message.rfind(trigger, 0) == 0)
+            {
+                prefix = trigger;
+                return true;
+            }
+        }
+
         return false;
     }
 
-    return true;
-}
-
-const std::string CCoreConfig::GetPath() const { return m_sPath; }
-
-bool CCoreConfig::IsTriggerInternal(std::vector<std::string> triggers, const std::string& message,
-                                    std::string& prefix) const
-{
-    for (std::string& trigger : triggers)
+    bool CoreConfig::IsSilentChatTrigger(const std::string& message, std::string& prefix) const
     {
-        if (message.rfind(trigger, 0) == 0)
-        {
-            prefix = trigger;
-            return true;
-        }
+        return IsTriggerInternal(SilentChatTrigger, message, prefix);
     }
 
-    return false;
-}
-
-bool CCoreConfig::IsSilentChatTrigger(const std::string& message, std::string& prefix) const
-{
-    return IsTriggerInternal(SilentChatTrigger, message, prefix);
-}
-
-bool CCoreConfig::IsPublicChatTrigger(const std::string& message, std::string& prefix) const
-{
-    return IsTriggerInternal(PublicChatTrigger, message, prefix);
+    bool CoreConfig::IsPublicChatTrigger(const std::string& message, std::string& prefix) const
+    {
+        return IsTriggerInternal(PublicChatTrigger, message, prefix);
+    }
 }

@@ -43,6 +43,7 @@
 #include "pluginapi.h"
 #include "pluginmanager.h"
 #include "raytrace.h"
+#include "coreconfig.h"
 #include "shared.h"
 #include "slotinput.h"
 #include "slowguard.h"
@@ -912,7 +913,7 @@ namespace commands {
 
     void CommandsManager::UnlockConCommands()
     {
-        if (shared::g_pCoreConfig->UnlockConCommands)
+        if (coreconfig::coreConfig.UnlockConCommands)
         {
             ConCommandData* data = g_pCVar->GetConCommandData(ConCommandRef());
             for (ConCommandRef ref = ConCommandRef((uint16)0); ref.GetRawData() != data; ref = ConCommandRef(ref.GetAccessIndex() + 1))

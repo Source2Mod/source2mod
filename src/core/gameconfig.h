@@ -44,58 +44,60 @@
 
 #undef snprintf
 
-class CGameConfig : public ISource2ModGameConfig
+namespace gameconfig
 {
-public:
-    using json = nlohmann::json;
-    CGameConfig(const std::string& path);
-    ~CGameConfig();
+    class GameConfig : public ISource2ModGameConfig
+    {
+    public:
+        using json = nlohmann::json;
+        bool LoadSingle(const std::string& path, char* conf_error, int conf_error_size);
+        bool InitAll(const std::string& folder, char* conf_error, int conf_error_size);
+        const std::string GetPath();
+        const char* GetLibrary(const char* pchName) override;
+        const char* GetSignature(const char* pchName) override;
+        const char* GetSymbol(const char* pchName) override;
+        const char* GetPatch(const char* pchName) override;
 
-    bool LoadSingle(const std::string& path, char* conf_error, int conf_error_size);
-    bool InitAll(const std::string& folder, char* conf_error, int conf_error_size);
-    const std::string GetPath();
-    const char* GetLibrary(const char* pchName) override;
-    const char* GetSignature(const char* pchName) override;
-    const char* GetSymbol(const char* pchName) override;
-    const char* GetPatch(const char* pchName) override;
+    public:
+        /// Whether the gamedata entry is a symbol (an "@"-prefixed name) rather
+        /// than a byte pattern.
+        bool IsSymbol(const char* pchName) override;
 
-public:
-    /// Whether the gamedata entry is a symbol (an "@"-prefixed name) rather
-    /// than a byte pattern.
-    bool IsSymbol(const char* pchName) override;
+        /// The module named by the entry's "library" field, loaded on first use.
+        /// Null when the entry names no library, or one that is not loaded.
+        DynLibUtils::CModule* GetModule(const char* pchName);
 
-    /// The module named by the entry's "library" field, loaded on first use.
-    /// Null when the entry names no library, or one that is not loaded.
-    DynLibUtils::CModule* GetModule(const char* pchName);
+        /// Resolves a gamedata entry to an address: by exported symbol when the
+        /// entry is "@"-prefixed, by pattern scan otherwise.
+        ISource2ModMemory ResolveSignature(const char* pchName) override;
 
-    /// Resolves a gamedata entry to an address: by exported symbol when the
-    /// entry is "@"-prefixed, by pattern scan otherwise.
-    ISource2ModMemory ResolveSignature(const char* pchName) override;
+        /// Keeps an address found by a scan of its own (addresses::FindSignature),
+        /// so a later ResolveSignature of the name does not scan again.
+        void RememberAddress(const char* pchName, void* pAddress);
 
-    /// Keeps an address found by a scan of its own (addresses::FindSignature),
-    /// so a later ResolveSignature of the name does not scan again.
-    void RememberAddress(const char* pchName, void* pAddress);
+        int GetOffset(const char* pchName) override;
 
-    int GetOffset(const char* pchName) override;
+        /// The entry's "function" object (ISource2ModFunctions.h), or null.
+        const json* GetFunction(const char* pchName) const;
 
-    /// The entry's "function" object (ISource2ModFunctions.h), or null.
-    const json* GetFunction(const char* pchName) const;
+        /// Whether the entry has a pattern or symbol (as opposed to an offset).
+        bool HasSignature(const char* pchName) const;
 
-    /// Whether the entry has a pattern or symbol (as opposed to an offset).
-    bool HasSignature(const char* pchName) const;
+    private:
+        std::string m_sPath;
+        // use Valve KeyValues in the future.
+        // since we'd better make '\' easier.
+        json m_json;
+        std::unordered_map<std::string, int> m_umOffsets;
+        std::unordered_map<std::string, std::string> m_umSignatures;
+        std::unordered_map<std::string, void*> m_umAddresses;
+        std::unordered_map<std::string, std::string> m_umLibraries;
+        std::unordered_map<std::string, std::string> m_umPatches;
+        std::unordered_map<std::string, json> m_umFunctions;
 
-private:
-    std::string m_sPath;
-    // use Valve KeyValues in the future.
-    // since we'd better make '\' easier.
-    json m_json;
-    std::unordered_map<std::string, int> m_umOffsets;
-    std::unordered_map<std::string, std::string> m_umSignatures;
-    std::unordered_map<std::string, void*> m_umAddresses;
-    std::unordered_map<std::string, std::string> m_umLibraries;
-    std::unordered_map<std::string, std::string> m_umPatches;
-    std::unordered_map<std::string, json> m_umFunctions;
+        /// Modules loaded on demand by GetModule, keyed by library name.
+        std::unordered_map<std::string, DynLibUtils::CModule> m_umModules;
+    };
 
-    /// Modules loaded on demand by GetModule, keyed by library name.
-    std::unordered_map<std::string, DynLibUtils::CModule> m_umModules;
-};
+    extern GameConfig gameConfig;
+}

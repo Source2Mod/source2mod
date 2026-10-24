@@ -27,6 +27,7 @@
 
 #include "core/events.h"
 #include "core/scheduler.h"
+#include "core/pluginapi.h"
 #include "core/shared.h"
 #include "utils/log.h"
 #include "utils/paths.h"
@@ -210,9 +211,10 @@ namespace maps
     const char* MapsManager::GetCurrentMap()
     {
         // Loaded mid-map: the level was initialised before the core was there.
-        if (m_current.empty() && shared::g_pGlobalVars)
+        CGlobalVars* globals = pluginApi.GetGlobalVars();
+        if (m_current.empty() && globals)
         {
-            if (const char* name = shared::g_pGlobalVars->mapname.ToCStr(); name && *name)
+            if (const char* name = globals->mapname.ToCStr(); name && *name)
                 m_current = name;
         }
         return m_current.c_str();

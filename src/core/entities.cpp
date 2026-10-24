@@ -39,6 +39,7 @@
 #include "commands.h"
 #include "events.h"
 #include "inlinehooks.h"
+#include "gameconfig.h"
 #include "shared.h"
 
 #include <source2mod/schema/entity/classes/CBaseEntity.h>
@@ -64,7 +65,7 @@ namespace entities
 
     CBaseEntity* EntitiesManager::FindPickerEntity(CBasePlayerController* pPlayer, CCSGameRules* pGameRules)
     {
-        static int offset = shared::g_pGameConfig->GetOffset("CGameRules::FindPickerEntity");
+        static int offset = gameconfig::gameConfig.GetOffset("CGameRules::FindPickerEntity");
         auto* gr = pGameRules ? pGameRules : shared::g_pGameRules;
         return CALL_VIRTUAL(CBaseEntity*, offset, gr, pPlayer ? pPlayer : nullptr, nullptr);
     }

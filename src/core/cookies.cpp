@@ -121,7 +121,7 @@ namespace cookies
 
     void CookiesManager::Init()
     {
-        std::string configured = shared::g_pCoreConfig ? shared::g_pCoreConfig->ClientPrefsDatabase : std::string();
+        std::string configured = coreconfig::coreConfig.ClientPrefsDatabase;
         if (configured.empty())
             configured = "data/clientprefs.sq3";
 

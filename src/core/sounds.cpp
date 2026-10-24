@@ -36,6 +36,8 @@
 #include "sounds.h"
 
 #include "plugin.h"
+#include "gameconfig.h"
+#include "pluginapi.h"
 #include "shared.h"
 #include "utils/log.h"
 
@@ -479,7 +481,7 @@ namespace sounds
 
     void SoundsManager::Init()
     {
-        m_nTakeGuidOffset = shared::g_pGameConfig ? shared::g_pGameConfig->GetOffset("CSoundSystem::TakeGuid") : -1;
+        m_nTakeGuidOffset = gameconfig::gameConfig.GetOffset("CSoundSystem::TakeGuid");
 
         if (!g_pSoundSystem || m_nTakeGuidOffset < 0)
             FP_WARN("Sounds: {} not available, sound guids come from a private counter", !g_pSoundSystem ? SOUNDSYSTEM_INTERFACE_VERSION : "CSoundSystem::TakeGuid");
@@ -511,7 +513,7 @@ namespace sounds
     {
         SoundRecipients mask = SOUND_RECIPIENTS_NONE;
 
-        CGlobalVars* globals = shared::getGlobalVars();
+        CGlobalVars* globals = pluginApi.GetGlobalVars();
         const int maxClients = globals ? std::min(globals->maxClients, 64) : 0;
 
         // A net channel is what tells a player from a bot: a sound message has

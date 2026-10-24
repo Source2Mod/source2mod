@@ -38,6 +38,7 @@
 #include "commands.h"
 #include "cookies.h"
 #include "pluginmanager.h"
+#include "coreconfig.h"
 #include "shared.h"
 #include "utils/log.h"
 #include "utils/paths.h"
@@ -522,8 +523,8 @@ namespace permissions
 
     void PermissionsManager::Init()
     {
-        m_authMode = ParseSteamAuthMode(shared::g_pCoreConfig->SteamAuthMode);
-        m_deniedMessage = shared::g_pCoreConfig->AccessDeniedMessage.empty() ? kDefaultDeniedMessage : shared::g_pCoreConfig->AccessDeniedMessage;
+        m_authMode = ParseSteamAuthMode(coreconfig::coreConfig.SteamAuthMode);
+        m_deniedMessage = coreconfig::coreConfig.AccessDeniedMessage.empty() ? kDefaultDeniedMessage : coreconfig::coreConfig.AccessDeniedMessage;
 
         std::string error;
         if (!LoadFile(error))

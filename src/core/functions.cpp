@@ -272,7 +272,7 @@ namespace functions
             return it->second.get();
 
         auto& slot = byName_[name];
-        CGameConfig* config = shared::g_pGameConfig;
+        gameconfig::GameConfig* config = &gameconfig::gameConfig;
         const nlohmann::json* d = config ? config->GetFunction(name) : nullptr;
         if (!d)
         {
@@ -358,7 +358,7 @@ namespace functions
 
     ISource2ModFunction* FunctionsManager::FromGameConfig(PluginId owner, const char* name, const FunctionTypes& types)
     {
-        CGameConfig* config = shared::g_pGameConfig;
+        gameconfig::GameConfig* config = &gameconfig::gameConfig;
         if (!config || !name)
             return nullptr;
         if (config->HasSignature(name))

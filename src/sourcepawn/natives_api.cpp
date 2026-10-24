@@ -42,6 +42,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
+#include "core/pluginapi.h"
 #include "core/shared.h"
 
 #include <source2mod/ISource2ModScheduler.h>
@@ -70,7 +71,7 @@ namespace sourcepawn
 
         CGlobalVars* Globals(IPluginContext* ctx)
         {
-            CGlobalVars* globals = shared::getGlobalVars();
+            CGlobalVars* globals = pluginApi.GetGlobalVars();
             if (!globals)
                 ctx->ThrowNativeError("The global variables are not available yet");
             return globals;

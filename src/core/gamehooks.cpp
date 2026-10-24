@@ -48,6 +48,7 @@
 
 #include "dynlibutils/module.hpp"
 #include "source2mod/ISource2ModKHook.h"
+#include "gameconfig.h"
 #include "shared.h"
 #include "tkvprof.h"
 #include "utils/log.h"
@@ -375,7 +376,7 @@ namespace gamehooks
                 if (m_address)
                     return true;
 
-                const ISource2ModMemory address = shared::g_pGameConfig ? shared::g_pGameConfig->ResolveSignature(this->m_pszName) : ISource2ModMemory();
+                const ISource2ModMemory address = gameconfig::gameConfig.ResolveSignature(this->m_pszName);
                 if (!address)
                 {
                     if (!this->m_bWarned)
@@ -442,7 +443,7 @@ namespace gamehooks
                 if (m_index >= 0 && m_pVTable)
                     return true;
 
-                m_index = shared::g_pGameConfig ? shared::g_pGameConfig->GetOffset(this->m_pszName) : -1;
+                m_index = gameconfig::gameConfig.GetOffset(this->m_pszName);
 
                 if (m_index >= 0)
                 {

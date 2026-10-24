@@ -35,6 +35,7 @@
  */
 #include "transmit.h"
 
+#include "pluginapi.h"
 #include "shared.h"
 #include "utils/log.h"
 
@@ -69,7 +70,7 @@ namespace transmit
 
         int MaxClients()
         {
-            CGlobalVars* globals = shared::getGlobalVars();
+            CGlobalVars* globals = pluginApi.GetGlobalVars();
             // Spelled out: <windows.h> has a min() macro.
             if (!globals)
                 return 0;
