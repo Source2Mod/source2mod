@@ -799,16 +799,26 @@ namespace sourcepawn
                 o->field = conv(params[2]);                                      \
             return 0;                                                            \
         }
+        // The vector itself, whether the field is a plain member (CMoveData) or
+        // a schema field accessor (CTakeDamageInfo).
+        template <typename F>
+        auto& FieldValue(F& field)
+        {
+            if constexpr (requires { field.Get(); })
+                return field.Get();
+            else
+                return field;
+        }
 #define S2M_FIELD_VEC(T, TYPE, field, N)                                         \
         cell_t N_##T##_##field(IPluginContext* ctx, const cell_t* params)        \
         {                                                                        \
             T* o = Lent<T>(ctx, params[1], TYPE());                              \
-            return o ? VecOut(ctx, params[2], &o->field.x, N) : 0;               \
+            return o ? VecOut(ctx, params[2], &FieldValue(o->field).x, N) : 0;   \
         }                                                                        \
         cell_t N_##T##_Set_##field(IPluginContext* ctx, const cell_t* params)    \
         {                                                                        \
             T* o = Lent<T>(ctx, params[1], TYPE());                              \
-            return o ? VecIn(ctx, params[2], &o->field.x, N) : 0;                \
+            return o ? VecIn(ctx, params[2], &FieldValue(o->field).x, N) : 0;    \
         }
 #define S2M_CELL(v) static_cast<cell_t>(v)
 #define S2M_BOOL(v) ((v) != 0)
