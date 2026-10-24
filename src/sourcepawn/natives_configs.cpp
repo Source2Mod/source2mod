@@ -126,8 +126,8 @@ namespace sourcepawn
             return c && c->config ? c : nullptr;
         }
 
-        // Register(name, defaults, callback, flags)
-        cell_t N_ConfigRegister(IPluginContext* ctx, const cell_t* params)
+        /// What Source2ModConfig.Register and Source2ModConfigDefaults.Register share.
+        cell_t RegisterConfig(IPluginContext* ctx, const char* name, const char* defaults, cell_t callback, cell_t flags)
         {
             const PluginId owner = CallerId(ctx);
             ISource2ModPlugin* plugin = PluginOf(owner);
@@ -135,16 +135,16 @@ namespace sourcepawn
                 return ctx->ThrowNativeError("Source2ModConfig.Register: the calling plugin is not loaded");
 
             IPluginFunction* fn = nullptr;
-            if (!IsUnset(params[3]))
+            if (!IsUnset(callback))
             {
-                fn = ctx->GetFunctionById(static_cast<funcid_t>(params[3]));
+                fn = ctx->GetFunctionById(static_cast<funcid_t>(callback));
                 if (!fn)
-                    return ctx->ThrowNativeError("Invalid function id (%X)", params[3]);
+                    return ctx->ThrowNativeError("Invalid function id (%X)", callback);
             }
 
             auto* c = new Config();
             c->owner = owner;
-            c->name = LocalString(ctx, params[1]);
+            c->name = name;
             c->callback = fn;
             c->values.owner = owner;
             c->handle = Handles().Create(ConfigType(), c, owner);
@@ -155,8 +155,7 @@ namespace sourcepawn
             }
 
             char error[512] = "";
-            ISource2ModConfig* config = configs::configsManager.Register(plugin, LocalString(ctx, params[1]), LocalString(ctx, params[2]),
-                                                                         static_cast<uint32_t>(params[4]), c, error, sizeof(error));
+            ISource2ModConfig* config = configs::configsManager.Register(plugin, name, defaults, static_cast<uint32_t>(flags), c, error, sizeof(error));
             if (!config)
             {
                 Handles().Free(c->handle, 0, true);
@@ -165,6 +164,101 @@ namespace sourcepawn
 
             c->config = config;
             return c->handle;
+        }
+
+        // Register(name, defaults, callback, flags)
+        cell_t N_ConfigRegister(IPluginContext* ctx, const cell_t* params)
+        {
+            return RegisterConfig(ctx, LocalString(ctx, params[1]), LocalString(ctx, params[2]), params[3], params[4]);
+        }
+
+        // ---- Source2ModConfigDefaults: the SDK's builder behind a handle ----------------
+
+        struct Defaults final : HandleObject
+        {
+            Source2ModConfigDefaults builder;
+        };
+
+        HandleType DefaultsType()
+        {
+            static const HandleType t = Handles().CreateType("Source2ModConfigDefaults", [](void* p) { delete static_cast<Defaults*>(p); });
+            return t;
+        }
+
+        Defaults* DefaultsOf(IPluginContext* ctx, cell_t handle)
+        {
+            return static_cast<Defaults*>(ReadHandle(ctx, handle, DefaultsType()));
+        }
+
+        /// The optional comment argument; null when it is "" or absent.
+        const char* CommentArg(IPluginContext* ctx, const cell_t* params, int index)
+        {
+            if (params[0] < index)
+                return nullptr;
+            const char* comment = LocalString(ctx, params[index]);
+            return *comment ? comment : nullptr;
+        }
+
+        cell_t N_DefaultsCreate(IPluginContext* ctx, const cell_t* params)
+        {
+            auto* d = new Defaults();
+            const cell_t h = Handles().Create(DefaultsType(), d, CallerId(ctx));
+            if (!h)
+                delete d;
+            return h;
+        }
+
+        // AddString(key, value, comment)
+        cell_t N_DefaultsAddString(IPluginContext* ctx, const cell_t* params)
+        {
+            if (Defaults* d = DefaultsOf(ctx, params[1]))
+                d->builder.Add(LocalString(ctx, params[2]), LocalString(ctx, params[3]), CommentArg(ctx, params, 4));
+            return 0;
+        }
+
+        cell_t N_DefaultsAddInt(IPluginContext* ctx, const cell_t* params)
+        {
+            if (Defaults* d = DefaultsOf(ctx, params[1]))
+                d->builder.Add(LocalString(ctx, params[2]), static_cast<int>(params[3]), CommentArg(ctx, params, 4));
+            return 0;
+        }
+
+        cell_t N_DefaultsAddFloat(IPluginContext* ctx, const cell_t* params)
+        {
+            if (Defaults* d = DefaultsOf(ctx, params[1]))
+                d->builder.Add(LocalString(ctx, params[2]), sp_ctof(params[3]), CommentArg(ctx, params, 4));
+            return 0;
+        }
+
+        cell_t N_DefaultsAddBool(IPluginContext* ctx, const cell_t* params)
+        {
+            if (Defaults* d = DefaultsOf(ctx, params[1]))
+                d->builder.Add(LocalString(ctx, params[2]), params[3] != 0, CommentArg(ctx, params, 4));
+            return 0;
+        }
+
+        cell_t N_DefaultsAddJSON(IPluginContext* ctx, const cell_t* params)
+        {
+            if (Defaults* d = DefaultsOf(ctx, params[1]))
+                d->builder.AddJSON(LocalString(ctx, params[2]), LocalString(ctx, params[3]), CommentArg(ctx, params, 4));
+            return 0;
+        }
+
+        // ToString(buffer, maxlen)
+        cell_t N_DefaultsToString(IPluginContext* ctx, const cell_t* params)
+        {
+            Defaults* d = DefaultsOf(ctx, params[1]);
+            return d ? ToBuffer(ctx, params[2], params[3], d->builder.Json()) : 0;
+        }
+
+        // Register(name, callback, flags)
+        cell_t N_DefaultsRegister(IPluginContext* ctx, const cell_t* params)
+        {
+            Defaults* d = DefaultsOf(ctx, params[1]);
+            if (!d)
+                return 0;
+            const std::string text = d->builder.Json();
+            return RegisterConfig(ctx, LocalString(ctx, params[2]), text.c_str(), params[3], params[4]);
         }
 
         cell_t N_ConfigRoot(IPluginContext* ctx, const cell_t* params)
@@ -295,6 +389,14 @@ namespace sourcepawn
             { "Source2ModConfig.Remove", N_ConfigRemove },
             { "Source2ModConfig.Save", N_ConfigSave },
             { "Source2ModConfig.Reload", N_ConfigReload },
+            { "Source2ModConfigDefaults.Source2ModConfigDefaults", N_DefaultsCreate },
+            { "Source2ModConfigDefaults.AddString", N_DefaultsAddString },
+            { "Source2ModConfigDefaults.AddInt", N_DefaultsAddInt },
+            { "Source2ModConfigDefaults.AddFloat", N_DefaultsAddFloat },
+            { "Source2ModConfigDefaults.AddBool", N_DefaultsAddBool },
+            { "Source2ModConfigDefaults.AddJSON", N_DefaultsAddJSON },
+            { "Source2ModConfigDefaults.ToString", N_DefaultsToString },
+            { "Source2ModConfigDefaults.Register", N_DefaultsRegister },
             { nullptr, nullptr },
         };
     }
