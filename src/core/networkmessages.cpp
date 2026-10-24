@@ -41,7 +41,8 @@
 #include <google/protobuf/message.h>
 #include <networksystem/inetworkmessages.h>
 #include <source2mod/schema/netmessages.h>
-#include <source2mod/schema/recipientfilter.h>
+#include <recipientfilter.h>
+#include "source2mod/utils/playermask.h"
 
 #include <cstring>
 
@@ -968,7 +969,7 @@ namespace networkmessages
         if (!netmsg)
             return;
 
-        CSingleRecipientFilter filter(slot);
+        CReliableSingleUserRecipientFilter filter(slot);
         shared::g_pGameEventSystem->PostEventAbstract(-1, false, &filter, netmsg, msg, 0);
     }
 
@@ -983,7 +984,8 @@ namespace networkmessages
             return;
 
         CRecipientFilter filter;
-        filter.SetFromBitmask(playermask);
+        filter.MakeReliable();
+        filter.AddPlayersFromBitMask(PlayerBitVecFromMask(playermask));
 
         shared::g_pGameEventSystem->PostEventAbstract(-1, false, &filter, netmsg, msg, 0);
     }

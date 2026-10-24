@@ -47,7 +47,8 @@
 #include <google/protobuf/message.h>
 #include <networksystem/inetworkmessages.h>
 #include <source2mod/schema/netmessages.h>
-#include <source2mod/schema/recipientfilter.h>
+#include <recipientfilter.h>
+#include "source2mod/utils/playermask.h"
 #include <source2mod/utils/virtual.h>
 #include <tier0/generichash.h>
 
@@ -574,7 +575,8 @@ namespace sounds
         SetBytes(msg.pb, "packed_params", packedParams);
 
         CRecipientFilter filter;
-        filter.SetFromBitmask(recipients);
+        filter.MakeReliable();
+        filter.AddPlayersFromBitMask(PlayerBitVecFromMask(recipients));
 
         m_bSending = true;
         shared::g_pGameEventSystem->PostEventAbstract(-1, false, &filter, msg.info, msg.net, 0);
@@ -590,7 +592,8 @@ namespace sounds
         SetInt32(msg.pb, "soundevent_guid", static_cast<int32_t>(guid));
 
         CRecipientFilter filter;
-        filter.SetFromBitmask(recipients);
+        filter.MakeReliable();
+        filter.AddPlayersFromBitMask(PlayerBitVecFromMask(recipients));
 
         m_bSending = true;
         shared::g_pGameEventSystem->PostEventAbstract(-1, false, &filter, msg.info, msg.net, 0);
@@ -607,7 +610,8 @@ namespace sounds
         SetBytes(msg.pb, "packed_params", packedParams);
 
         CRecipientFilter filter;
-        filter.SetFromBitmask(recipients);
+        filter.MakeReliable();
+        filter.AddPlayersFromBitMask(PlayerBitVecFromMask(recipients));
 
         m_bSending = true;
         shared::g_pGameEventSystem->PostEventAbstract(-1, false, &filter, msg.info, msg.net, 0);
@@ -790,7 +794,8 @@ namespace sounds
         SetInt32(msg.pb, "source_entity_index", sourceEntityIndex);
 
         CRecipientFilter filter;
-        filter.SetFromBitmask(recipients);
+        filter.MakeReliable();
+        filter.AddPlayersFromBitMask(PlayerBitVecFromMask(recipients));
 
         m_bSending = true;
         shared::g_pGameEventSystem->PostEventAbstract(-1, false, &filter, msg.info, msg.net, 0);

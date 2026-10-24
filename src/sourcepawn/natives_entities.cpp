@@ -56,7 +56,8 @@
 #include "utils/log.h"
 
 #include <source2mod/ISource2ModEntities.h>
-#include <source2mod/schema/recipientfilter.h>
+#include <recipientfilter.h>
+#include "source2mod/utils/playermask.h"
 #include <source2mod/schema/schema.h>
 #include <source2mod/schema/entity/classes/CAttributeList.h>
 #include <source2mod/schema/entity/classes/CBaseEntity.h>
@@ -936,10 +937,18 @@ namespace sourcepawn
             Access a;
             if (!Lookup(ctx, params, a, Kind::StringPtr, "a string"))
                 return 0;
-            if (a.field->kind != Kind::CharArray)
-                return ctx->ThrowNativeError("Field %s::%s (%s) cannot be set from a script; only char arrays can",
-                                             a.field->declClass.c_str(), a.field->name.c_str(), a.field->typeName.c_str());
             const char* src = LocalString(ctx, params[4]);
+            // The engine's pooled string: the game compares it by pointer, so
+            // the value has to be the engine's own symbol for the text.
+            if (a.field->typeName == "CGlobalSymbol")
+            {
+                *reinterpret_cast<CGlobalSymbol*>(a.addr) = MakeGlobalSymbol(src);
+                Changed(a);
+                return 0;
+            }
+            if (a.field->kind != Kind::CharArray)
+                return ctx->ThrowNativeError("Field %s::%s (%s) cannot be set from a script; only char arrays and CGlobalSymbol can",
+                                             a.field->declClass.c_str(), a.field->name.c_str(), a.field->typeName.c_str());
             const size_t len = std::min(strlen(src), static_cast<size_t>(a.field->size) - 1);
             memcpy(a.addr, src, len);
             a.addr[len] = '\0';
@@ -1380,7 +1389,8 @@ namespace sourcepawn
             const uint64_t recipients = static_cast<uint32_t>(mask[0]) | (static_cast<uint64_t>(static_cast<uint32_t>(mask[1])) << 32);
             // Everybody is C++'s default: no filter.
             CRecipientFilter filter;
-            filter.SetFromBitmask(recipients);
+            filter.MakeReliable();
+            filter.AddPlayersFromBitMask(PlayerBitVecFromMask(recipients));
             ent->DispatchParticleEffect(LocalString(ctx, params[2]), static_cast<ParticleAttachment_t>(params[3]), static_cast<uint8>(params[4]),
                                         params[5] != 0, recipients == ~0ull ? nullptr : &filter, ChainArg(params, 7));
             return 0;
