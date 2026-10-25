@@ -4,7 +4,7 @@
     "display_name": "Source2Mod",
     "description": "Source2Mod",
     "author": "Michal \"Slynx (˙·٠● S l y n x ●٠·˙)\" Přikryl",
-    "url": "https://www.slynxdev.cz",
+    "url": "https://www.source2mod.net",
     "log_tag": "Source2Mod",
     "license": "Source2Mod (GPLv3 with exceptions)",
     "version": "{{semver}} @ {{github-sha}}",
