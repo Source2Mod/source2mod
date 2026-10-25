@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "pluginmanager.h"
+#include "gamesystems.h"
 
 #include "commands.h"
 #include "configs.h"
@@ -448,6 +449,7 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
         networkmessages::networkMessagesManager.RemoveAllForPlugin(failedId);
         sounds::soundsManager.RemoveAllForPlugin(failedId);
         transmit::transmitManager.RemoveAllForPlugin(failedId);
+        gamesystems::gameSystemsManager.RemoveAllForPlugin(failedId);
         scripts::scriptsManager.RemoveAllForPlugin(failedId);
         scheduler::schedulerManager.RemoveAllForPlugin(failedId);
         http::httpManager.RemoveAllForPlugin(failedId);
@@ -597,6 +599,7 @@ bool PluginManager::ReloadPlugin(int id)
         networkmessages::networkMessagesManager.RemoveAllForPlugin(id);
         sounds::soundsManager.RemoveAllForPlugin(id);
         transmit::transmitManager.RemoveAllForPlugin(id);
+        gamesystems::gameSystemsManager.RemoveAllForPlugin(id);
         scripts::scriptsManager.RemoveAllForPlugin(id);
         // Timers and next-frame tasks run callbacks that live inside the
         // library about to be closed; both the call and destroying the
@@ -667,6 +670,7 @@ bool PluginManager::UnloadPlugin(PluginId id)
         networkmessages::networkMessagesManager.RemoveAllForPlugin(id);
         sounds::soundsManager.RemoveAllForPlugin(id);
         transmit::transmitManager.RemoveAllForPlugin(id);
+        gamesystems::gameSystemsManager.RemoveAllForPlugin(id);
         scripts::scriptsManager.RemoveAllForPlugin(id);
         scheduler::schedulerManager.RemoveAllForPlugin(id);
         http::httpManager.RemoveAllForPlugin(id);
@@ -794,6 +798,7 @@ void PluginManager::UnloadAll()
         networkmessages::networkMessagesManager.RemoveAllForPlugin(p->id);
         sounds::soundsManager.RemoveAllForPlugin(p->id);
         transmit::transmitManager.RemoveAllForPlugin(p->id);
+        gamesystems::gameSystemsManager.RemoveAllForPlugin(p->id);
         scripts::scriptsManager.RemoveAllForPlugin(p->id);
         scheduler::schedulerManager.RemoveAllForPlugin(p->id);
         http::httpManager.RemoveAllForPlugin(p->id);

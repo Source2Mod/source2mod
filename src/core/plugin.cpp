@@ -247,6 +247,8 @@ bool Source2ModCore::Unload(char* error, size_t maxlen)
     // After the scheduler: a next-frame close still holding a script runtime
     // drops it there, and the runtimes have to go before the VM.
     sourcepawn::Shutdown();
+    // Plugins and scripts are gone; the host game system leaves the engine.
+    gamesystems::gameSystemsManager.Shutdown();
     // Takes the engine-level change callback back out with it.
     convars::convarsManager.Shutdown();
     http::httpManager.Shutdown();
