@@ -1,10 +1,10 @@
 # Gamedata validation
 
-CS2 build **26144732** · Linux manifest `5491505037461703699` · Windows manifest `5751660862748360256` · 2026-10-24T10:02:54+00:00
+CS2 build **26144732** · Linux manifest `5491505037461703699` · Windows manifest `5751660862748360256` · 2026-10-25T18:50:00+00:00
 
 | | Windows | Linux |
 |---|---|---|
-| Signatures | 🟢 68 | 🟢 68 |
+| Signatures | 🟢 72 | 🟢 72 |
 | Offsets | 🟢 46 ⚪ 3 | 🟢 46 ⚪ 3 |
 
 ## Everything resolves
@@ -110,7 +110,11 @@ CS2 build **26144732** · Linux manifest `5491505037461703699` · Windows manife
 - 🟢🟢 `IGameEventManager2::FreeEvent` — W 10/16 · L 11/17
 - 🟢🟢 `IGameEventManager2::LoadEventsFromFile` — W 1/16 · L 2/17
 - 🟢🟢 `IGameEventSystem::PostEventAbstract` — W 16/21 · L 15/21
+- 🟢🟢 `IGameSystem::InitAllSystems->Factories`
+- 🟢🟢 `IGameSystem::InitAllSystems->SymbolTable`
 - 🟢🟢 `IGameSystem::InitAllSystems->pFirst`
+- 🟢🟢 `IGameSystem::LoopInitAllSystems->ActiveSystems`
+- 🟢🟢 `IGameSystem::LoopInitAllSystems->sm_pEventDispatcher`
 - 🟢🟢 `IGameSystem::OnServerGamePostSimulate` — W 37/65 · L 37/66
 - ⚪⚪ `INetworkMessageProcessingPreFilter::FilterMessage`
 - 🟢🟢 `INetworkServerService::StartupServer` — W 26/51 · L 27/53

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-24T10:02:54+00:00",
+  "generated_at": "2026-10-25T18:50:00+00:00",
   "build": {
     "buildid": "26144732",
     "linux_manifest": "5491505037461703699",
@@ -1507,6 +1507,34 @@
       }
     },
     {
+      "name": "IGameSystem::InitAllSystems->Factories",
+      "kind": "signature",
+      "windows": {
+        "matches": 1,
+        "address": "0x18054c52b",
+        "status": "ok"
+      },
+      "linux": {
+        "matches": 1,
+        "address": "0xf1ace9",
+        "status": "ok"
+      }
+    },
+    {
+      "name": "IGameSystem::InitAllSystems->SymbolTable",
+      "kind": "signature",
+      "windows": {
+        "matches": 1,
+        "address": "0x18054c4ec",
+        "status": "ok"
+      },
+      "linux": {
+        "matches": 1,
+        "address": "0xf1ac37",
+        "status": "ok"
+      }
+    },
+    {
       "name": "IGameSystem::InitAllSystems->pFirst",
       "kind": "signature",
       "windows": {
@@ -1517,6 +1545,34 @@
       "linux": {
         "matches": 1,
         "address": "0xf1ac66",
+        "status": "ok"
+      }
+    },
+    {
+      "name": "IGameSystem::LoopInitAllSystems->ActiveSystems",
+      "kind": "signature",
+      "windows": {
+        "matches": 1,
+        "address": "0x18055169c",
+        "status": "ok"
+      },
+      "linux": {
+        "matches": 1,
+        "address": "0xf21b19",
+        "status": "ok"
+      }
+    },
+    {
+      "name": "IGameSystem::LoopInitAllSystems->sm_pEventDispatcher",
+      "kind": "signature",
+      "windows": {
+        "matches": 1,
+        "address": "0x1805516c5",
+        "status": "ok"
+      },
+      "linux": {
+        "matches": 1,
+        "address": "0xf21cb6",
         "status": "ok"
       }
     },
