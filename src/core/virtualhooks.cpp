@@ -1,4 +1,4 @@
-﻿/**
+/**
 * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * Source2Mod
@@ -479,7 +479,7 @@ namespace virtualhooks
         return { PreAction(hooks::hooksManager.Dispatch(HookPointId::StartupServer, ctx, false)) };
     }
 
-    KHook::Return<void> Virtuals::Hook_ClientPutInServer(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, int type, uint64 xuid)
+    KHook::Return<void> Virtuals::Hook_ClientPutInServer(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, ClientPutInServerType_t type, uint64 xuid)
     {
         TK_VPROF("Source2Mod::ClientPutInServer");
 
@@ -494,7 +494,7 @@ namespace virtualhooks
         return { KHook::Action::Ignore };
     }
 
-    KHook::Return<void> Virtuals::Hook_ClientPutInServerPre(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, int type, uint64 xuid)
+    KHook::Return<void> Virtuals::Hook_ClientPutInServerPre(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, ClientPutInServerType_t type, uint64 xuid)
     {
         ClientPutInServerContext ctx{ slot, pszName, type, xuid };
         return { PreAction(hooks::hooksManager.Dispatch(HookPointId::ClientPutInServer, ctx, false)) };

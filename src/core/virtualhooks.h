@@ -1,4 +1,4 @@
-﻿/**
+/**
 * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * Source2Mod
@@ -80,8 +80,8 @@ namespace virtualhooks {
         KHook::Return<void> Hook_DispatchConCommand(ICvar* pThis, ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
         KHook::Return<void> Hook_DispatchConCommandPost(ICvar* pThis, ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args);
         KHook::Return<void> Hook_ClientCommand(ISource2GameClients* pThis, CPlayerSlot slot, const CCommand& args);
-        KHook::Return<void> Hook_ClientPutInServer(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, int type, uint64 xuid);
-        KHook::Return<void> Hook_ClientPutInServerPre(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, int type, uint64 xuid);
+        KHook::Return<void> Hook_ClientPutInServer(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, ClientPutInServerType_t type, uint64 xuid);
+        KHook::Return<void> Hook_ClientPutInServerPre(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, ClientPutInServerType_t type, uint64 xuid);
         KHook::Return<void> Hook_ClientVoice(ISource2GameClients* pThis, CPlayerSlot slot);
         KHook::Return<void> Hook_ClientVoicePre(ISource2GameClients* pThis, CPlayerSlot slot);
         KHook::Return<void> Hook_ClientSettingsChanged(ISource2GameClients* pThis, CPlayerSlot slot);
@@ -116,7 +116,7 @@ namespace virtualhooks {
         Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot, const CCommand&>* m_hClientCommand = nullptr;
         // Fanned out to the plugins' ISource2ModListener; Source2Mod itself has
         // no use for them.
-        Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot, const char*, int, uint64>* m_hClientPutInServer = nullptr;
+        Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot, const char*, ClientPutInServerType_t, uint64>* m_hClientPutInServer = nullptr;
         Source2ModKHook::Virtual<ISource2GameClients, bool, CPlayerSlot, const char*, uint64, const char*, bool, CBufferString*>* m_hClientConnect = nullptr;
         Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot, const char*, uint64, const char*, const char*, bool>* m_hOnClientConnected = nullptr;
         Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot>* m_hClientVoice = nullptr;
