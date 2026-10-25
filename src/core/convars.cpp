@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "convars.h"
+#include "commands.h"
 
 #include "hookid.h"
 #include "pluginapi.h"
@@ -610,6 +611,18 @@ namespace convars
             entry.handler(ref, slot, pszNewValue, pszOldValue);
     }
 
+    void ConVarsManager::TrackConVar(PluginId owner, ConVarRefAbstract* ref)
+    {
+        if (ref && ref->IsValidRef())
+            m_pluginConVars.push_back({ owner, *ref, ref });
+    }
+
+    void ConVarsManager::TrackConCommand(PluginId owner, ConCommandRef* ref)
+    {
+        if (ref && ref->IsValidRef())
+            m_pluginConCommands.push_back({ owner, *ref, ref });
+    }
+
     void ConVarsManager::RemoveAllForPlugin(PluginId id)
     {
         std::erase_if(m_changeHandlers, [id](const ConVarChangeEntry& e)
@@ -618,6 +631,82 @@ namespace convars
         });
 
         RemoveGlobalCallbackIfIdle();
+
+        // The engine has no real unregister, so a plugin's ConVar / ConCommand
+        // is taken out by hand: callbacks off (and a ConVar's data invalidated,
+        // as Metamod's META_CONVAR_REGISTER does), then out of CCvar's name table
+        // and its list, so the plugin loading again registers it anew and
+        // find/cvarlist do not meet the old entry. Metamod's way alone (hide,
+        // keep the entry) leaves a reloaded command dead: the hidden one keeps
+        // the name. Where CCvar's table does not look as expected the entry is
+        // only hidden. The slot is free afterwards, so the plugin's own ref is
+        // invalidated too -- its destructor at dlclose would unregister it again.
+        std::erase_if(m_pluginConVars, [id](PluginConVar& entry)
+        {
+            if (entry.owner != id)
+                return false;
+            if (g_pCVar && entry.copy.IsValidRef())
+            {
+                const std::string name = entry.copy.GetName();
+                g_pCVar->UnregisterConVarCallbacks(entry.copy);
+                if (ConVarData* data = entry.copy.GetConVarData())
+                    data->Invalidate();
+                // The plugin's ref only while it still names this slot: a ConVar it
+                // destroyed itself already invalidated its own.
+                const uint16 index = entry.copy.GetAccessIndex();
+                if (ReleaseConVarName(name.c_str(), index) && entry.plugin && entry.plugin->GetAccessIndex() == index)
+                    entry.plugin->InvalidateRef();
+            }
+            return true;
+        });
+
+        std::erase_if(m_pluginConCommands, [id](PluginConCommand& entry)
+        {
+            if (entry.owner != id)
+                return false;
+            if (g_pCVar && entry.copy.IsValidRef())
+            {
+                const std::string name = entry.copy.GetName();
+                g_pCVar->UnregisterConCommandCallbacks(entry.copy);
+                const uint16 index = entry.copy.GetAccessIndex();
+                if (commands::ReleaseConCommandName(name.c_str(), index))
+                {
+                    if (entry.plugin && entry.plugin->GetAccessIndex() == index)
+                        entry.plugin->InvalidateRef();
+                }
+                else
+                    entry.copy.AddFlags(FCVAR_DEFENSIVE | FCVAR_HIDDEN | FCVAR_DEVELOPMENTONLY);
+            }
+            return true;
+        });
+    }
+
+    bool ConVarsManager::ReleaseConVarName(const char* name, uint16 accessIndex)
+    {
+        // As commands::ReleaseConCommandName: CCvar's layout is reverse
+        // engineered, so the name is only dropped from m_ConVarHashes when the
+        // table and FindConVar agree on the access index.
+        if (!g_pCVar || !name || !*name)
+            return false;
+
+        auto& hashes = static_cast<CCvar*>(g_pCVar)->m_ConVarHashes;
+        const CUtlStringToken token(name);
+        const auto handle = hashes.Find(token, token.GetHashCode());
+
+        if (handle == hashes.InvalidHandle() || hashes.Element(handle) != accessIndex)
+        {
+            FP_WARN("Could not release ConVar '{}': CCvar's table does not look the way this build expects", name);
+            return false;
+        }
+
+        // The name and the list entry both, so find/cvarlist do not meet the old
+        // one next to the next registration of the name.
+        if (!hashes.Remove(token, token.GetHashCode()))
+            return false;
+        auto* pCvar = static_cast<CCvar*>(g_pCVar);
+        pCvar->m_ConVarList.Remove(accessIndex);
+        --pCvar->m_ConVarCount;
+        return true;
     }
 
     void ConVarsManager::Shutdown()

@@ -664,6 +664,14 @@ namespace commands {
 
     void DestructCommands()
     {
+        // The core unloads: its command names leave the engine too, so loading
+        // it again registers them anew. Where the table does not look as
+        // expected, the destructor's plain unregister is all that happens.
+        for (auto& [name, command] : registeredCommands)
+        {
+            if (command.cmd && ReleaseConCommandName(name.c_str()))
+                command.cmd->InvalidateRef();
+        }
         registeredCommands.clear();
         consoleListeners.clear();
     }
@@ -848,13 +856,13 @@ namespace commands {
     // touch the table if the two agree on the access index. A mismatch means
     // this build's CCvar is not the one described here, and the caller falls
     // back to parking the command instead.
-    static bool ReleaseConCommandName(const char* pchName)
+    bool ReleaseConCommandName(const char* pchName, uint16 expectedIndex)
     {
         if (!g_pCVar || !pchName || !*pchName)
             return false;
 
         const ConCommandRef ref = g_pCVar->FindConCommand(pchName, true);
-        if (!ref.IsValidRef())
+        if (!ref.IsValidRef() || (expectedIndex != 0xFFFF && ref.GetAccessIndex() != expectedIndex))
             return false;
 
         auto* pCvar = static_cast<CCvar*>(g_pCVar);
@@ -878,7 +886,17 @@ namespace commands {
             return false;
         }
 
-        return hashes.Remove(token, token.GetHashCode());
+        // Out of the name table and out of the command list: dropping only the
+        // name left the old entry in the list, where find/cmdlist met it next to
+        // the next registration of the name (UtlRBTree duplicate asserts). The
+        // slot is free for reuse afterwards, so the caller's own ConCommandRef
+        // has to be invalidated before anything touches it again.
+        g_pCVar->UnregisterConCommandCallbacks(ref);
+        if (!hashes.Remove(token, token.GetHashCode()))
+            return false;
+        pCvar->m_ConCommandList.Remove(ref.GetAccessIndex());
+        --pCvar->m_ConCommandCount;
+        return true;
     }
 
     Source2ModCommandId CommandsManager::RegisterConCommand(PluginId owner, const char* pchName, ChatHandler handler, const char* pchPermission) {
@@ -978,7 +996,12 @@ namespace commands {
                 return false;
 
             if (ReleaseConCommandName(kv.first.c_str()))
+            {
+                // Its slot is gone; the destructor must not unregister it again.
+                if (kv.second.cmd)
+                    kv.second.cmd->InvalidateRef();
                 return true;
+            }
 
             // The table did not look the way we expect, so the name cannot be
             // released on this build. Park the command instead: FCVAR_DEFENSIVE

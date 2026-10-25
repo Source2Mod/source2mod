@@ -78,6 +78,11 @@ namespace commands {
     /// plugin has this name -- what a silent chat trigger hides the line for.
     bool HasChatCommand(const char* name);
 
+    /// Takes a command out of CCvar (callbacks, name table, list), so the name
+    /// is free again; false when the table does not look as expected, or when
+    /// @p expectedIndex is given and the name now belongs to another command.
+    bool ReleaseConCommandName(const char* name, uint16 expectedIndex = 0xFFFF);
+
     class CommandsManager : public ISource2ModCommands
     {
     public:

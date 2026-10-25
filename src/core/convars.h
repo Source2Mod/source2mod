@@ -98,6 +98,8 @@ namespace convars {
 
         void DeleteConVar(uint16 accessIndex) override;
 
+        void TrackConVar(PluginId owner, ConVarRefAbstract* ref) override;
+        void TrackConCommand(PluginId owner, ConCommandRef* ref) override;
 
         Source2ModConVarHookId HookConVarChange(ConVarChangeHandler handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookConVarChange(owner, std::move(handler)); }
         bool UnhookConVarChange(const ConVarChangeHandler& handler) override { return UnhookConVarChange(hookid::OwnerOfHandler(handler), handler); }
@@ -123,10 +125,30 @@ namespace convars {
 
     private:
         void EnsureGlobalCallbackInstalled();
+        static bool ReleaseConVarName(const char* name, uint16 accessIndex);
         void RemoveGlobalCallbackIfIdle();
 
         std::vector<ConVarChangeEntry> m_changeHandlers;
         bool m_bGlobalCallbackInstalled = false;
+
+        // The plugins' own ConVars and ConCommands (SOURCE2MOD_SAVEVARS): a copy
+        // to take them out by (a plugin's ConVar_Unregister invalidates its own
+        // refs, not these), and the plugin's ref, invalidated once its slot is
+        // gone.
+        struct PluginConVar
+        {
+            PluginId owner;
+            ConVarRefAbstract copy;
+            ConVarRefAbstract* plugin;
+        };
+        struct PluginConCommand
+        {
+            PluginId owner;
+            ConCommandRef copy;
+            ConCommandRef* plugin;
+        };
+        std::vector<PluginConVar> m_pluginConVars;
+        std::vector<PluginConCommand> m_pluginConCommands;
 
         inline ConVarRefAbstract GetRef(uint16 idx)
         {
