@@ -55,11 +55,11 @@
 #include "slowguard.h"
 #include "pluginmanager.h"
 
-#include "source2mod/schema/takedamageinfo.h"
-#include "source2mod/schema/entity/classes/CBaseEntity.h"
-#include "source2mod/schema/entity/classes/CBasePlayerController.h"
-#include "source2mod/schema/entity/classes/CCSPlayerController.h"
-#include "source2mod/schema/entity/classes/CCSPlayerPawnBase.h"
+#include "source2mod/sdk/game/shared/takedamageinfo.h"
+#include "source2mod/sdk/schema/classes/CBaseEntity.h"
+#include "source2mod/sdk/schema/classes/CBasePlayerController.h"
+#include "source2mod/sdk/schema/classes/CCSPlayerController.h"
+#include "source2mod/sdk/schema/classes/CCSPlayerPawnBase.h"
 #include <entity2/entityidentity.h>
 #include <tier0/utlsymbollarge.h>
 

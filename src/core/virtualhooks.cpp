@@ -68,12 +68,12 @@
 #include <engine2/igameeventsystem.h>
 #include <engine2/inetworkserverservice.h>
 #include <engine2/networkgameserverbase.h>
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
-#include <source2mod/schema/entity/classes/CCSCustomHudLayout.h>
-#include <source2mod/schema/entity/classes/CCSGameRulesProxy.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
-#include <source2mod/schema/entity/enums/ECstrike15UserMessages.h>
-#include <source2mod/schema/schema.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CCSCustomHudLayout.h>
+#include <source2mod/sdk/schema/classes/CCSGameRulesProxy.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/enums/ECstrike15UserMessages.h>
+#include <source2mod/sdk/schemasystem_helper.h>
 #include <source2mod/utils/plat.h>
 #include <steam/isteamgameserver.h>
 

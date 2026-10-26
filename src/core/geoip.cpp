@@ -33,7 +33,7 @@
 #include "utils/log.h"
 #include "utils/paths.h"
 
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
 
 #include <cstdio>
 #include <cstring>

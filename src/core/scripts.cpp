@@ -51,7 +51,7 @@
 #include <entity2/entitysystem.h>
 #include <entitykeyvalues.h>
 #include <interfaces/interfaces.h>
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
 #include <tier0/convar.h>
 
 #include <algorithm>

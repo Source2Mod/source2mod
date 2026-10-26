@@ -62,7 +62,7 @@
 #include "core/module.h"
 #include "core/shared.h"
 
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
 
 #include <tier0/buffer_string.h>
 

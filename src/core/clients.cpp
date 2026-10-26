@@ -43,7 +43,7 @@
 
 #include <interfaces/interfaces.h>
 #include <inetchannelinfo.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
 
 #include <cinttypes>
 #include <cstdio>

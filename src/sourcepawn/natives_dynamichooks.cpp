@@ -50,7 +50,7 @@
 #include "core/hooks.h"
 
 #include <source2mod/ISource2ModCommands.h>
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
 
 #include <tier0/buffer_string.h>
 

@@ -39,11 +39,11 @@
 #include <engine2/ivengineserver2.h>
 #include <entitysystem.h>
 #include <source2mod/ISource2ModTrace.h>
-#include <source2mod/schema/tracefilter.h>
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
-#include <source2mod/schema/entity/classes/CCollisionProperty.h>
+#include <source2mod/sdk/game/shared/tracefilter.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CCollisionProperty.h>
 
-// The filters are the SDK's (source2mod/schema/tracefilter.h), so plugins
+// The filters are the SDK's (source2mod/sdk/game/shared/tracefilter.h), so plugins
 // calling TraceShapeEx build the same ones.
 
 namespace raytrace

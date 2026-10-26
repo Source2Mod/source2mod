@@ -40,7 +40,7 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/message.h>
 #include <networksystem/inetworkmessages.h>
-#include <source2mod/schema/netmessages.h>
+#include <source2mod/sdk/game/shared/netmessages.h>
 #include <recipientfilter.h>
 #include "source2mod/utils/playermask.h"
 

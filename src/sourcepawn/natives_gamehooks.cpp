@@ -51,18 +51,18 @@
 
 #include "core/hooks.h"
 
-#include <source2mod/schema/movedata.h>
-#include <source2mod/schema/takedamageinfo.h>
-#include <source2mod/schema/takedamageresult.h>
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
-#include <source2mod/schema/entity/classes/CBasePlayerController.h>
-#include <source2mod/schema/entity/classes/CBasePlayerWeapon.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
-#include <source2mod/schema/entity/classes/CCSPlayerPawn.h>
-#include <source2mod/schema/entity/classes/CCSPlayerPawnBase.h>
-#include <source2mod/schema/entity/classes/CCSPlayer_ItemServices.h>
-#include <source2mod/schema/entity/classes/CCSPlayer_MovementServices.h>
-#include <source2mod/schema/entity/classes/CCSPlayer_WeaponServices.h>
+#include <source2mod/sdk/game/shared/movedata.h>
+#include <source2mod/sdk/game/shared/takedamageinfo.h>
+#include <source2mod/sdk/game/shared/takedamageresult.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CBasePlayerController.h>
+#include <source2mod/sdk/schema/classes/CBasePlayerWeapon.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerPawn.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerPawnBase.h>
+#include <source2mod/sdk/schema/classes/CCSPlayer_ItemServices.h>
+#include <source2mod/sdk/schema/classes/CCSPlayer_MovementServices.h>
+#include <source2mod/sdk/schema/classes/CCSPlayer_WeaponServices.h>
 #include <entity2/entityidentity.h>
 
 #include <sp_callable.h>

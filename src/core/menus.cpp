@@ -37,9 +37,9 @@
 
 #include "slowguard.h"
 
-#include <source2mod/schema/entity/classes/CCSCustomHudLayout.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
-#include <source2mod/schema/schema.h>
+#include <source2mod/sdk/schema/classes/CCSCustomHudLayout.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schemasystem_helper.h>
 
 #include <entity2/globalvars_base.h>
 

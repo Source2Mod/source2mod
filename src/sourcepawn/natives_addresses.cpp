@@ -45,7 +45,7 @@
 
 #include "core/addresses.h"
 
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
 
 #include <sp_callable.h>
 

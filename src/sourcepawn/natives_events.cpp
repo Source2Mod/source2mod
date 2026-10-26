@@ -46,8 +46,8 @@
 
 #include "core/shared.h"
 
-#include <source2mod/schema/entity/classes/CBasePlayerController.h>
-#include <source2mod/schema/entity/classes/CBasePlayerPawn.h>
+#include <source2mod/sdk/schema/classes/CBasePlayerController.h>
+#include <source2mod/sdk/schema/classes/CBasePlayerPawn.h>
 
 #include <gameevents.pb.h>
 #include <google/protobuf/message.h>

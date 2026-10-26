@@ -46,8 +46,8 @@
 #include "shared.h"
 
 #include <interfaces/interfaces.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
-#include <source2mod/schema/entity/classes/CCSPlayerPawn.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerPawn.h>
 
 #include <algorithm>
 #include <cctype>

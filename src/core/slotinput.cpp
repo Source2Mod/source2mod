@@ -42,19 +42,19 @@
 #include "pluginapi.h"
 #include "shared.h"
 #include "sounds.h"
-#include "source2mod/schema/usercmd.h"
+#include "source2mod/sdk/game/shared/usercmd.h"
 #include "utils/log.h"
 
 #include <engine2/isource2server.h>
-#include <source2mod/schema/entity/classes/CBasePlayerWeapon.h>
-#include <source2mod/schema/entity/classes/CCSGameRules.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
-#include <source2mod/schema/entity/classes/CCSPlayerPawn.h>
-#include <source2mod/schema/entity/classes/CCSPlayer_MovementServices.h>
-#include <source2mod/schema/entity/classes/CCSWeaponBase.h>
-#include <source2mod/schema/entity/classes/CCSWeaponBaseVData.h>
-#include <source2mod/schema/entity/classes/CPlayer_WeaponServices.h>
-#include <source2mod/schema/schema.h>
+#include <source2mod/sdk/schema/classes/CBasePlayerWeapon.h>
+#include <source2mod/sdk/schema/classes/CCSGameRules.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerPawn.h>
+#include <source2mod/sdk/schema/classes/CCSPlayer_MovementServices.h>
+#include <source2mod/sdk/schema/classes/CCSWeaponBase.h>
+#include <source2mod/sdk/schema/classes/CCSWeaponBaseVData.h>
+#include <source2mod/sdk/schema/classes/CPlayer_WeaponServices.h>
+#include <source2mod/sdk/schemasystem_helper.h>
 #include <tier0/tier0_strtools.h>
 
 #include <algorithm>

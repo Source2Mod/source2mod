@@ -40,14 +40,14 @@
  * ray tracing (core/raytrace.cpp).
  */
 #include "natives.h"
-#include <source2mod/schema/tracefilter.h>
+#include <source2mod/sdk/game/shared/tracefilter.h>
 #include "handles.h"
 #include "scriptplugin.h"
 
 #include "core/raytrace.h"
 
-#include <source2mod/schema/navarea.h>
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
+#include <source2mod/sdk/game/server/navarea.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
 
 #include <sp_callable.h>
 

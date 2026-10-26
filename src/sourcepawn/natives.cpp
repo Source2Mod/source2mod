@@ -23,7 +23,7 @@
 #include "core/shared.h"
 #include "utils/log.h"
 
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
 
 #include <base-runtime.h>
 #include <sp_callable.h>

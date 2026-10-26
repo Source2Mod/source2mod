@@ -44,9 +44,9 @@
 
 #include "core/scripts.h"
 
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
-#include <source2mod/schema/entity/classes/CCSCustomHudLayout.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CCSCustomHudLayout.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
 
 #include <sp_callable.h>
 

@@ -34,7 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
-#include "source2mod/schema/entityio.h"
+#include "source2mod/sdk/game/server/entityio.h"
 
 // KHook, via metamod.
 #include "ISmmPlugin.h"

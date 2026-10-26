@@ -53,8 +53,8 @@
 
 #include <dynlibutils/module.hpp>
 #include <source2mod/ISource2ModPlugin.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
-#include <source2mod/schema/entity/classes/CCSPlayerPawn.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerPawn.h>
 
 #include <cstdarg>
 #include <sstream>

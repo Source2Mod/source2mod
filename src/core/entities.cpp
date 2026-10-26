@@ -43,10 +43,10 @@
 #include "pluginapi.h"
 #include "shared.h"
 
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
-#include <source2mod/schema/entity/classes/CBasePlayerController.h>
-#include <source2mod/schema/entity/classes/CCSGameRules.h>
-#include <source2mod/schema/entityio.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CBasePlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSGameRules.h>
+#include <source2mod/sdk/game/server/entityio.h>
 #include <source2mod/utils/plat.h>
 #include <source2mod/utils/virtual.h>
 

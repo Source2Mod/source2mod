@@ -41,9 +41,9 @@
 
 #include <entity2/entityinstance.h>
 #include <entity2/entitysystem.h>
-#include <source2mod/schema/entity/classes/CCSObserverPawn.h>
-#include <source2mod/schema/entity/classes/CCSPlayerController.h>
-#include <source2mod/schema/entity/classes/CCSPlayerPawn.h>
+#include <source2mod/sdk/schema/classes/CCSObserverPawn.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/schema/classes/CCSPlayerPawn.h>
 #include <tier0/tier0_strtools.h>
 
 #include <algorithm>

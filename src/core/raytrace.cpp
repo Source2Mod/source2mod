@@ -39,14 +39,14 @@
 #include "commands.h"
 #include "core/scheduler.h"
 #include "events.h"
-#include "schema/navphysicsinterface.h"
+#include "sdk/game/server/navphysicsinterface.h"
 #include "shared.h"
 #include "utils/vectorextends.h"
 
 #include <dynlibutils/module.hpp>
 #include <engine2/inetworkserverservice.h>
 #include <engine2/networkgameserverbase.h>
-#include <source2mod/schema/entity/classes/CBaseEntity.h>
+#include <source2mod/sdk/schema/classes/CBaseEntity.h>
 #include <source2mod/utils/plat.h>
 
 namespace raytrace

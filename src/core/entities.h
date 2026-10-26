@@ -39,7 +39,7 @@
 #include <engine2/ivengineserver2.h>
 #include <entitysystem.h>
 #include <source2mod/ISource2ModEntities.h>
-#include <source2mod/schema/entityio.h>
+#include <source2mod/sdk/game/server/entityio.h>
 
 #include "hookid.h"
 
