@@ -46,7 +46,7 @@
 
 #include "core/raytrace.h"
 
-#include <source2mod/sdk/game/server/navarea.h>
+#include <source2mod/sdk/navlib/navarea.h>
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 
 #include <sp_callable.h>

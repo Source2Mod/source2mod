@@ -39,7 +39,7 @@
 #include "commands.h"
 #include "core/scheduler.h"
 #include "events.h"
-#include "sdk/game/server/navphysicsinterface.h"
+#include "sdk/navlib/navphysicsinterface.h"
 #include "shared.h"
 #include "utils/vectorextends.h"
 
