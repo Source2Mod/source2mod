@@ -2290,7 +2290,7 @@ namespace sourcepawn
             { "CEntityInstance.GetClassname", N_EntGetClassname },
             { "CEntityInstance.GetName", N_EntGetName },
             { "CEntityInstance.GetEntityIndex", N_EntGetEntityIndex },
-            // schema/classes.inc, from tools/sp_schemagen/methods.inc
+            // sdk/schema/classes/*.inc, from tools/sp_schemagen/methods.inc
             { "CBaseEntity.FromIndex", N_BaseFromIndex },
             { "CBaseEntity.CreateEntityByName", N_BaseCreateEntityByName },
             { "CBaseEntity.AcceptInput", N_BaseAcceptInput },
