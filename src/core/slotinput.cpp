@@ -36,6 +36,7 @@
 #include "slotinput.h"
 
 #include "gameconfig.h"
+#include "gamesystems.h"
 #include "hooks.h"
 #include "menus.h"
 #include "pluginapi.h"
@@ -661,9 +662,30 @@ namespace slotinput {
         }
     }
 
+    namespace
+    {
+        Source2ModGameSystemId g_GameSystem = 0;
+    }
+
     void Init()
     {
         g_RunCommandHook = hooks::hooksManager.Hook(HookPoint::RunCommand, HookTarget::All(), OnRunCommand, false);
+
+        // The fakes are in the weapon list only while the snapshots are built
+        // (CheckTransmit injects them). The snapshots go out in the async post
+        // tick work; right after it they leave the list again, so nothing that
+        // runs before the next frame -- Steam and GC callbacks, an econ plugin
+        // swapping a player's weapons, a strip -- ever sees them.
+        auto& gs = gamesystems::gameSystemsManager;
+        g_GameSystem = gs.Create(0, "Source2Mod_SlotInput");
+        if (g_GameSystem)
+        {
+            gs.Hook(0, g_GameSystem, GameSystemEvent::ServerPostEndAsyncPostTickWork, GameSystemHandler([](const void*)
+            {
+                Eject();
+            }));
+            gs.Register(g_GameSystem);
+        }
     }
 
     void Shutdown()
@@ -671,6 +693,9 @@ namespace slotinput {
         if (g_RunCommandHook)
             hooks::hooksManager.Unhook(g_RunCommandHook);
         g_RunCommandHook = 0;
+        if (g_GameSystem)
+            gamesystems::gameSystemsManager.Destroy(g_GameSystem);
+        g_GameSystem = 0;
         g_Pending.clear();
 
         // Server shutdown: the entity system is gone before the core unloads,
