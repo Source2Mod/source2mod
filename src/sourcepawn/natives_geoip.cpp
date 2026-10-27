@@ -40,6 +40,7 @@
  * ISource2ModGeoIP. GeoipCode3 is not there: GeoLite2 has no three-letter codes.
  */
 #include "natives.h"
+#include "core/shared.h"
 
 #include "core/geoip.h"
 
@@ -72,7 +73,7 @@ namespace sourcepawn
         /// A CPlayerSlot argument (source2mod/*.inc pass slots, 0-based).
         bool PlayerSlot(IPluginContext* ctx, cell_t value, CPlayerSlot& slot)
         {
-            if (value < 0 || value >= kMaxClients)
+            if (value < 0 || value >= shared::MaxClients())
             {
                 ctx->ThrowNativeError("Player slot %d is invalid", value);
                 return false;

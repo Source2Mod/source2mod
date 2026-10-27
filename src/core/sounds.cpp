@@ -515,7 +515,7 @@ namespace sounds
         SoundRecipients mask = SOUND_RECIPIENTS_NONE;
 
         CGlobalVars* globals = pluginApi.GetGlobalVars();
-        const int maxClients = globals ? std::min(globals->maxClients, 64) : 0;
+        const int maxClients = globals ? std::min(globals->maxClients, ABSOLUTE_PLAYER_LIMIT) : 0;
 
         // A net channel is what tells a player from a bot: a sound message has
         // nowhere to go without one.
@@ -628,7 +628,7 @@ namespace sounds
 
     float SoundsManager::ChannelVolume(int slot, const std::string& channel) const
     {
-        if (slot < 0 || slot >= 64 || channel.empty())
+        if (slot < 0 || slot >= shared::MaxClients() || channel.empty())
             return 1.0f;
 
         const auto it = m_volumes[slot].find(channel);
@@ -662,7 +662,7 @@ namespace sounds
 
         if (!channel.empty())
         {
-            for (int i = 0; i < 64; i++)
+            for (int i = 0, n = shared::MaxClients(); i < n; i++)
             {
                 const SoundRecipients bit = SoundRecipients(1) << i;
                 if (!(sound.GetRecipients() & bit))
@@ -823,7 +823,7 @@ namespace sounds
         }
 
         std::map<float, SoundRecipients> groups;
-        for (int i = 0; i < 64; i++)
+        for (int i = 0, n = shared::MaxClients(); i < n; i++)
         {
             const SoundRecipients bit = SoundRecipients(1) << i;
             if (active->recipients & bit)
@@ -855,7 +855,7 @@ namespace sounds
     void SoundsManager::SetPlayerVolume(CPlayerSlot slot, const char* channel, float volume)
     {
         const int i = slot.Get();
-        if (i < 0 || i >= 64 || !channel || !channel[0])
+        if (i < 0 || i >= shared::MaxClients() || !channel || !channel[0])
             return;
 
         volume = std::max(volume, 0.0f);
@@ -891,7 +891,7 @@ namespace sounds
     void SoundsManager::ResetPlayerVolumes(CPlayerSlot slot)
     {
         const int i = slot.Get();
-        if (i < 0 || i >= 64)
+        if (i < 0 || i >= shared::MaxClients())
             return;
 
         // Through SetPlayerVolume() so the sounds still playing come back up too.
@@ -1009,8 +1009,10 @@ namespace sounds
 
     void SoundsManager::OnClientDisconnect(CPlayerSlot slot)
     {
+        // The array's bound, not maxClients: a disconnect at shutdown, with
+        // the globals gone, still has to clear the slot.
         const int i = slot.Get();
-        if (i < 0 || i >= 64)
+        if (i < 0 || i >= ABSOLUTE_PLAYER_LIMIT)
             return;
 
         // The next player in this slot starts from their own settings, and

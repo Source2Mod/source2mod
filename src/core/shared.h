@@ -66,4 +66,9 @@ namespace shared
     extern CGlobalVars* g_pGlobalVars;
     extern CCSGameRules* g_pGameRules;
 
+    /// The server's player slots: globals->maxClients, at most
+    /// ABSOLUTE_PLAYER_LIMIT; 0 before there is a server. What every slot
+    /// loop and slot check bounds by.
+    int MaxClients();
+
 }

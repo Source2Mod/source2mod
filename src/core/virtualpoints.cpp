@@ -33,6 +33,7 @@
  * Project: Source2Mod
  */
 #include "virtualpoints.h"
+#include "shared.h"
 
 #include "source2mod/sdk/schema/classes/CCSPlayerController.h"
 #include "source2mod/sdk/schema/classes/CCSPlayerController_InventoryServices.h"
@@ -131,7 +132,7 @@ namespace virtualpoints
         {
             if (!inventory)
                 return nullptr;
-            for (int slot = 0; slot < 64; slot++)
+            for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
             {
                 CCSPlayerController* controller = CCSPlayerController::FromSlot(slot);
                 CCSPlayerController_InventoryServices* services = controller ? controller->m_pInventoryServices() : nullptr;

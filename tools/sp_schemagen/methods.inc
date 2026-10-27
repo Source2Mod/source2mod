@@ -64,6 +64,8 @@
 	public native void GetSteamID(char[] buffer, int maxlen);
 	public native int GetPlayerName(char[] buffer, int maxlen);
 	public native void GetIpAddress(char[] buffer, int maxlen);
+	// The engine client of this controller's slot (source2mod/clients).
+	public CServerSideClient GetServerSideClient() { return CServerSideClient(this.GetPlayerSlot()); }
 	public native void ReplicateConVar(const char[] name, const char[] value);
 	public native void FireEventToClient(IGameEvent event);
 	// Overwrites the networked player name (128 bytes, cut to fit).

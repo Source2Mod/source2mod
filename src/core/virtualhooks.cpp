@@ -35,6 +35,7 @@
  */
 #include "virtualhooks.h"
 
+#include "clients.h"
 #include "commands.h"
 #include "core/entities.h"
 #include "core/menus.h"
@@ -72,6 +73,7 @@
 #include <source2mod/sdk/schema/classes/CCSCustomHudLayout.h>
 #include <source2mod/sdk/schema/classes/CCSGameRulesProxy.h>
 #include <source2mod/sdk/schema/classes/CCSPlayerController.h>
+#include <source2mod/sdk/game/shared/netmessages.h>
 #include <source2mod/sdk/schema/enums/ECstrike15UserMessages.h>
 #include <source2mod/sdk/schemasystem_helper.h>
 #include <source2mod/utils/plat.h>
@@ -823,6 +825,7 @@ namespace virtualhooks
         // After the plugins: theirs is the last look at who the player was.
         permissions::permissionsManager.OnClientDisconnect(slot);
         cookies::cookiesManager.OnClientDisconnect(slot);
+        clients::clientsManager.OnClientDisconnect(slot);
 
         return { KHook::Action::Ignore };
     }
@@ -1030,7 +1033,14 @@ namespace virtualhooks
         if (!pInfo)
             return { KHook::Action::Ignore, true };
 
-        const Action action = networkmessages::DispatchClientHook(static_cast<CServerSideClientBase*>(pThis)->m_nClientSlot, pInfo->m_MessageId, const_cast<CNetMessage*>(pData));
+        const CPlayerSlot slot = static_cast<CServerSideClientBase*>(pThis)->m_nClientSlot;
+
+        // Ahead of the plugins' hooks, so one that supersedes the message
+        // cannot make QueryClientConVar's answer go missing.
+        if (pInfo->m_MessageId == CCLCMsg_RespondCvarValue_t::kMsgId)
+            clients::clientsManager.OnRespondCvarValue(slot, *pData->ToPB<CCLCMsg_RespondCvarValue>());
+
+        const Action action = networkmessages::DispatchClientHook(slot, pInfo->m_MessageId, const_cast<CNetMessage*>(pData));
 
         return { action, true };
     }

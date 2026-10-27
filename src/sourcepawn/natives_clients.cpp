@@ -39,10 +39,15 @@
  * ISource2ModClients.
  */
 #include "natives.h"
+#include "core/shared.h"
+
+#include "scriptplugin.h"
 
 #include "core/clients.h"
 
+#include <engine2/serversideclient.h>
 #include <interfaces/interfaces.h>
+#include <sp_callable.h>
 
 #include <string>
 #include <vector>
@@ -120,7 +125,7 @@ namespace sourcepawn
             std::vector<char> message(1024);
             if (!FormatParams(ctx, params, 2, message.data(), message.size()))
                 return 0;
-            Clients().Kick(CPlayerSlot(params[1]), message.data());
+            Clients().Disconnect(CPlayerSlot(params[1]), NETWORK_DISCONNECT_KICKED, message.data());
             return 0;
         }
 
@@ -150,7 +155,7 @@ namespace sourcepawn
         {
             if (!g_pEngineServer)
                 return -1;
-            for (int slot = 0; slot < 64; slot++)
+            for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
             {
                 if (Clients().IsConnected(CPlayerSlot(slot)) && g_pEngineServer->GetPlayerUserId(CPlayerSlot(slot)).Get() == params[1])
                     return slot;
@@ -164,7 +169,7 @@ namespace sourcepawn
             if (!id)
                 return -1;
             const std::string want = clients::ClientsManager::FormatSteamId(id, SOURCE2MOD_AUTHID_STEAMID64);
-            for (int slot = 0; slot < 64; slot++)
+            for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
             {
                 if (Clients().GetAuthId(CPlayerSlot(slot), SOURCE2MOD_AUTHID_STEAMID64, false) == want)
                     return slot;
@@ -172,7 +177,196 @@ namespace sourcepawn
             return -1;
         }
 
+        // ---- CServerSideClient (a slot; the client is looked up on every call) ----
+
+        CServerSideClient* ServerClient(const cell_t* params)
+        {
+            return Clients().GetServerSideClient(CPlayerSlot(params[1]));
+        }
+
+        cell_t N_SscIsValid(IPluginContext*, const cell_t* params)
+        {
+            return ServerClient(params) != nullptr;
+        }
+
+        cell_t N_SscSignonState(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client ? static_cast<cell_t>(client->GetSignonState()) : 0;
+        }
+
+        cell_t N_SscIsFakePlayer(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client && client->IsFakePlayer();
+        }
+
+        cell_t N_SscIsHLTV(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client && client->IsHLTV();
+        }
+
+        cell_t N_SscHasNetChannel(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client && client->GetNetChannel() != nullptr;
+        }
+
+        cell_t N_SscIsFullyAuthenticated(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client && client->IsFullyAuthenticated();
+        }
+
+        cell_t N_SscUserId(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client ? client->GetUserID().Get() : -1;
+        }
+
+        // GetName(buffer, maxlen)
+        cell_t N_SscGetName(IPluginContext* ctx, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return ToBuffer(ctx, params[2], params[3], client ? client->GetClientName() : "");
+        }
+
+        // GetNetworkIDString(buffer, maxlen)
+        cell_t N_SscGetNetworkIDString(IPluginContext* ctx, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return ToBuffer(ctx, params[2], params[3], client ? client->GetNetworkIDString() : "");
+        }
+
+        // GetSteamID(buffer, maxlen)
+        cell_t N_SscGetSteamID(IPluginContext* ctx, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            const uint64_t id = client ? client->GetClientSteamID().ConvertToUint64() : 0;
+            return ToBuffer(ctx, params[2], params[3], id ? std::to_string(id).c_str() : "");
+        }
+
+        // GetAddress(buffer, maxlen)
+        cell_t N_SscGetAddress(IPluginContext* ctx, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            char address[64] = "";
+            if (client && client->GetNetChannel())
+                client->GetRemoteAddress()->ToString(address, sizeof(address));
+            return ToBuffer(ctx, params[2], params[3], address);
+        }
+
+        // QueryConVar(name, callback, value)
+        cell_t N_SscQueryConVar(IPluginContext* ctx, const cell_t* params)
+        {
+            IPluginFunction* fn = ctx->GetFunctionById(static_cast<funcid_t>(params[3]));
+            if (!fn)
+                return ctx->ThrowNativeError("Invalid function id (%X)", params[3]);
+
+            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
+            const PluginId owner = plugin ? plugin->Id() : 0;
+            const cell_t value = params[4];
+
+            // Dropped with the script's other registrations when it unloads,
+            // so fn never outlives it.
+            ClientConVarQueryCallback callback([fn, value](CPlayerSlot slot, int cookie, ESource2ModConVarQueryResult result,
+                                                           const char* name, const char* cvarValue)
+            {
+                sp::CallArgs args;
+                args.PushCell(cookie);
+                args.PushCell(slot.Get());
+                args.PushCell(static_cast<cell_t>(result));
+                args.PushString(name);
+                args.PushString(cvarValue);
+                args.PushCell(value);
+                Invoke(fn, args);
+            });
+            return Clients().QueryClientConVar(owner, CPlayerSlot(params[1]), LocalString(ctx, params[2]), std::move(callback));
+        }
+
+        // ReplicateConVar(name, value)
+        cell_t N_SscReplicateConVar(IPluginContext* ctx, const cell_t* params)
+        {
+            return Clients().ReplicateConVar(CPlayerSlot(params[1]), LocalString(ctx, params[2]), LocalString(ctx, params[3]));
+        }
+
+        // GetIpAddress(buffer, maxlen)
+        cell_t N_SscGetIpAddress(IPluginContext* ctx, const cell_t* params)
+        {
+            return ToBuffer(ctx, params[2], params[3], Clients().GetIpAddress(CPlayerSlot(params[1])).c_str());
+        }
+
+        // PrintTo*(message)
+        template <void (clients::ClientsManager::*Print)(CPlayerSlot, const char*)>
+        cell_t N_SscPrint(IPluginContext* ctx, const cell_t* params)
+        {
+            (Clients().*Print)(CPlayerSlot(params[1]), LocalString(ctx, params[2]));
+            return 0;
+        }
+
+        // PrintToCenterHtml(message, duration, menu)
+        cell_t N_SscPrintToCenterHtml(IPluginContext* ctx, const cell_t* params)
+        {
+            Clients().PrintToCenterHtml(CPlayerSlot(params[1]), LocalString(ctx, params[2]), params[3], params[4] != 0);
+            return 0;
+        }
+
+        // ExecuteClientCommand(command)
+        cell_t N_SscExecuteClientCommand(IPluginContext* ctx, const cell_t* params)
+        {
+            Clients().ExecuteClientCommand(CPlayerSlot(params[1]), LocalString(ctx, params[2]));
+            return 0;
+        }
+
+        // ExecuteClientCommandFromServer(command)
+        cell_t N_SscExecuteClientCommandFromServer(IPluginContext* ctx, const cell_t* params)
+        {
+            Clients().ExecuteClientCommandFromServer(CPlayerSlot(params[1]), LocalString(ctx, params[2]));
+            return 0;
+        }
+
+        // FireEventToClient(event): the event stays the script's.
+        cell_t N_SscFireEventToClient(IPluginContext* ctx, const cell_t* params)
+        {
+            if (IGameEvent* event = ScriptEvent(ctx, params[2]))
+                Clients().FireEventToClient(CPlayerSlot(params[1]), event);
+            return 0;
+        }
+
+        // Disconnect(reason, internalReason): "" logs no reason, as the controller's does.
+        cell_t N_SscDisconnect(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* internalReason = LocalString(ctx, params[3]);
+            Clients().Disconnect(CPlayerSlot(params[1]), static_cast<ENetworkDisconnectionReason>(params[2]),
+                                 internalReason && *internalReason ? internalReason : nullptr);
+            return 0;
+        }
+
         const sp_nativeinfo_t g_clientNatives[] = {
+            { "CServerSideClient.IsValid.get", N_SscIsValid },
+            { "CServerSideClient.SignonState.get", N_SscSignonState },
+            { "CServerSideClient.IsFakePlayer.get", N_SscIsFakePlayer },
+            { "CServerSideClient.IsHLTV.get", N_SscIsHLTV },
+            { "CServerSideClient.HasNetChannel.get", N_SscHasNetChannel },
+            { "CServerSideClient.IsFullyAuthenticated.get", N_SscIsFullyAuthenticated },
+            { "CServerSideClient.UserId.get", N_SscUserId },
+            { "CServerSideClient.GetName", N_SscGetName },
+            { "CServerSideClient.GetNetworkIDString", N_SscGetNetworkIDString },
+            { "CServerSideClient.GetSteamID", N_SscGetSteamID },
+            { "CServerSideClient.GetAddress", N_SscGetAddress },
+            { "CServerSideClient.QueryConVar", N_SscQueryConVar },
+            { "CServerSideClient.ReplicateConVar", N_SscReplicateConVar },
+            { "CServerSideClient.GetIpAddress", N_SscGetIpAddress },
+            { "CServerSideClient.PrintToConsole", N_SscPrint<&clients::ClientsManager::PrintToConsole> },
+            { "CServerSideClient.PrintToChat", N_SscPrint<&clients::ClientsManager::PrintToChat> },
+            { "CServerSideClient.PrintToCenter", N_SscPrint<&clients::ClientsManager::PrintToCenter> },
+            { "CServerSideClient.PrintToCenterAlert", N_SscPrint<&clients::ClientsManager::PrintToCenterAlert> },
+            { "CServerSideClient.PrintToCenterHtml", N_SscPrintToCenterHtml },
+            { "CServerSideClient.ExecuteClientCommand", N_SscExecuteClientCommand },
+            { "CServerSideClient.ExecuteClientCommandFromServer", N_SscExecuteClientCommandFromServer },
+            { "CServerSideClient.FireEventToClient", N_SscFireEventToClient },
+            { "CServerSideClient.Disconnect", N_SscDisconnect },
             { "Source2ModClients.IsConnected", N_IsConnected },
             { "Source2ModClients.IsInGame", N_IsInGame },
             { "Source2ModClients.IsFakeClient", N_IsFakeClient },

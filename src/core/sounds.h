@@ -246,7 +246,7 @@ namespace sounds
         std::unordered_map<uint32_t, std::string> m_names;
 
         /// Per slot, channel name -> volume. Missing means 1.0.
-        std::unordered_map<std::string, float> m_volumes[64];
+        std::unordered_map<std::string, float> m_volumes[ABSOLUTE_PLAYER_LIMIT];
 
         /// Newest at the back. Nothing says when a sound has finished on a
         /// client, so this is simply the last so many that were sent; a stop or

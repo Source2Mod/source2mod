@@ -49,6 +49,7 @@
  * stale one reads as gone instead of reading freed memory.
  */
 #include "natives.h"
+#include "core/shared.h"
 #include "handles.h"
 #include "scriptplugin.h"
 
@@ -1580,7 +1581,7 @@ namespace sourcepawn
 
         cell_t N_CSFromSlot(IPluginContext*, const cell_t* params)
         {
-            if (params[1] < 0 || params[1] >= 64)
+            if (params[1] < 0 || params[1] >= shared::MaxClients())
                 return -1;
             return EntityCell(CCSPlayerController::FromSlot(params[1]));
         }

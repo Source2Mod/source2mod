@@ -42,15 +42,19 @@
 #include <source2mod/ISource2ModClients.h>
 
 #include <cstdint>
+#include <random>
 #include <string>
+#include <vector>
 
 class CCSPlayerController;
+class CCLCMsg_RespondCvarValue;
 
 namespace clients
 {
     class ClientsManager final : public ISource2ModClients
     {
     public:
+        CServerSideClient* GetServerSideClient(CPlayerSlot slot) override;
         bool IsConnected(CPlayerSlot slot) override;
         bool IsInGame(CPlayerSlot slot) override;
         bool IsFakeClient(CPlayerSlot slot) override;
@@ -59,7 +63,18 @@ namespace clients
         float GetLatency(CPlayerSlot slot) override;
         float GetConnectionTime(CPlayerSlot slot) override;
         std::string GetClientConVar(CPlayerSlot slot, const char* name) override;
-        void Kick(CPlayerSlot slot, const char* message) override;
+        int QueryClientConVar(CPlayerSlot slot, const char* name, ClientConVarQueryCallback callback) override;
+        bool ReplicateConVar(CPlayerSlot slot, const char* name, const char* value) override;
+        std::string GetIpAddress(CPlayerSlot slot) override;
+        void PrintToConsole(CPlayerSlot slot, const char* message) override;
+        void PrintToChat(CPlayerSlot slot, const char* message) override;
+        void PrintToCenter(CPlayerSlot slot, const char* message) override;
+        void PrintToCenterAlert(CPlayerSlot slot, const char* message) override;
+        void PrintToCenterHtml(CPlayerSlot slot, const char* message, int duration = 5, bool menu = false) override;
+        void ExecuteClientCommand(CPlayerSlot slot, const char* command) override;
+        void ExecuteClientCommandFromServer(CPlayerSlot slot, const char* command) override;
+        void FireEventToClient(CPlayerSlot slot, IGameEvent* event) override;
+        void Disconnect(CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* internalReason = nullptr) override;
         int GetClientCount(bool inGameOnly = true) override;
 
         // ---- core side ----
@@ -70,6 +85,28 @@ namespace clients
         static std::string FormatSteamId(uint64_t steamId, ESource2ModAuthId form);
         /// Any SteamID form back to a SteamID64; 0 when the text is none.
         static uint64_t ParseSteamId(const char* text);
+
+        /// QueryClientConVar on behalf of @p owner (a script names its own).
+        int QueryClientConVar(PluginId owner, CPlayerSlot slot, const char* name, ClientConVarQueryCallback callback);
+        /// A CLC_RespondCvarValue off the wire (FilterMessage).
+        void OnRespondCvarValue(CPlayerSlot slot, const CCLCMsg_RespondCvarValue& msg);
+        /// The slot's open queries answer CANCELLED.
+        void OnClientDisconnect(CPlayerSlot slot);
+        /// Drops a plugin's open queries unanswered: its callbacks are about to go.
+        void RemoveAllForPlugin(PluginId id);
+
+    private:
+        struct PendingQuery
+        {
+            int cookie;
+            CPlayerSlot slot;
+            PluginId owner;
+            std::string name;
+            ClientConVarQueryCallback callback;
+        };
+
+        std::vector<PendingQuery> m_queries;
+        std::mt19937 m_random{ std::random_device{}() };
     };
 
     extern ClientsManager clientsManager;

@@ -68,9 +68,6 @@ namespace sourcepawn
 {
     class ScriptPlugin;
 
-    /// What MaxClients holds for every script: CS2's slot count.
-    constexpr cell_t kMaxClients = 64;
-
     // enum Source2ModAction (types.inc): what hooks and forward functions answer
     constexpr cell_t kActionIgnore = 0;
     constexpr cell_t kActionOverride = 1;

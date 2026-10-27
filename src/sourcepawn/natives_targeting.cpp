@@ -39,6 +39,7 @@
  * ISource2ModTargeting. A script's target filters go when it unloads.
  */
 #include "natives.h"
+#include "core/shared.h"
 #include "handles.h"
 #include "scriptplugin.h"
 
@@ -141,7 +142,7 @@ namespace sourcepawn
                 Handles().Free(list, 0, true);
                 for (cell_t slot : slots)
                 {
-                    if (slot >= 0 && slot < 64)
+                    if (slot >= 0 && slot < shared::MaxClients())
                         targets.push_back(CPlayerSlot(slot));
                 }
                 return ok;

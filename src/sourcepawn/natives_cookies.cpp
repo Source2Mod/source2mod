@@ -42,6 +42,7 @@
  * and the cookie iterator are not there yet.
  */
 #include "natives.h"
+#include "core/shared.h"
 #include "handles.h"
 #include "scriptplugin.h"
 
@@ -80,7 +81,7 @@ namespace sourcepawn
 
         bool SlotOf(IPluginContext* ctx, cell_t client, CPlayerSlot& slot)
         {
-            if (client < 1 || client > kMaxClients)
+            if (client < 1 || client > shared::MaxClients())
             {
                 ctx->ThrowNativeError("Client index %d is invalid", client);
                 return false;
@@ -92,7 +93,7 @@ namespace sourcepawn
         /// A CPlayerSlot argument (source2mod/*.inc pass slots, 0-based).
         bool PlayerSlot(IPluginContext* ctx, cell_t value, CPlayerSlot& slot)
         {
-            if (value < 0 || value >= kMaxClients)
+            if (value < 0 || value >= shared::MaxClients())
             {
                 ctx->ThrowNativeError("Player slot %d is invalid", value);
                 return false;

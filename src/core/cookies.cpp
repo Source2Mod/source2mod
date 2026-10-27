@@ -49,8 +49,6 @@ namespace cookies
 
     namespace
     {
-        constexpr int kMaxSlots = 64;
-
         /// A prepared statement that finalizes itself.
         struct Statement
         {
@@ -89,7 +87,7 @@ namespace cookies
 
         bool ValidSlot(CPlayerSlot slot)
         {
-            return slot.Get() >= 0 && slot.Get() < kMaxSlots;
+            return slot.Get() >= 0 && slot.Get() < shared::MaxClients();
         }
     }
 
@@ -160,7 +158,7 @@ namespace cookies
         FP_INFO("ClientPrefs: database '{}'", path.string());
 
         // Loaded mid-map: the players already authorized get theirs now.
-        for (int slot = 0; slot < kMaxSlots; slot++)
+        for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
         {
             if (permissions::permissionsManager.IsPlayerAuthorized(CPlayerSlot(slot)))
                 if (const uint64 steamId = permissions::permissionsManager.GetPlayerSteamID(CPlayerSlot(slot)))
@@ -283,7 +281,9 @@ namespace cookies
 
     void CookiesManager::OnClientDisconnect(CPlayerSlot slot)
     {
-        if (ValidSlot(slot))
+        // The array's bound, not maxClients: a disconnect at shutdown, with
+        // the globals gone, still has to clear the slot.
+        if (slot.Get() >= 0 && slot.Get() < ABSOLUTE_PLAYER_LIMIT)
             m_players[slot.Get()] = Player{};
     }
 
@@ -404,7 +404,7 @@ namespace cookies
             return false;
 
         // Connected: through the slot, so the cache follows.
-        for (int slot = 0; slot < kMaxSlots; slot++)
+        for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
         {
             if (m_players[slot].steamId == steamId && m_players[slot].cached)
                 return SetCookie(CPlayerSlot(slot), cookie, value);

@@ -60,7 +60,6 @@ namespace targeting
 
     namespace
     {
-        constexpr int kMaxSlots = 64;
         constexpr int kTeamSpectator = 1;
         constexpr int kTeamT = 2;
         constexpr int kTeamCT = 3;
@@ -112,7 +111,7 @@ namespace targeting
             auto* hit = static_cast<CBaseEntity*>(tr.HitEntity());
             if (!hit)
                 return -1;
-            for (int slot = 0; slot < kMaxSlots; slot++)
+            for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
             {
                 CCSPlayerController* other = PlayerAt(slot);
                 if (other && slot != caller.Get() && other->GetPlayerPawn() == hit)
@@ -240,7 +239,7 @@ namespace targeting
             if (builtin)
             {
                 const std::string lower = builtin->name;
-                for (int slot = 0; slot < kMaxSlots; slot++)
+                for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
                 {
                     CCSPlayerController* player = PlayerAt(slot);
                     if (player && InPattern(lower, slot, player, caller))
@@ -285,7 +284,7 @@ namespace targeting
             const long userid = std::strtol(rest.c_str(), &end, 10);
             if (end && !*end)
             {
-                for (int slot = 0; slot < kMaxSlots; slot++)
+                for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
                 {
                     if (PlayerAt(slot) && UserIdOf(slot) == userid)
                         return Single(slot, caller, flags, targets, name);
@@ -293,7 +292,7 @@ namespace targeting
             }
             if (const uint64_t steamId = clients::ClientsManager::ParseSteamId(rest.c_str()))
             {
-                for (int slot = 0; slot < kMaxSlots; slot++)
+                for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
                 {
                     CCSPlayerController* player = PlayerAt(slot);
                     if (player && !player->IsBot() && player->m_steamID() == steamId)
@@ -301,7 +300,7 @@ namespace targeting
                 }
                 return SOURCE2MOD_TARGET_NONE;
             }
-            for (int slot = 0; slot < kMaxSlots; slot++)
+            for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
             {
                 if (PlayerAt(slot) && NameOf(PlayerAt(slot)) == rest)
                     return Single(slot, caller, flags, targets, name);
@@ -312,7 +311,7 @@ namespace targeting
         // A bare SteamID
         if (const uint64_t steamId = clients::ClientsManager::ParseSteamId(text.c_str()))
         {
-            for (int slot = 0; slot < kMaxSlots; slot++)
+            for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
             {
                 CCSPlayerController* player = PlayerAt(slot);
                 if (player && !player->IsBot() && player->m_steamID() == steamId)
@@ -322,7 +321,7 @@ namespace targeting
 
         // Part of a name: an exact (case-insensitive) match wins.
         std::vector<int> partial;
-        for (int slot = 0; slot < kMaxSlots; slot++)
+        for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)
         {
             CCSPlayerController* player = PlayerAt(slot);
             if (!player)

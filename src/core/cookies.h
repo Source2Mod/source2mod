@@ -113,7 +113,7 @@ namespace cookies
 
         sqlite3* m_db = nullptr;
         std::vector<Cookie> m_cookies;   // id = index + 1
-        Player m_players[64];
+        Player m_players[ABSOLUTE_PLAYER_LIMIT];
         std::vector<Listener> m_listeners;
     };
 

@@ -116,7 +116,7 @@ namespace translations
         std::vector<Language> m_languages;
         bool m_languagesLoaded = false;
         int m_serverLanguage = 0;
-        std::array<PlayerLanguage, 64> m_players{};
+        std::array<PlayerLanguage, ABSOLUTE_PLAYER_LIMIT> m_players{};
         std::unordered_map<PluginId, std::unordered_map<std::string, Phrase>> m_phrases;
     };
 

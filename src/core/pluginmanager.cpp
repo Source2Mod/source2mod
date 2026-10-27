@@ -36,6 +36,7 @@
 #include "pluginmanager.h"
 #include "gamesystems.h"
 
+#include "clients.h"
 #include "commands.h"
 #include "configs.h"
 #include "convars.h"
@@ -459,6 +460,7 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
         entities::entitiesManager.RemoveAllForPlugin(failedId);
         permissions::permissionsManager.RemoveAllForPlugin(failedId);
         cookies::cookiesManager.RemoveAllForPlugin(failedId);
+        clients::clientsManager.RemoveAllForPlugin(failedId);
         translations::translationsManager.RemoveAllForPlugin(failedId);
         targeting::targetingManager.RemoveAllForPlugin(failedId);
         functions::functionsManager.RemoveAllForPlugin(failedId);
@@ -612,6 +614,7 @@ bool PluginManager::ReloadPlugin(int id)
         entities::entitiesManager.RemoveAllForPlugin(id);
         permissions::permissionsManager.RemoveAllForPlugin(id);
         cookies::cookiesManager.RemoveAllForPlugin(id);
+        clients::clientsManager.RemoveAllForPlugin(id);
         translations::translationsManager.RemoveAllForPlugin(id);
         targeting::targetingManager.RemoveAllForPlugin(id);
         functions::functionsManager.RemoveAllForPlugin(id);
@@ -680,6 +683,7 @@ bool PluginManager::UnloadPlugin(PluginId id)
         entities::entitiesManager.RemoveAllForPlugin(id);
         permissions::permissionsManager.RemoveAllForPlugin(id);
         cookies::cookiesManager.RemoveAllForPlugin(id);
+        clients::clientsManager.RemoveAllForPlugin(id);
         translations::translationsManager.RemoveAllForPlugin(id);
         targeting::targetingManager.RemoveAllForPlugin(id);
         functions::functionsManager.RemoveAllForPlugin(id);
@@ -808,6 +812,7 @@ void PluginManager::UnloadAll()
         entities::entitiesManager.RemoveAllForPlugin(p->id);
         permissions::permissionsManager.RemoveAllForPlugin(p->id);
         cookies::cookiesManager.RemoveAllForPlugin(p->id);
+        clients::clientsManager.RemoveAllForPlugin(p->id);
         translations::translationsManager.RemoveAllForPlugin(p->id);
         targeting::targetingManager.RemoveAllForPlugin(p->id);
         functions::functionsManager.RemoveAllForPlugin(p->id);

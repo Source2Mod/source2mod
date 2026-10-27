@@ -61,7 +61,7 @@ namespace sourcepawn
 
         CCSPlayerController* Controller(int client)
         {
-            if (client < 1 || client > kMaxClients)
+            if (client < 1 || client > shared::MaxClients())
                 return nullptr;
             return CCSPlayerController::FromSlot(client - 1);
         }

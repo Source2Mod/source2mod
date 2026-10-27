@@ -35,10 +35,14 @@
  */
 #include "shared.h"
 
+#include "pluginapi.h"
+
 #include <engine2/inetworkserverservice.h>
 #include <engine2/networkgameserverbase.h>
 #include <icvar.h>
 #include <schemasystem.h>
+
+#include <algorithm>
 
 namespace shared
 {
@@ -49,5 +53,11 @@ namespace shared
 
     CGlobalVars* g_pGlobalVars = nullptr;
     CCSGameRules* g_pGameRules = nullptr;
+
+    int MaxClients()
+    {
+        CGlobalVars* globals = pluginApi.GetGlobalVars();
+        return globals ? std::min(globals->maxClients, ABSOLUTE_PLAYER_LIMIT) : 0;
+    }
 
 }

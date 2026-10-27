@@ -47,6 +47,20 @@ namespace sourcepawn
         // "FFPS": the first four bytes of every SMX file.
         constexpr uint32_t kSmxMagic = 0x53504646;
 
+        // MaxClients is a public the host fills in: the server's slot count,
+        // so again at every level init -- a script loaded before the server
+        // existed starts out at 0.
+        void SetMaxClients(IPluginRuntime* runtime)
+        {
+            uint32_t idx;
+            if (!runtime || runtime->FindPubvarByName("MaxClients", &idx) != SP_ERROR_NONE)
+                return;
+            cell_t local;
+            cell_t* addr;
+            if (runtime->GetPubvarAddrs(idx, &local, &addr) == SP_ERROR_NONE)
+                *addr = shared::MaxClients();
+        }
+
         // SourceMod's order and wording, so a script error reads the same as
         // it did there: the message, the plugin to blame, the call stack.
         class DebugListener : public IDebugListener
@@ -306,15 +320,7 @@ namespace sourcepawn
         // What other plugins registered so far.
         BindDynamicNatives();
 
-        // MaxClients is a public the host fills in.
-        uint32_t idx;
-        if (m_runtime->FindPubvarByName("MaxClients", &idx) == SP_ERROR_NONE)
-        {
-            cell_t local;
-            cell_t* addr;
-            if (m_runtime->GetPubvarAddrs(idx, &local, &addr) == SP_ERROR_NONE)
-                *addr = kMaxClients;
-        }
+        SetMaxClients(m_runtime.get());
 
         // The includes mark what may be missing: __ext_<name>_SetNTVOptional
         // and __pl_<name>_SetNTVOptional call MarkNativeAsOptional.
@@ -490,6 +496,8 @@ namespace sourcepawn
 
     void ScriptPlugin::OnLevelInit(const char* mapName, const char* mapEntities, const char* oldLevel, const char* landmarkName, bool loadGame, bool background)
     {
+        SetMaxClients(m_runtime.get());
+
         if (IPluginFunction* fn = m_runtime->GetFunctionByName("Source2Mod_OnLevelInit"))
         {
             sp::CallArgs args;
