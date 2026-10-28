@@ -293,6 +293,64 @@ namespace sourcepawn
             return 0;
         }
 
+        // ---- what the function is (ISource2ModFunction's introspection) ---------
+        // The core's description when there is one (it is what Find hands out,
+        // with the gamedata's own types); the script's shape otherwise.
+
+        cell_t N_FnGetReturnType(IPluginContext* ctx, const cell_t* params)
+        {
+            const Function* fn = FnOf(ctx, params[1]);
+            if (!fn)
+                return 0;
+            return fn->described ? static_cast<cell_t>(fn->described->GetReturnType()) : static_cast<cell_t>(fn->returnType);
+        }
+
+        cell_t N_FnGetParamCount(IPluginContext* ctx, const cell_t* params)
+        {
+            const Function* fn = FnOf(ctx, params[1]);
+            if (!fn)
+                return 0;
+            return fn->described ? fn->described->GetParamCount() : static_cast<cell_t>(fn->params.size());
+        }
+
+        // GetParamType(index)
+        cell_t N_FnGetParamType(IPluginContext* ctx, const cell_t* params)
+        {
+            const Function* fn = FnOf(ctx, params[1]);
+            if (!fn)
+                return 0;
+            const int count = fn->described ? fn->described->GetParamCount() : static_cast<int>(fn->params.size());
+            if (params[2] < 0 || params[2] >= count)
+                return ctx->ThrowNativeError("Parameter %d out of range (%d parameters)", params[2], count);
+            return fn->described ? static_cast<cell_t>(fn->described->GetParamType(params[2])) : static_cast<cell_t>(fn->params[params[2]]);
+        }
+
+        cell_t N_FnIsVirtual(IPluginContext* ctx, const cell_t* params)
+        {
+            const Function* fn = FnOf(ctx, params[1]);
+            if (!fn)
+                return 0;
+            return fn->described ? fn->described->IsVirtual() : fn->vtableIndex >= 0;
+        }
+
+        cell_t N_FnIsMember(IPluginContext* ctx, const cell_t* params)
+        {
+            const Function* fn = FnOf(ctx, params[1]);
+            if (!fn)
+                return 0;
+            return fn->described ? fn->described->IsMember() : fn->vtableIndex >= 0;
+        }
+
+        // GetName(buffer, maxlen): the gamedata name, "" for one the script built.
+        cell_t N_FnGetName(IPluginContext* ctx, const cell_t* params)
+        {
+            const Function* fn = FnOf(ctx, params[1]);
+            const char* name = fn && fn->described ? fn->described->GetName() : "";
+            size_t written = 0;
+            ctx->StringToLocalUTF8(params[2], params[3], name ? name : "", &written);
+            return static_cast<cell_t>(written);
+        }
+
         cell_t N_FnGetBypassHooks(IPluginContext* ctx, const cell_t* params)
         {
             Function* fn = FnOf(ctx, params[1]);
@@ -802,6 +860,12 @@ namespace sourcepawn
             { "Source2ModFunction.FromVirtualTable", N_FnFromVirtualTable },
             { "Source2ModFunction.FromAddress", N_FnFromAddress },
             { "Source2ModFunction.AddParam", N_FnAddParam },
+            { "Source2ModFunction.ReturnType.get", N_FnGetReturnType },
+            { "Source2ModFunction.ParamCount.get", N_FnGetParamCount },
+            { "Source2ModFunction.GetParamType", N_FnGetParamType },
+            { "Source2ModFunction.IsVirtual.get", N_FnIsVirtual },
+            { "Source2ModFunction.IsMember.get", N_FnIsMember },
+            { "Source2ModFunction.GetName", N_FnGetName },
             { "Source2ModFunction.BypassHooks.get", N_FnGetBypassHooks },
             { "Source2ModFunction.BypassHooks.set", N_FnSetBypassHooks },
             { "Source2ModFunction.Call", N_FnCall },

@@ -452,6 +452,29 @@ namespace sourcepawn
             return NewConnection(ctx, info);
         }
 
+        // GetNamedConnection(name, host, hostLen, user, userLen, pass, passLen,
+        //                    database, databaseLen, &port, &timeout, &driver)
+        cell_t N_SQLGetNamedConnection(IPluginContext* ctx, const cell_t* params)
+        {
+            Source2ModSQLConnectionInfo info{};
+            if (!mysql::mysqlManager.GetNamedConnection(LocalString(ctx, params[1]), info))
+                return 0;
+
+            ToBuffer(ctx, params[2], params[3], info.host);
+            ToBuffer(ctx, params[4], params[5], info.user);
+            ToBuffer(ctx, params[6], params[7], info.pass);
+            ToBuffer(ctx, params[8], params[9], info.database);
+
+            const cell_t values[] = { info.port, info.timeout, static_cast<cell_t>(info.driver) };
+            for (int i = 0; i < 3; i++)
+            {
+                cell_t* out = nullptr;
+                if (ctx->LocalToPhysAddr(params[10 + i], &out) == SP_ERROR_NONE && out)
+                    *out = values[i];
+            }
+            return 1;
+        }
+
         cell_t N_SQLCreateNamedServerless(IPluginContext* ctx, const cell_t* params)
         {
             Source2ModSQLConnectionInfo info{};
@@ -663,6 +686,7 @@ namespace sourcepawn
             { "Source2ModSQL.CreateServerless", N_MySQLCreateServerless },
             { "Source2ModSQL.CreateNamedConnection", N_SQLCreateNamedConnection },
             { "Source2ModSQL.CreateNamedServerless", N_SQLCreateNamedServerless },
+            { "Source2ModSQL.GetNamedConnection", N_SQLGetNamedConnection },
             { nullptr, nullptr },
         };
     }

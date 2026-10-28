@@ -48,6 +48,8 @@
 
 #include <source2mod/ISource2ModScheduler.h>
 
+#include <tier0/convar.h>
+
 #include <sp_callable.h>
 
 #include <algorithm>
@@ -251,7 +253,72 @@ namespace sourcepawn
             return a ? ToBuffer(ctx, params[2], params[3], a->GetCommandString()) : 0;
         }
 
+        // ---- Source2ModCommandLine: text through the engine's tokenizer -----------
+
+        // The engine's own CCommand, so a script splits a line exactly as the
+        // engine does before it looks a ConCommand up -- it also breaks on
+        // { } ( ) ' : ("say:x" is say), which a split on spaces would miss.
+        HandleType CommandLineType()
+        {
+            static const HandleType t = Handles().CreateType("Source2ModCommandLine", [](void* p) { delete static_cast<CCommand*>(p); });
+            return t;
+        }
+
+        const CCommand* CommandLineOf(IPluginContext* ctx, cell_t handle)
+        {
+            return static_cast<const CCommand*>(ReadHandle(ctx, handle, CommandLineType()));
+        }
+
+        // Source2ModCommandLine(text)
+        cell_t N_LineCreate(IPluginContext* ctx, const cell_t* params)
+        {
+            auto* command = new CCommand();
+            command->Tokenize(LocalString(ctx, params[1]));
+            const cell_t handle = Handles().Create(CommandLineType(), command, CallerId(ctx));
+            if (!handle)
+                delete command;
+            return handle;
+        }
+
+        cell_t N_LineArgC(IPluginContext* ctx, const cell_t* params)
+        {
+            const CCommand* c = CommandLineOf(ctx, params[1]);
+            return c ? c->ArgC() : 0;
+        }
+
+        cell_t N_LineArg(IPluginContext* ctx, const cell_t* params)
+        {
+            const CCommand* c = CommandLineOf(ctx, params[1]);
+            return c ? ToBuffer(ctx, params[3], params[4], c->Arg(params[2])) : 0;
+        }
+
+        cell_t N_LineArgS(IPluginContext* ctx, const cell_t* params)
+        {
+            const CCommand* c = CommandLineOf(ctx, params[1]);
+            return c ? ToBuffer(ctx, params[2], params[3], c->ArgS()) : 0;
+        }
+
+        cell_t N_LineGetCommandString(IPluginContext* ctx, const cell_t* params)
+        {
+            const CCommand* c = CommandLineOf(ctx, params[1]);
+            return c ? ToBuffer(ctx, params[2], params[3], c->GetCommandString()) : 0;
+        }
+
+        // IsCommand(name): Arg(0) is `name`, case-insensitively, as the engine
+        // matches a ConCommand ("SAY" runs say).
+        cell_t N_LineIsCommand(IPluginContext* ctx, const cell_t* params)
+        {
+            const CCommand* c = CommandLineOf(ctx, params[1]);
+            return c && c->ArgC() > 0 && !V_stricmp(c->Arg(0), LocalString(ctx, params[2]));
+        }
+
         const sp_nativeinfo_t g_commandNatives[] = {
+            { "Source2ModCommandLine.Source2ModCommandLine", N_LineCreate },
+            { "Source2ModCommandLine.ArgC", N_LineArgC },
+            { "Source2ModCommandLine.Arg", N_LineArg },
+            { "Source2ModCommandLine.ArgS", N_LineArgS },
+            { "Source2ModCommandLine.GetCommandString", N_LineGetCommandString },
+            { "Source2ModCommandLine.IsCommand", N_LineIsCommand },
             { "Source2ModCommands.RegisterConCommand", N_RegisterConCommand },
             { "Source2ModCommands.UnregisterConCommand", N_Unregister },
             { "Source2ModCommands.RegisterChatListener", N_RegisterChatListener },

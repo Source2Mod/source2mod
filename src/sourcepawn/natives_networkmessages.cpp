@@ -748,14 +748,26 @@ namespace sourcepawn
             return true;
         }
 
+        // The optional messageId of the Hook* natives; -1 (every message) for a
+        // script compiled before it existed.
+        int OnlyMessage(const cell_t* params, int index)
+        {
+            return params[0] >= index ? static_cast<int>(params[index]) : -1;
+        }
+
         cell_t N_HookServerMessage(IPluginContext* ctx, const cell_t* params)
         {
             IPluginFunction* fn = Function(ctx, params[1]);
             if (!fn)
                 return 0;
             const PluginId owner = CallerId(ctx);
-            NetMessageServerHook handler([fn, owner](uint64_t* clients, int messageId, void* msg) -> Action
+            const int only = OnlyMessage(params, 2);
+            NetMessageServerHook handler([fn, owner, only](uint64_t* clients, int messageId, void* msg) -> Action
             {
+                // Ahead of the handle and the call: an unwanted message costs
+                // a compare, not a trip through the VM.
+                if (only != -1 && messageId != only)
+                    return Action::Ignore;
                 LentMsg lent(msg, owner);
                 cell_t mask[2];
                 WriteMask(mask, *clients);
@@ -771,10 +783,12 @@ namespace sourcepawn
             return Remember(networkmessages::networkMessagesManager.HookServerMessage(owner, std::move(handler)), owner, HookKind::ServerMessage);
         }
 
-        NetMessageClientHook ClientHook(IPluginFunction* fn, PluginId owner)
+        NetMessageClientHook ClientHook(IPluginFunction* fn, PluginId owner, int only)
         {
-            return NetMessageClientHook([fn, owner](CPlayerSlot slot, int messageId, void* msg) -> Action
+            return NetMessageClientHook([fn, owner, only](CPlayerSlot slot, int messageId, void* msg) -> Action
             {
+                if (only != -1 && messageId != only)
+                    return Action::Ignore;
                 LentMsg lent(msg, owner);
                 sp::CallArgs args;
                 args.PushCell(slot.Get());
@@ -792,7 +806,8 @@ namespace sourcepawn
             if (!fn)
                 return 0;
             const PluginId owner = CallerId(ctx);
-            return Remember(networkmessages::networkMessagesManager.HookClientMessage(owner, ClientHook(fn, owner)), owner, HookKind::ClientMessage);
+            return Remember(networkmessages::networkMessagesManager.HookClientMessage(owner, ClientHook(fn, owner, OnlyMessage(params, 2))), owner,
+                            HookKind::ClientMessage);
         }
 
         cell_t N_HookServerInternalMessage(IPluginContext* ctx, const cell_t* params)
@@ -801,7 +816,7 @@ namespace sourcepawn
             if (!fn)
                 return 0;
             const PluginId owner = CallerId(ctx);
-            return Remember(networkmessages::networkMessagesManager.HookServerInternalMessage(owner, ClientHook(fn, owner)), owner,
+            return Remember(networkmessages::networkMessagesManager.HookServerInternalMessage(owner, ClientHook(fn, owner, OnlyMessage(params, 2))), owner,
                             HookKind::ServerInternalMessage);
         }
 

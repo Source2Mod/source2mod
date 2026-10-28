@@ -97,24 +97,34 @@ bool Source2ModModule::InitFromMemory(uintptr_t ptr)
     return m_module.InitFromMemory(DynLibUtils::CMemory(ptr));
 }
 
+// A module that did not initialise (no such library loaded) answers nothing
+// rather than reaching into DynLibUtils: on Linux GetBase() reads through the
+// handle (a link_map*), which is null then.
+
 ISource2ModMemory Source2ModModule::FindPattern(const char* pattern, ISource2ModMemory startAddress) const
 {
+    if (!m_module.IsValid() || !pattern)
+        return ISource2ModMemory();
     return ISource2ModMemory(m_module.FindPattern(DynLibUtils::ParsePattern(pattern), DynLibUtils::CMemory(startAddress.GetAddr())).GetPtr());
 }
 
 ISource2ModMemory Source2ModModule::FindPatternInSection(const char* pattern, const char* section, ISource2ModMemory startAddress) const
 {
+    if (!m_module.IsValid() || !pattern || !section)
+        return ISource2ModMemory();
     return ISource2ModMemory(m_module.FindPattern(DynLibUtils::ParsePattern(pattern), DynLibUtils::CMemory(startAddress.GetAddr()), m_module.GetSectionByName(section)).GetPtr());
 }
 
 ISource2ModMemory Source2ModModule::GetVirtualTableByName(const char* name, bool decorated) const
 {
+    if (!m_module.IsValid() || !name)
+        return ISource2ModMemory();
     return ISource2ModMemory(m_module.GetVirtualTableByName(name, decorated).GetPtr());
 }
 
 ISource2ModMemory Source2ModModule::GetVirtualTableByOffset(const char* name, std::ptrdiff_t offset, bool decorated) const
 {
-    if (!name)
+    if (!m_module.IsValid() || !name)
         return ISource2ModMemory();
 
     return ISource2ModMemory(m_module.GetVirtualTableByOffset(name, offset, decorated).GetPtr());
@@ -122,7 +132,7 @@ ISource2ModMemory Source2ModModule::GetVirtualTableByOffset(const char* name, st
 
 ISource2ModMemory Source2ModModule::GetVirtualTableByBase(const char* name, const char* baseName, bool decorated) const
 {
-    if (!name || !baseName)
+    if (!m_module.IsValid() || !name || !baseName)
         return ISource2ModMemory();
 
     return ISource2ModMemory(m_module.GetVirtualTableByBase(name, baseName, decorated).GetPtr());
@@ -130,11 +140,15 @@ ISource2ModMemory Source2ModModule::GetVirtualTableByBase(const char* name, cons
 
 ISource2ModMemory Source2ModModule::GetFunctionByName(const char* name) const
 {
+    if (!m_module.IsValid() || !name)
+        return ISource2ModMemory();
     return ISource2ModMemory(m_module.GetFunctionByName(name).GetPtr());
 }
 
 ISource2ModModule::SectionInfo Source2ModModule::GetSectionByName(const char* name) const
 {
+    if (!m_module.IsValid() || !name)
+        return { 0, 0 };
     const auto* sec = m_module.GetSectionByName(name);
     if (!sec) return { 0, 0 };
     return { reinterpret_cast<uintptr_t>(sec->GetPtr()), sec->m_nSectionSize };
@@ -147,16 +161,22 @@ void* Source2ModModule::GetModuleHandle() const
 
 ISource2ModMemory Source2ModModule::GetModuleBase() const
 {
+    if (!m_module.IsValid())
+        return ISource2ModMemory();
     return ISource2ModMemory(m_module.GetBase().GetPtr());
 }
 
 const char* Source2ModModule::GetModulePath() const
 {
+    if (!m_module.IsValid())
+        return "";
     return m_module.GetPath().data();
 }
 
 const char* Source2ModModule::GetModuleName() const
 {
+    if (!m_module.IsValid())
+        return "";
     if (m_cachedName.empty())
         m_cachedName = m_module.GetName();
     return m_cachedName.c_str();

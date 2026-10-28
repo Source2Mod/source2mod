@@ -165,6 +165,14 @@ namespace sourcepawn
             return ToBuffer(ctx, params[3], params[4], buf.data());
         }
 
+        // TranslateLanguage(phrase, language, buffer, maxlen)
+        cell_t N_TranslateLanguage(IPluginContext* ctx, const cell_t* params)
+        {
+            std::vector<char> buf(std::max<cell_t>(params[4], 1));
+            Tr().TranslateLanguage(CallerId(ctx), LocalString(ctx, params[1]), params[2], buf.data(), buf.size());
+            return ToBuffer(ctx, params[3], params[4], buf.data());
+        }
+
         // FormatPhrase(buffer, maxlen, target, phrase, any ...)
         cell_t N_FormatPhrase(IPluginContext* ctx, const cell_t* params)
         {
@@ -197,6 +205,7 @@ namespace sourcepawn
             { "Source2ModTranslations.PhraseExists", N_PhraseExists },
             { "Source2ModTranslations.IsTranslatedFor", N_IsTranslatedFor },
             { "Source2ModTranslations.Translate", N_Translate },
+            { "Source2ModTranslations.TranslateLanguage", N_TranslateLanguage },
             { "Source2ModTranslations.FormatPhrase", N_FormatPhrase },
             { "Source2ModTranslations.SetFormatTarget", N_SetFormatTarget },
             { nullptr, nullptr },
