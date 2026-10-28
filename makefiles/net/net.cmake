@@ -17,6 +17,9 @@ add_library(source2mod-net STATIC ${NET_SOURCE_FILES})
 set_target_properties(source2mod-net PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(source2mod-net PRIVATE ${source2mod_include_directories})
 target_link_libraries(source2mod-net PRIVATE source2mod-config)
+# Beast's templates put more sections in one object than COFF allows by default
+# (C1128 in net_websocket.cpp).
+target_compile_options(source2mod-net PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/bigobj>)
 target_compile_definitions(source2mod-net PRIVATE
         # Asio's deadline_timer and regex read_until, and the Boost.DateTime and
         # Boost.Regex they drag in: steady_timer and plain read_until do.
