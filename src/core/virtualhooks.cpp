@@ -49,6 +49,7 @@
 #include "hooks.h"
 #include "http.h"
 #include "mysql.h"
+#include "net.h"
 #include "networkmessages.h"
 #include "cookies.h"
 #include "permissions.h"
@@ -61,7 +62,7 @@
 #include "shared.h"
 #include "slotinput.h"
 #include "sounds.h"
-#include "tkvprof.h"
+#include "fpvprof.h"
 #include "transmit.h"
 #include "utils/log.h"
 
@@ -144,6 +145,18 @@ namespace virtualhooks
         {
             return action == Action::Supersede ? KHook::Action::Supersede : KHook::Action::Ignore;
         }
+
+        // The engine dispatches Steam's callbacks every pass of its loop,
+        // hibernating or not (Steam's HTTP results arrive there). Beast's
+        // results are handed over right after, so they do not wait for a
+        // player either.
+        KHook::Function<void>* s_hSteamRunCallbacks = nullptr;
+
+        KHook::Return<void> Hook_SteamGameServerRunCallbacks()
+        {
+            net::RunFrame();
+            return { KHook::Action::Ignore };
+        }
     }
 
     Virtuals::Virtuals() :
@@ -220,6 +233,18 @@ namespace virtualhooks
         ResolveIndex(m_hCheckTransmit, "ISource2GameEntities::CheckTransmit");
 
         m_hGameFrame->Add(g_pSource2Server);
+#ifdef _WIN32
+        DynLibUtils::CModule libsteamapi("steam_api64");
+#else
+        DynLibUtils::CModule libsteamapi("libsteam_api");
+#endif
+        if (void* pRunCallbacks = libsteamapi.GetFunctionByName("SteamGameServer_RunCallbacks").GetPtr())
+        {
+            s_hSteamRunCallbacks = new KHook::Function<void>(nullptr, &Hook_SteamGameServerRunCallbacks);
+            s_hSteamRunCallbacks->Configure(pRunCallbacks);
+        }
+        else
+            FP_WARN("SteamGameServer_RunCallbacks not found: Beast HTTP results wait for the server to wake up.");
         m_hStartupServer->Add(g_pNetworkServerService);
         m_hDispatchConCommand->Add(g_pCVar);
         gamehooks::gameHooksManager.Install(HookPointId::PlayerChat);
@@ -271,6 +296,8 @@ namespace virtualhooks
         // Every pointer can be null: a second call, or an Init that stopped part way.
         if (m_hGameFrame)
             m_hGameFrame->Remove(g_pSource2Server);
+        delete s_hSteamRunCallbacks;
+        s_hSteamRunCallbacks = nullptr;
         if (m_hStartupServer)
             m_hStartupServer->Remove(g_pNetworkServerService);
         // Already gone when this is the second half of a console "meta unload".
@@ -382,7 +409,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_GameFrame(ISource2Server* pThis, bool simulating, bool bFirstTick, bool bLastTick)
     {
-        TK_VPROF("Source2Mod::GameFrame");
+        FP_VPROF("Source2Mod::GameFrame");
 
         // First, and before the early return below: a signal handler someone
         // replaced has to go back regardless of whether the world is up.
@@ -408,6 +435,11 @@ namespace virtualhooks
         // Players Steam validated since the last frame, and permission changes
         // that were held back to be announced from here.
         permissions::permissionsManager.OnGameFrame();
+
+        // Results of the core's own sockets (HTTP through Beast). Here and not
+        // in PostSimulate: Steam's HTTP results arrive while the server
+        // hibernates, and Beast's must not wait for a player.
+        net::RunFrame();
 
         {
             GameFrameContext ctx{ simulating, bFirstTick, bLastTick };
@@ -443,7 +475,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_StartupServer(INetworkServerService* pThis, const GameSessionConfiguration_t& config, ISource2WorldSession* pWorldSession, const char* pszMapName)
     {
-        TK_VPROF("Source2Mod::StartupServer");
+        FP_VPROF("Source2Mod::StartupServer");
 
         crashhandler::OnStartupServer(pszMapName);
 
@@ -483,7 +515,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_ClientPutInServer(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, ClientPutInServerType_t type, uint64 xuid)
     {
-        TK_VPROF("Source2Mod::ClientPutInServer");
+        FP_VPROF("Source2Mod::ClientPutInServer");
 
         slotinput::ResetPlayer(slot);
 
@@ -504,7 +536,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_ClientVoice(ISource2GameClients* pThis, CPlayerSlot slot)
     {
-        TK_VPROF("Source2Mod::ClientVoice");
+        FP_VPROF("Source2Mod::ClientVoice");
 
         ClientSlotContext ctx{ slot };
         hooks::hooksManager.Dispatch(HookPointId::ClientVoice, ctx, true);
@@ -520,7 +552,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_ClientSettingsChanged(ISource2GameClients* pThis, CPlayerSlot slot)
     {
-        TK_VPROF("Source2Mod::ClientSettingsChanged");
+        FP_VPROF("Source2Mod::ClientSettingsChanged");
 
         ClientSlotContext ctx{ slot };
         hooks::hooksManager.Dispatch(HookPointId::ClientSettingsChanged, ctx, true);
@@ -556,7 +588,7 @@ namespace virtualhooks
             return { KHook::Action::Supersede };
         }
 
-        TK_VPROF("Source2Mod::DispatchConCommand");
+        FP_VPROF("Source2Mod::DispatchConCommand");
 
         if (args.ArgC() >= 2)
         {
@@ -660,7 +692,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_ClientCommand(ISource2GameClients* pThis, CPlayerSlot slot, const CCommand& args)
     {
-        TK_VPROF("Source2Mod::ClientCommand");
+        FP_VPROF("Source2Mod::ClientCommand");
 
         slotinput::Eject();
 
@@ -679,7 +711,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_ClientSvcUserMessage(ISource2GameClients* pThis, CPlayerSlot slot, int nType, uint32 nSize, const void* pBuffer)
     {
-        TK_VPROF("Source2Mod::ClientSvcUserMessage");
+        FP_VPROF("Source2Mod::ClientSvcUserMessage");
 
         if (nType != static_cast<int>(ECstrike15UserMessages::CS_UM_CustomHudClicked))
             return { KHook::Action::Ignore };
@@ -692,7 +724,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_GameServerSteamAPIActivated(ISource2Server* pThis)
     {
-        TK_VPROF("Source2Mod::GameServerSteamAPIActivated");
+        FP_VPROF("Source2Mod::GameServerSteamAPIActivated");
 
         http::httpManager.OnSteamAPIActivated();
         // After the HTTP manager: the crash report waiting for Steam goes out
@@ -715,7 +747,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_GameServerSteamAPIDeactivated(ISource2Server* pThis)
     {
-        TK_VPROF("Source2Mod::GameServerSteamAPIDeactivated");
+        FP_VPROF("Source2Mod::GameServerSteamAPIDeactivated");
 
         http::httpManager.OnSteamAPIDeactivated();
 
@@ -734,7 +766,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_PostEventAbstract(IGameEventSystem* pThis, CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64* clients, INetworkMessageInternal* pEvent, const CNetMessage* pData, unsigned long nSize, NetChannelBufType_t bufType)
     {
-        TK_VPROF("Source2Mod::PostEventAbstract");
+        FP_VPROF("Source2Mod::PostEventAbstract");
 
         if (!pEvent || !pData)
             return { KHook::Action::Ignore };
@@ -761,7 +793,7 @@ namespace virtualhooks
 
     KHook::Return<bool> Virtuals::Hook_ClientConnect(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, uint64 xuid, const char* pszNetworkID, bool unk1, CBufferString* pRejectReason)
     {
-        TK_VPROF("Source2Mod::ClientConnect");
+        FP_VPROF("Source2Mod::ClientConnect");
 
         // A handler that refuses (result false, Supersede) has written the
         // reason; the engine never sees the connection.
@@ -786,7 +818,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_OnClientConnected(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, uint64 xuid, const char* pszNetworkID, const char* pszAddress, bool bFakePlayer)
     {
-        TK_VPROF("Source2Mod::OnClientConnected");
+        FP_VPROF("Source2Mod::OnClientConnected");
 
         ClientConnectedContext ctx{ slot, pszName, xuid, pszNetworkID, pszAddress, bFakePlayer };
         hooks::hooksManager.Dispatch(HookPointId::ClientConnected, ctx, true);
@@ -802,7 +834,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_ClientDisconnect(ISource2GameClients* pThis, CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName, uint64 xuid, const char* pszNetworkID)
     {
-        TK_VPROF("Source2Mod::ClientDisconnect");
+        FP_VPROF("Source2Mod::ClientDisconnect");
 
         // Pre: the plugins see the player while everything is still there.
         ClientDisconnectContext ctx{ slot, reason, pszName, xuid, pszNetworkID };
@@ -811,7 +843,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_ClientDisconnectPost(ISource2GameClients* pThis, CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName, uint64 xuid, const char* pszNetworkID)
     {
-        TK_VPROF("Source2Mod::ClientDisconnectPost");
+        FP_VPROF("Source2Mod::ClientDisconnectPost");
 
         sounds::soundsManager.OnClientDisconnect(slot);
         transmit::transmitManager.OnClientDisconnect(slot);
@@ -832,7 +864,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_CheckTransmit(ISource2GameEntities* pThis, CCheckTransmitInfo** ppInfoList, int nInfoCount, CBitVec<16384>& unionTransmitEdicts, CBitVec<16384>& unionTransmitEdicts2, const Entity2Networkable_t** pNetworkables, const uint16* pEntityIndicies, int nEntities)
     {
-        TK_VPROF("Source2Mod::CheckTransmit");
+        FP_VPROF("Source2Mod::CheckTransmit");
 
         // The menu-key fakes go into m_hMyWeapons for this pack only, and stay
         // off every wire but their owner's.
@@ -892,7 +924,7 @@ namespace virtualhooks
 
     KHook::Return<void> Virtuals::Hook_OnServerGamePostSimulate(IGameSystem* pThis, const EventServerGamePostSimulate_t* const pMsg)
     {
-        TK_VPROF("Source2Mod::OnServerGamePostSimulate");
+        FP_VPROF("Source2Mod::OnServerGamePostSimulate");
 
         mysql::mysqlManager.RunFrame();
         return { KHook::Action::Ignore };
@@ -900,7 +932,7 @@ namespace virtualhooks
 
     KHook::Return<int> Virtuals::Hook_LoadEventsFromFile(IGameEventManager2* pThis, const char* filename, bool bSearchAll)
     {
-        TK_VPROF("Source2Mod::LoadEventsFromFile");
+        FP_VPROF("Source2Mod::LoadEventsFromFile");
 
         ExecuteOnce(
             shared::g_pGameEventManager = pThis;
@@ -922,7 +954,7 @@ namespace virtualhooks
 
     KHook::Return<bool> Virtuals::Hook_FireEvent(IGameEventManager2* pThis, IGameEvent* event, bool bDontBroadcast)
     {
-        TK_VPROF("Source2Mod::FireEvent");
+        FP_VPROF("Source2Mod::FireEvent");
 
         if (!event)
             return { KHook::Action::Ignore, false };
@@ -985,7 +1017,7 @@ namespace virtualhooks
 
     KHook::Return<bool> Virtuals::Hook_FireEventPost(IGameEventManager2* pThis, IGameEvent* event, bool bDontBroadcast)
     {
-        TK_VPROF("Source2Mod::FireEventPost");
+        FP_VPROF("Source2Mod::FireEventPost");
 
         if (!event)
             return { KHook::Action::Ignore, false };
@@ -1018,7 +1050,7 @@ namespace virtualhooks
 
     KHook::Return<bool> Virtuals::Hook_FilterMessage(INetworkMessageProcessingPreFilter* pThis, const CNetMessage* pData, INetChannel* pChannel)
     {
-        TK_VPROF("Source2Mod::FilterMessage");
+        FP_VPROF("Source2Mod::FilterMessage");
 
         // pThis is the client's pre-filter subobject, not the whole client;
         // static_cast steps back to the CServerSideClientBase around it.
@@ -1047,7 +1079,7 @@ namespace virtualhooks
 
     KHook::Return<bool> Virtuals::Hook_SendNetMessage(CServerSideClientBase* pThis, const CNetMessage* pData, NetChannelBufType_t bufType)
     {
-        TK_VPROF("Source2Mod::SendNetMessage");
+        FP_VPROF("Source2Mod::SendNetMessage");
 
         if (!pThis || !pData)
             return { KHook::Action::Ignore, true };
@@ -1072,7 +1104,7 @@ namespace virtualhooks
 
     void CEntityListener::OnEntityCreated(CEntityInstance* pEntity)
     {
-        TK_VPROF("Source2Mod::OnEntityCreated");
+        FP_VPROF("Source2Mod::OnEntityCreated");
 
         if (!V_strcmp("cs_gamerules", pEntity->GetClassname()))
             shared::g_pGameRules = static_cast<CCSGameRulesProxy*>(pEntity)->m_pGameRules;
@@ -1082,7 +1114,7 @@ namespace virtualhooks
 
     void CEntityListener::OnEntityDeleted(CEntityInstance* pEntity)
     {
-        TK_VPROF("Source2Mod::OnEntityDeleted");
+        FP_VPROF("Source2Mod::OnEntityDeleted");
 
         // The plugins first, while the entity is whole; then the core forgets it.
         entities::entitiesManager.NotifyDeleted(pEntity);

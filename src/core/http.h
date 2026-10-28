@@ -35,10 +35,12 @@
  */
 #pragma once
 #include "hookid.h"
+#include "net.h"
 
 #include <source2mod/ISource2ModHTTP.h>
 #include <steam/steam_gameserver.h>
 
+#include <unordered_map>
 #include <vector>
 
 namespace http {
@@ -100,8 +102,9 @@ namespace http {
         /// Core-internal: a POST whose body is arbitrary bytes under a
         /// content type of the caller's choosing -- the interface above only
         /// ever sends JSON. The crash reporter needs it for Discord's
-        /// multipart uploads. Not queued: returns false when Steam's HTTP
-        /// client is not there yet, and the caller keeps its payload.
+        /// multipart uploads. Not queued: without Steam's HTTP client it goes
+        /// through Beast, or, with HttpFallback off, returns false and the
+        /// caller keeps its payload.
         bool PostRaw(PluginId owner, const char* pszUrl, const char* pszContentType,
                      const void* pData, size_t nSize, Source2ModHTTPCallback callback);
 
@@ -109,7 +112,7 @@ namespace http {
         /// it was not there yet. Driven by the ISource2Server vtable hook.
         void OnSteamAPIActivated();
 
-        /// Steam took it away again; queue from here on.
+        /// Steam took it away again; Beast (or the queue) from here on.
         void OnSteamAPIDeactivated();
 
         /// Drops every in-flight and queued request. Called on unload -- a
@@ -126,8 +129,11 @@ namespace http {
         /// so it has to outlive the call and delete itself when it lands.
         class TrackedRequest {
         public:
+            /// @p fallback is the same request for Beast, sent instead of
+            /// failing when Steam's call does not come back; empty url for a
+            /// request that must not go out twice (POST, PATCH).
             TrackedRequest(PluginId owner, HTTPRequestHandle hRequest, SteamAPICall_t hCall,
-                           Source2ModHTTPCallback callback);
+                           Source2ModHTTPCallback callback, net::HttpRequest fallback);
             TrackedRequest(const TrackedRequest&) = delete;
             TrackedRequest& operator=(const TrackedRequest&) = delete;
 
@@ -144,6 +150,15 @@ namespace http {
             HTTPRequestHandle m_hRequest;
             CCallResult<TrackedRequest, HTTPRequestCompleted_t> m_CallResult;
             Source2ModHTTPCallback m_Callback;
+            net::HttpRequest m_Fallback;
+        };
+
+        /// One request Beast is working on. The IO thread only knows its id:
+        /// a request whose owner unloaded meanwhile is simply not here any
+        /// more when the result comes back.
+        struct BeastRequest {
+            PluginId owner = 0;
+            Source2ModHTTPCallback callback;
         };
 
         struct QueuedRequest {
@@ -160,7 +175,15 @@ namespace http {
                   bool bHasBody, Source2ModHTTPCallback callback,
                   const std::vector<Source2ModHTTPHeader>* pHeaders);
 
+        /// Hands @p request to Beast; @p callback runs on the main thread with
+        /// the result, unless the owner unloads first.
+        void SendViaBeast(PluginId owner, net::HttpRequest request, Source2ModHTTPCallback callback);
+        void OnBeastCompleted(uint64_t id, net::HttpResult result);
+
         std::vector<QueuedRequest> m_QueuedRequests;
+
+        std::unordered_map<uint64_t, BeastRequest> m_BeastRequests;
+        uint64_t m_nNextBeastId = 1;
 
         // A TrackedRequest used to be reachable only from the Steam call it
         // was waiting on, which left no way to cancel one. Kept here so a

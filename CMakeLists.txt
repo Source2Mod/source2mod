@@ -36,20 +36,10 @@ add_subdirectory(${SOURCE2MOD_SDK_DIR} ${CMAKE_BINARY_DIR}/source2mod-sdk)
 add_subdirectory(vendor/dynlibutils)
 add_subdirectory(vendor/spdlog)
 
-# GeoIP: libmaxminddb as a static library, nothing else of it (tests, the
-# mmdblookup binary, install rules).
-set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-set(MAXMINDDB_BUILD_BINARIES OFF CACHE BOOL "" FORCE)
-set(MAXMINDDB_INSTALL OFF CACHE BOOL "" FORCE)
-set(MSVC_STATIC_RUNTIME ON CACHE BOOL "" FORCE)
-add_subdirectory(vendor/maxminddb EXCLUDE_FROM_ALL)
-
-# SQLite, the amalgamation (SourceMod's copy, 3.47.0): client preferences, and
-# the SQL layer's SQLite driver.
-add_library(sqlite3 STATIC vendor/sqlite/sqlite3.c)
-target_include_directories(sqlite3 PUBLIC ${CMAKE_SOURCE_DIR}/vendor/sqlite)
-target_compile_definitions(sqlite3 PRIVATE SQLITE_THREADSAFE=1 SQLITE_OMIT_LOAD_EXTENSION SQLITE_DEFAULT_FOREIGN_KEYS=1)
+# The libraries the core builds itself, one file each under makefiles/.
+include(${CMAKE_CURRENT_LIST_DIR}/makefiles/maxminddb/maxminddb.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/makefiles/sqlite/sqlite.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/makefiles/breakpad/breakpad.cmake)
 
 # CONFIGURE_DEPENDS: ifacecompat.py generate adds files to src/compat/gen,
 # which a plain glob would not see until the next configure.
@@ -64,142 +54,10 @@ file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS
 # until it is ported to KHook's (khook/asm, khook/memory).
 list(FILTER SOURCE_FILES EXCLUDE REGEX "/src/core/dynhooks/")
 
-# Crash handler (Linux only). The breakpad client and processor come prebuilt
-# from vendor/breakpad-build; the in-process symbol dumper (ELF/DWARF to
-# breakpad symbols, what lets a crash be symbolized without llvm-symbolizer
-# or addr2line on the box) is not part of those libraries, so its sources
-# are compiled straight into the core.
-set(BREAKPAD_SOURCE_FILES "")
-if (UNIX AND NOT APPLE)
-    set(BREAKPAD_SRC ${CMAKE_SOURCE_DIR}/vendor/breakpad/src)
-    set(BREAKPAD_SOURCE_FILES
-            ${BREAKPAD_SRC}/common/dwarf_cfi_to_module.cc
-            ${BREAKPAD_SRC}/common/dwarf_cu_to_module.cc
-            ${BREAKPAD_SRC}/common/dwarf_line_to_module.cc
-            ${BREAKPAD_SRC}/common/dwarf_range_list_handler.cc
-            ${BREAKPAD_SRC}/common/language.cc
-            ${BREAKPAD_SRC}/common/module.cc
-            ${BREAKPAD_SRC}/common/path_helper.cc
-            ${BREAKPAD_SRC}/common/stabs_reader.cc
-            ${BREAKPAD_SRC}/common/stabs_to_module.cc
-            ${BREAKPAD_SRC}/common/dwarf/bytereader.cc
-            ${BREAKPAD_SRC}/common/dwarf/dwarf2diehandler.cc
-            ${BREAKPAD_SRC}/common/dwarf/dwarf2reader.cc
-            ${BREAKPAD_SRC}/common/dwarf/elf_reader.cc
-            ${BREAKPAD_SRC}/common/linux/crc32.cc
-            ${BREAKPAD_SRC}/common/linux/dump_symbols.cc
-            ${BREAKPAD_SRC}/common/linux/elf_symbols_to_module.cc
-    )
-    # Hidden for the same reason the prebuilt libraries are --exclude-libs'd
-    # below: the SDK's -fvisibility=default would otherwise export all of it.
-    set_source_files_properties(${BREAKPAD_SOURCE_FILES} PROPERTIES
-            LANGUAGE CXX
-            COMPILE_OPTIONS "-fvisibility=hidden"
-    )
-elseif (WIN32)
-    # No prebuilt libraries on Windows: the client, the processor and
-    # libdisasm are built from the submodule with MSVC, the same set
-    # AcceleratorCS2 builds. Symbolization goes through DbgHelp there, so
-    # nothing of breakpad's PDB tooling (DIA) is needed.
-    set(BREAKPAD_SRC ${CMAKE_SOURCE_DIR}/vendor/breakpad/src)
-    add_library(breakpad-win STATIC
-            ${BREAKPAD_SRC}/processor/basic_code_modules.cc
-            ${BREAKPAD_SRC}/processor/basic_source_line_resolver.cc
-            ${BREAKPAD_SRC}/processor/call_stack.cc
-            ${BREAKPAD_SRC}/processor/cfi_frame_info.cc
-            ${BREAKPAD_SRC}/processor/convert_old_arm64_context.cc
-            ${BREAKPAD_SRC}/processor/disassembler_x86.cc
-            ${BREAKPAD_SRC}/processor/dump_context.cc
-            ${BREAKPAD_SRC}/processor/dump_object.cc
-            ${BREAKPAD_SRC}/processor/exploitability.cc
-            ${BREAKPAD_SRC}/processor/exploitability_linux.cc
-            ${BREAKPAD_SRC}/processor/exploitability_win.cc
-            ${BREAKPAD_SRC}/processor/fast_source_line_resolver.cc
-            ${BREAKPAD_SRC}/processor/logging.cc
-            ${BREAKPAD_SRC}/processor/microdump.cc
-            ${BREAKPAD_SRC}/processor/microdump_processor.cc
-            ${BREAKPAD_SRC}/processor/minidump.cc
-            ${BREAKPAD_SRC}/processor/minidump_processor.cc
-            ${BREAKPAD_SRC}/processor/module_comparer.cc
-            ${BREAKPAD_SRC}/processor/module_serializer.cc
-            ${BREAKPAD_SRC}/processor/pathname_stripper.cc
-            ${BREAKPAD_SRC}/processor/process_state.cc
-            ${BREAKPAD_SRC}/processor/proc_maps_linux.cc
-            ${BREAKPAD_SRC}/processor/simple_symbol_supplier.cc
-            ${BREAKPAD_SRC}/processor/source_line_resolver_base.cc
-            ${BREAKPAD_SRC}/processor/stack_frame_cpu.cc
-            ${BREAKPAD_SRC}/processor/stack_frame_symbolizer.cc
-            ${BREAKPAD_SRC}/processor/stackwalk_common.cc
-            ${BREAKPAD_SRC}/processor/stackwalker.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_amd64.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_arm.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_arm64.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_address_list.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_mips.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_ppc.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_ppc64.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_riscv.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_riscv64.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_sparc.cc
-            ${BREAKPAD_SRC}/processor/stackwalker_x86.cc
-            ${BREAKPAD_SRC}/processor/symbolic_constants_win.cc
-            ${BREAKPAD_SRC}/processor/tokenize.cc
+# src/core/net*.cpp build into source2mod-net (makefiles/net/net.cmake).
+list(FILTER SOURCE_FILES EXCLUDE REGEX "/src/core/net(_[^/]*)?\\.cpp$")
 
-            ${BREAKPAD_SRC}/client/windows/crash_generation/client_info.cc
-            ${BREAKPAD_SRC}/client/windows/crash_generation/crash_generation_client.cc
-            ${BREAKPAD_SRC}/client/windows/crash_generation/crash_generation_server.cc
-            ${BREAKPAD_SRC}/client/windows/crash_generation/minidump_generator.cc
-            ${BREAKPAD_SRC}/client/windows/handler/exception_handler.cc
-            ${BREAKPAD_SRC}/common/windows/guid_string.cc
-            ${BREAKPAD_SRC}/common/windows/string_utils.cc
-            ${BREAKPAD_SRC}/common/convert_UTF.cc
-            ${BREAKPAD_SRC}/common/string_conversion.cc
-
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_implicit.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_insn.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_invariant.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_modrm.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_opcode_tables.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_operand.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_reg.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/ia32_settings.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/x86_disasm.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/x86_format.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/x86_imm.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/x86_insn.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/x86_misc.c
-            ${BREAKPAD_SRC}/third_party/libdisasm/x86_operand_list.c
-    )
-    target_include_directories(breakpad-win PRIVATE
-            ${CMAKE_SOURCE_DIR}/vendor/breakpad-config/windows
-            ${BREAKPAD_SRC}
-    )
-    target_compile_definitions(breakpad-win PRIVATE
-            HAVE_CONFIG_H
-            # The client is written against the wide Win32 API.
-            UNICODE
-            _UNICODE
-            NOMINMAX
-            _CRT_SECURE_NO_WARNINGS
-            _CRT_NONSTDC_NO_DEPRECATE
-            # minidump_generator.cc still uses stdext::checked_array_iterator,
-            # deprecated since VS 2022 17.8 and silenced here on toolsets
-            # that still ship it.
-            _SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING
-    )
-    target_compile_options(breakpad-win PRIVATE /utf-8 /EHsc /wd4267 /wd4244 /wd4996)
-    # VS 2026 (MSVC 14.50+) removed stdext::checked_array_iterator from the
-    # STL entirely. Force-include a drop-in replacement into the one file
-    # that uses it instead of patching the submodule; the header is a no-op
-    # on older toolsets.
-    set_source_files_properties(
-            ${BREAKPAD_SRC}/client/windows/crash_generation/minidump_generator.cc
-            PROPERTIES COMPILE_OPTIONS
-            "/FI${CMAKE_SOURCE_DIR}/vendor/breakpad-config/windows/stdext_compat.h"
-    )
-endif ()
-
-add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES} ${BREAKPAD_SOURCE_FILES})
+add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 target_compile_definitions(source2mod-sdk PUBLIC SOURCE2MOD_CORE)
 
 if (MSVC)
@@ -312,21 +170,19 @@ if (UNIX AND NOT APPLE)
             ${CMAKE_SOURCE_DIR}/vendor/openssl/include
             ${CMAKE_SOURCE_DIR}/vendor/mysql/include
             ${CMAKE_SOURCE_DIR}/vendor/spdlog/include
-            # Breakpad, for the crash handler. configs.h in breakpad-config is
+            # Breakpad, for the crash handler. configs.h in src/breakpad-config is
             # the autoconf output the sources expect. Only the src root goes
             # in: its subdirectories carry a module.h and a logging.h that
             # would shadow Source2Mod's and tier0's for anyone including
             # them by bare name.
-            ${CMAKE_SOURCE_DIR}/vendor/breakpad-config/linux
+            ${CMAKE_SOURCE_DIR}/src/breakpad-config/linux
             ${CMAKE_SOURCE_DIR}/vendor/breakpad/src
     )
     SET(source2mod_link_libraries
             ${CMAKE_SOURCE_DIR}/vendor/mysql/lib/libmysqlclient.a
             ${CMAKE_SOURCE_DIR}/vendor/openssl/lib/linux/libssl.a
             ${CMAKE_SOURCE_DIR}/vendor/openssl/lib/linux/libcrypto.a
-            ${CMAKE_SOURCE_DIR}/vendor/breakpad-build/libbreakpad.a
-            ${CMAKE_SOURCE_DIR}/vendor/breakpad-build/libbreakpad-client.a
-            ${CMAKE_SOURCE_DIR}/vendor/breakpad-build/libdisasm.a
+            breakpad
             dynlibutils
             z
     )
@@ -347,7 +203,7 @@ elseif (WIN32)
             ${CMAKE_SOURCE_DIR}/vendor/spdlog/include
             # Breakpad, for the crash handler -- see the Linux branch for why
             # only the src root goes in.
-            ${CMAKE_SOURCE_DIR}/vendor/breakpad-config/windows
+            ${CMAKE_SOURCE_DIR}/src/breakpad-config/windows
             ${CMAKE_SOURCE_DIR}/vendor/breakpad/src
     )
     SET(source2mod_link_libraries
@@ -355,9 +211,12 @@ elseif (WIN32)
             ${CMAKE_SOURCE_DIR}/vendor/openssl/lib/windows/ssl.lib
             ${CMAKE_SOURCE_DIR}/vendor/openssl/lib/windows/crypto.lib
             crypt32.lib
+            # Asio's sockets.
+            ws2_32.lib
+            mswsock.lib
             # Crash handler: breakpad built above, DbgHelp for symbolizing
             # addons/ modules from their PDBs.
-            breakpad-win
+            breakpad
             dbghelp.lib
             dynlibutils
     )
@@ -374,12 +233,16 @@ target_include_directories(source2mod-sdk PUBLIC ${source2mod_include_directorie
 
 include(${CMAKE_CURRENT_LIST_DIR}/makefiles/sourcepawn/sourcepawn.cmake)
 
+# After source2mod_include_directories, which it builds with.
+include(${CMAKE_CURRENT_LIST_DIR}/makefiles/net/net.cmake)
+
 target_link_libraries(${PROJECT_NAME}
         source2mod-config
         source2mod-sdk
         sp-vm
         maxminddb
         sqlite3
+        source2mod-net
         ${source2mod_link_libraries}
 )
 
@@ -390,9 +253,12 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE __STDC_FORMAT_MACROS)
 if (UNIX AND NOT APPLE)
     # Breakpad is an implementation detail of the core. Kept out of the .so's
     # export table so another crash handler loaded next to Source2Mod
-    # (Accelerator, AcceleratorLocal) cannot bind to this copy of it.
+    # (Accelerator, AcceleratorLocal) cannot bind to this copy of it. The same
+    # for OpenSSL and the MySQL client: other plugins link their own copies
+    # (InventoryManager's OpenSSL), and an exported SSL_* here could be the one
+    # they end up calling.
     target_link_options(${PROJECT_NAME} PRIVATE
-            -Wl,--exclude-libs=libbreakpad.a:libbreakpad-client.a:libdisasm.a:libsp-vm.a:libsp-zlib.a:libmaxminddb.a:libsqlite3.a
+            -Wl,--exclude-libs=libbreakpad.a:libsp-vm.a:libsp-zlib.a:libmaxminddb.a:libsqlite3.a:libsource2mod-net.a:libssl.a:libcrypto.a:libmysqlclient.a
     )
 endif ()
 

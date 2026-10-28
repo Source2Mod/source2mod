@@ -74,6 +74,7 @@ namespace coreconfig
         UnlockConVars = data.value("UnlockConVars", UnlockConVars);
         CrashHandlerEnabled = data.value("CrashHandlerEnabled", CrashHandlerEnabled);
         CrashDiscordWebhook = data.value("CrashDiscordWebhook", CrashDiscordWebhook);
+        HttpFallback = data.value("HttpFallback", HttpFallback);
         SlowCallbackWarnMs = data.value("SlowCallbackWarnMs", SlowCallbackWarnMs);
         SteamAuthMode = data.value("SteamAuthMode", SteamAuthMode);
         AccessDeniedMessage = data.value("AccessDeniedMessage", AccessDeniedMessage);

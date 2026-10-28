@@ -1,4 +1,4 @@
-﻿/**
+/**
 * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * Source2Mod
@@ -33,26 +33,31 @@
  *
  * Project: Source2Mod
  */
-// What Source2Mod core costs, as seen by the engine's profiler (vprof_on,
-// then vprof_generate_report / vprof_generate_report_budget).
-//
-// Not named vprof.h: tier0's own is reachable as <vprof.h> as well.
 #pragma once
 
-#include "tier0/vprof.h"
+// Boost's side of net.h: only the net*.cpp files include this. They build into
+// source2mod-net, which the core links with --exclude-libs (CMakeLists.txt), so
+// no Asio or Beast symbol ends up in the core's export table where another
+// library's copy could bind to it.
 
-// Budget group every scope of the core is filed under: one "Source2Mod"
-// line in the budget report, next to the game's own groups. A plugin's own
-// time spent inside a callback the core dispatches lands under the core's
-// scope unless the plugin opens a scope of its own.
-#define TK_VPROF_BUDGETGROUP "Source2Mod"
+#include "net.h"
 
-// Scope covering the rest of the enclosing block; goes first in a hook
-// handler. The name is the node in the report, "Source2Mod::<hooked
-// function>", kept under 52 characters: the report cuts the Scope column
-// there. A Pre and a Post handler are two scopes, so the game's own call
-// between them is not counted.
-// VPROF_BUDGET and not VPROF: that one is detail level 1, which the SDK's
-// default VPROF_LEVEL 0 compiles out. While vprof is off, or off the main
-// thread, tier0 returns right at the top of the enter call.
-#define TK_VPROF(name) VPROF_BUDGET(name, TK_VPROF_BUDGETGROUP)
+#include <boost/asio.hpp>
+#include <boost/asio/ssl.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/ssl.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/beast/websocket/ssl.hpp>
+
+namespace net {
+    /// The one io_context every core socket runs on, served by one IO thread.
+    /// The first call starts that thread.
+    boost::asio::io_context& IoContext();
+
+    /// A TLS 1.2+ client context. @p verifyPeer checks the server's chain
+    /// against the system's CA store (the CA bundle on Linux, the ROOT store on
+    /// Windows); without it any certificate is taken, for self-signed test
+    /// servers. Built once each, on first use.
+    boost::asio::ssl::context& ClientTlsContext(bool verifyPeer);
+}

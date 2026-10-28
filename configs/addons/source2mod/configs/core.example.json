@@ -8,6 +8,7 @@
   "UnlockConVars": true,
   "CrashHandlerEnabled": true,
   "CrashDiscordWebhook": "",
+  "HttpFallback": true,
   "SlowCallbackWarnMs": 100,
   "SteamAuthMode": "auto",
   "AccessDeniedMessage": "You do not have access to this command.",

@@ -13,3 +13,7 @@
 [submodule "vendor/maxminddb"]
 	path = vendor/maxminddb
 	url = https://github.com/maxmind/libmaxminddb.git
+[submodule "vendor/boost"]
+	path = vendor/boost
+	url = https://github.com/SlynxCZ/boost.git
+	branch = main

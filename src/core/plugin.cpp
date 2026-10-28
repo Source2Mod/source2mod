@@ -54,6 +54,8 @@
 #include "inlinehooks.h"
 #include "maps.h"
 #include "mysql.h"
+#include "net.h"
+#include "websockets.h"
 #include "networkmessages.h"
 #include "patches.h"
 #include "permissions.h"
@@ -252,6 +254,9 @@ bool Source2ModCore::Unload(char* error, size_t maxlen)
     // Takes the engine-level change callback back out with it.
     convars::convarsManager.Shutdown();
     http::httpManager.Shutdown();
+    websockets::webSocketsManager.Shutdown();
+    // Joins the IO thread: after HTTP and the WebSockets, whose connections run on it.
+    net::Shutdown();
     // Takes the Steam ticket callback back out.
     permissions::permissionsManager.Shutdown();
     // Its last writes go out through the SQL layer, so before that shuts down.

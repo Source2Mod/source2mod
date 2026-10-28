@@ -43,6 +43,7 @@
 #include "cookies.h"
 #include "core/hooks.h"
 #include "core/http.h"
+#include "core/websockets.h"
 #include "core/menus.h"
 #include "core/translations.h"
 #include "core/targeting.h"
@@ -454,6 +455,7 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
         scripts::scriptsManager.RemoveAllForPlugin(failedId);
         scheduler::schedulerManager.RemoveAllForPlugin(failedId);
         http::httpManager.RemoveAllForPlugin(failedId);
+        websockets::webSocketsManager.RemoveAllForPlugin(failedId);
         mysql::mysqlManager.RemoveAllForPlugin(failedId);
         menus::menuManager.RemoveAllForPlugin(failedId);
         hooks::hooksManager.RemoveAllForPlugin(failedId);
@@ -608,6 +610,7 @@ bool PluginManager::ReloadPlugin(int id)
         // std::function would land in unmapped memory afterwards.
         scheduler::schedulerManager.RemoveAllForPlugin(id);
         http::httpManager.RemoveAllForPlugin(id);
+        websockets::webSocketsManager.RemoveAllForPlugin(id);
         mysql::mysqlManager.RemoveAllForPlugin(id);
         menus::menuManager.RemoveAllForPlugin(id);
         hooks::hooksManager.RemoveAllForPlugin(id);
@@ -677,6 +680,7 @@ bool PluginManager::UnloadPlugin(PluginId id)
         scripts::scriptsManager.RemoveAllForPlugin(id);
         scheduler::schedulerManager.RemoveAllForPlugin(id);
         http::httpManager.RemoveAllForPlugin(id);
+        websockets::webSocketsManager.RemoveAllForPlugin(id);
         mysql::mysqlManager.RemoveAllForPlugin(id);
         menus::menuManager.RemoveAllForPlugin(id);
         hooks::hooksManager.RemoveAllForPlugin(id);
@@ -806,6 +810,7 @@ void PluginManager::UnloadAll()
         scripts::scriptsManager.RemoveAllForPlugin(p->id);
         scheduler::schedulerManager.RemoveAllForPlugin(p->id);
         http::httpManager.RemoveAllForPlugin(p->id);
+        websockets::webSocketsManager.RemoveAllForPlugin(p->id);
         mysql::mysqlManager.RemoveAllForPlugin(p->id);
         menus::menuManager.RemoveAllForPlugin(p->id);
         hooks::hooksManager.RemoveAllForPlugin(p->id);

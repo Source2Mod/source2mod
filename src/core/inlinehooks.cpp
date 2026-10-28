@@ -45,7 +45,7 @@
 #include "networkmessages.h"
 #include "plugin.h"
 #include "shared.h"
-#include "tkvprof.h"
+#include "fpvprof.h"
 
 #include <dynlibutils/module.hpp>
 #include <engine2/inetworkserverservice.h>
@@ -81,7 +81,7 @@ namespace inlinehooks
 
     KHook::Return<void> Inlines::Hook_FireOutputInternal(CEntityIOOutput* pThis, CEntityInstance* pActivator, CEntityInstance* pCaller, void* variantValue, float delay, void* unk01, void* unk02)
     {
-        TK_VPROF("Source2Mod::FireOutputInternal");
+        FP_VPROF("Source2Mod::FireOutputInternal");
 
         const char* outputName = pThis->m_pDesc ? pThis->m_pDesc->m_pName : "";
 

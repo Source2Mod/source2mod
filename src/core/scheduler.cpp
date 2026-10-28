@@ -38,7 +38,7 @@
 #include "pluginapi.h"
 #include "shared.h"
 #include "slowguard.h"
-#include "tkvprof.h"
+#include "fpvprof.h"
 
 #include <engine2/gameshareddefs.h>
 
@@ -179,7 +179,7 @@ namespace scheduler
 
     void Tick(bool simulating)
     {
-        TK_VPROF("Source2Mod::Scheduler::Tick");
+        FP_VPROF("Source2Mod::Scheduler::Tick");
 
         // Taken one at a time rather than swapping the queue out, so a task
         // that unloads a plugin -- the file watcher's reload comes through

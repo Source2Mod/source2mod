@@ -63,6 +63,13 @@ namespace coreconfig
         bool CrashHandlerEnabled = true;
         std::string CrashDiscordWebhook;
 
+        /// HTTP goes through Steam's client; with this on, Source2Mod's own
+        /// client takes a request Steam cannot: before the Steam API is up
+        /// (instead of queuing it), when Steam refuses it, and when Steam
+        /// loses a GET, HEAD, PUT or DELETE (a POST or PATCH is never sent
+        /// twice). Off: Steam only, queued until it is there.
+        bool HttpFallback = true;
+
         /// Panorama layouts (panorama/layout/custom_game/<name>.vxml_c on the
         /// client) the core draws HUD menus and HUD texts with; the reference
         /// ones are in the repository's panorama/ folder.

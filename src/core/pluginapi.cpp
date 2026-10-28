@@ -57,6 +57,7 @@
 #include "gamesystems.h"
 #include "geoip.h"
 #include "http.h"
+#include "websockets.h"
 #include "json.h"
 #include "maps.h"
 #include "menus.h"
@@ -325,6 +326,7 @@ namespace
             { SOURCE2MOD_TRANSLATIONS_INTERFACE, &translations::translationsManager },
             { SOURCE2MOD_FILES_INTERFACE, &files::filesManager },
             { SOURCE2MOD_UTILS_INTERFACE, &utils::utilsManager },
+            { SOURCE2MOD_WEBSOCKETS_INTERFACE, &websockets::webSocketsManager },
             { SOURCE2MOD_CLIENTS_INTERFACE, &clients::clientsManager },
             { SOURCE2MOD_TARGETING_INTERFACE, &targeting::targetingManager },
             { SOURCE2MOD_FUNCTIONS_INTERFACE, &functions::functionsManager },
