@@ -367,6 +367,12 @@ namespace sourcepawn
             { "CServerSideClient.ExecuteClientCommandFromServer", N_SscExecuteClientCommandFromServer },
             { "CServerSideClient.FireEventToClient", N_SscFireEventToClient },
             { "CServerSideClient.Disconnect", N_SscDisconnect },
+            // The same calls where ISource2ModEvents / ISource2ModConVars have them.
+            { "Source2ModEvents.FireEventToClient", N_SscFireEventToClient },
+            { "Source2ModConVars.QueryClientConVar", N_SscQueryConVar },
+            { "Source2ModConVars.ReplicateConVar", N_SscReplicateConVar },
+            { "Source2ModCommands.ExecuteClientCommand", N_SscExecuteClientCommand },
+            { "Source2ModCommands.ExecuteClientCommandFromServer", N_SscExecuteClientCommandFromServer },
             { "Source2ModClients.IsConnected", N_IsConnected },
             { "Source2ModClients.IsInGame", N_IsInGame },
             { "Source2ModClients.IsFakeClient", N_IsFakeClient },

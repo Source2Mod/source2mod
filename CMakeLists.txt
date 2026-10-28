@@ -51,7 +51,9 @@ add_library(sqlite3 STATIC vendor/sqlite/sqlite3.c)
 target_include_directories(sqlite3 PUBLIC ${CMAKE_SOURCE_DIR}/vendor/sqlite)
 target_compile_definitions(sqlite3 PRIVATE SQLITE_THREADSAFE=1 SQLITE_OMIT_LOAD_EXTENSION SQLITE_DEFAULT_FOREIGN_KEYS=1)
 
-file(GLOB_RECURSE SOURCE_FILES
+# CONFIGURE_DEPENDS: ifacecompat.py generate adds files to src/compat/gen,
+# which a plain glob would not see until the next configure.
+file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS
         src/*.cpp
         src/*.h
         src/*.hpp

@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "convars.h"
+#include "clients.h"
 #include "commands.h"
 
 #include "hookid.h"
@@ -621,6 +622,16 @@ namespace convars
     {
         if (ref && ref->IsValidRef())
             m_pluginConCommands.push_back({ owner, *ref, ref });
+    }
+
+    int ConVarsManager::QueryClientConVar(CPlayerSlot slot, const char* name, ClientConVarQueryCallback callback)
+    {
+        return clients::clientsManager.QueryClientConVar(slot, name, std::move(callback));
+    }
+
+    bool ConVarsManager::ReplicateConVar(CPlayerSlot slot, const char* name, const char* value)
+    {
+        return clients::clientsManager.ReplicateConVar(slot, name, value);
     }
 
     void ConVarsManager::RemoveAllForPlugin(PluginId id)

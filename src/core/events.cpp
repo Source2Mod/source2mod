@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "events.h"
+#include "clients.h"
 
 #include "hookid.h"
 #include "shared.h"
@@ -102,6 +103,11 @@ namespace events {
             }
         }
         return false;
+    }
+
+    void EventManager::FireEventToClient(CPlayerSlot slot, IGameEvent* event)
+    {
+        clients::clientsManager.FireEventToClient(slot, event);
     }
 
     void EventManager::RemoveAllForPlugin(PluginId id)

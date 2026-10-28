@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "commands.h"
+#include "clients.h"
 #include "configs.h"
 
 #include "hooks.h"
@@ -808,6 +809,16 @@ namespace commands {
 
         const std::string line = std::string(pszMessage) + "\n";
         g_pEngineServer->ClientPrintf(slot, line.c_str());
+    }
+
+    void CommandsManager::ExecuteClientCommand(CPlayerSlot slot, const char* command)
+    {
+        clients::clientsManager.ExecuteClientCommand(slot, command);
+    }
+
+    void CommandsManager::ExecuteClientCommandFromServer(CPlayerSlot slot, const char* command)
+    {
+        clients::clientsManager.ExecuteClientCommandFromServer(slot, command);
     }
 
     bool CommandsManager::RemoveAliases(PluginId owner, const char* pchName, const ChatHandler& handler)

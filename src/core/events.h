@@ -67,6 +67,7 @@ namespace events {
         Source2ModEventHookId HookGameEvent(const char* pchName, GameEventHandler handler, bool post) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookGameEvent(owner, pchName, std::move(handler), post); }
         bool UnhookGameEvent(const char* pchName, const GameEventHandler& handler, bool post) override { return UnhookGameEvent(hookid::OwnerOfHandler(handler), pchName, handler, post); }
         bool UnhookGameEvent(Source2ModEventHookId id) override { return Unhook(id); }
+        void FireEventToClient(CPlayerSlot slot, IGameEvent* event) override;
 
         // The same with the owner spelled out: what the calls above resolve
         // to, and what the core itself calls.

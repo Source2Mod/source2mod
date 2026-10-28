@@ -97,6 +97,8 @@ namespace commands {
         bool UnhookConCommand(const char* pchName, const CommandHandler& handler, bool post) override { return UnhookConCommand(hookid::OwnerOfHandler(handler), pchName, handler, post); }
         bool UnhookConCommand(Source2ModCommandHookId id) override { return Unregister(id); }
         void ReplyToCommand(const Source2ModCommandContext& ctx, const char* pszMessage) override;
+        void ExecuteClientCommand(CPlayerSlot slot, const char* command) override;
+        void ExecuteClientCommandFromServer(CPlayerSlot slot, const char* command) override;
 
         // The same with the owner spelled out: what the calls above resolve
         // to, and what the core itself calls.

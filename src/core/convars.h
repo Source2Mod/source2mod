@@ -101,6 +101,9 @@ namespace convars {
         void TrackConVar(PluginId owner, ConVarRefAbstract* ref) override;
         void TrackConCommand(PluginId owner, ConCommandRef* ref) override;
 
+        int QueryClientConVar(CPlayerSlot slot, const char* name, ClientConVarQueryCallback callback) override;
+        bool ReplicateConVar(CPlayerSlot slot, const char* name, const char* value) override;
+
         Source2ModConVarHookId HookConVarChange(ConVarChangeHandler handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookConVarChange(owner, std::move(handler)); }
         bool UnhookConVarChange(const ConVarChangeHandler& handler) override { return UnhookConVarChange(hookid::OwnerOfHandler(handler), handler); }
         bool UnhookConVarChange(Source2ModConVarHookId id) override { return UnhookConVarChangeId(id); }
