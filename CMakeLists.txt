@@ -237,6 +237,19 @@ if (NOT VERSION_GEN_RESULT EQUAL 0)
     message(FATAL_ERROR "version_gen.py failed (${VERSION_GEN_RESULT})")
 endif ()
 
+# The adapters that serve older interface revisions (src/compat/gen) must
+# match the frozen revisions and the SDK the core is built against: a stale
+# one would forward to methods that are not there any more.
+execute_process(
+        COMMAND ${CMAKE_COMMAND} -E env SOURCE2MOD_SDK=${SOURCE2MOD_SDK_DIR}
+                ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/ifacecompat/ifacecompat.py check
+        RESULT_VARIABLE IFACECOMPAT_RESULT
+)
+
+if (NOT IFACECOMPAT_RESULT EQUAL 0)
+    message(FATAL_ERROR "src/compat/gen is stale: run tools/ifacecompat/ifacecompat.py generate")
+endif ()
+
 # Re-run cmake when the metadata changes.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
         ${CMAKE_SOURCE_DIR}/plugin-metadata.json)

@@ -67,8 +67,10 @@ fork, against `main`.
   pull request what you tested and how.
 - **Public interfaces** (`ISource2Mod*` in the SDK) are versioned. A change to an
   existing interface's layout is a new revision (`ISource2ModX002` -> `003`) with
-  the old one still served -- see
-  [Compatibility](https://www.source2mod.net/docs/development/compatibility).
+  the old one still served: run `tools/ifacecompat/ifacecompat.py bump ISource2ModX`
+  before editing the header and `ifacecompat.py generate` after (see the README's
+  "Interfaces and the factory" and
+  [Compatibility](https://www.source2mod.net/docs/development/compatibility)).
   Such changes usually need a matching pull request in
   [source2mod-sdk](https://github.com/Source2Mod/source2mod-sdk);
   link the two.

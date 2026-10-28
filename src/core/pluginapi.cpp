@@ -70,6 +70,7 @@
 #include "scripts.h"
 #include "sounds.h"
 #include "transmit.h"
+#include "compat/compat.h"
 #include "sourcepawn/natives.h"
 #include "utils/log.h"
 
@@ -336,6 +337,33 @@ namespace
         return s_current;
     }
 
+    // The current revision by its exact version string; what a frozen
+    // revision's adapter forwards to.
+    void* CurrentInterfaceByName(const char* iface)
+    {
+        size_t count = 0;
+        const CurrentInterface* current = CurrentInterfaces(count);
+        for (size_t i = 0; i < count; i++)
+        {
+            if (!strcmp(iface, current[i].iface))
+                return current[i].ptr;
+        }
+        return nullptr;
+    }
+
+    // An older revision still served through its adapter (src/compat/).
+    void* FrozenInterfaceByName(const char* iface)
+    {
+        size_t count = 0;
+        const compat::FrozenInterface* frozen = compat::FrozenInterfaces(count);
+        for (size_t i = 0; i < count; i++)
+        {
+            if (!strcmp(iface, frozen[i].iface))
+                return frozen[i].get(&CurrentInterfaceByName);
+        }
+        return nullptr;
+    }
+
     // "ISource2ModMenus002" -> revision 2, and the length of the name before it.
     bool SplitRevision(const char* iface, size_t& nameLen, int& revision)
     {
@@ -366,6 +394,9 @@ bool PluginApi::IsInterfaceServed(const char* iface)
         if (!strcmp(iface, current[i].iface))
             return current[i].ptr != nullptr;
     }
+
+    if (FrozenInterfaceByName(iface))
+        return true;
 
     // A plugin's: asked the way Source2ModFactory() asks, minus the logging
     // and the record of what the loading plugin uses.
@@ -413,6 +444,11 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
             if (!strcmp(iface, current[i].iface))
                 ptr = current[i].ptr;
         }
+
+        // An older revision the core still serves: its frozen vtable, forwarding
+        // to the current one (src/compat/).
+        if (!ptr && (ptr = FrozenInterfaceByName(iface)) != nullptr)
+            FP_INFO("{} was built against {}, an older revision: served through its compat adapter", who, iface);
 
         // Not the current revision: the same interface at another one? The
         // name carries the revision ("ISource2ModMenus002"); the C++ name

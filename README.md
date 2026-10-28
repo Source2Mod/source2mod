@@ -121,6 +121,32 @@ example in C++ and SourcePawn, guides and the full API reference.
   [`sp_sample`](https://github.com/Source2Mod/source2mod-samples/tree/main/cs2/sp_sample)
   is the same plugin as a script.
 
+## Interfaces and the factory
+
+A plugin asks the core for every interface by name and revision
+(`ISource2ModCommands004`); `PluginApi::Source2ModFactory()` in
+`src/core/pluginapi.cpp` answers:
+
+- the **current** revision -- the interface itself;
+- an **older** revision frozen in `src/compat/` -- a generated adapter
+  (`src/compat/gen/`) with the old vtable, forwarding each method by name and
+  signature to the current interface, so plugins built against it keep
+  loading; methods whose signature changed are written by hand in
+  `src/compat/<ISource2ModX00N>.cpp`;
+- anything else -- refused, with the log saying which side to update.
+
+Changing an interface:
+
+```bash
+tools/ifacecompat/ifacecompat.py bump ISource2ModCommands   # before editing: freeze the current revision, raise the SDK's
+# edit the SDK header, implement it in the core
+tools/ifacecompat/ifacecompat.py generate                   # write the adapters
+```
+
+CMake runs `ifacecompat.py check` and stops when `src/compat/gen` is stale.
+SourcePawn natives bind by name and need none of this; the rules for them, and
+the rest, are on [Compatibility](https://www.source2mod.net/docs/development/compatibility).
+
 ---
 
 ## Contributing
