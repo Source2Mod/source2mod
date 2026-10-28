@@ -2,7 +2,7 @@
 * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * Source2Mod
- * Copyright (C) 2025-2026 Michal "Slynx (˙·٠● S l y n x ●٠·˙)" Přikryl.
+ * Copyright (C) 2025-2026 Michal "Slynx (˙·٠● S l y n x ●٠·˙)" Přikryl.
  * All rights reserved.
  * =============================================================================
  *
@@ -19,7 +19,7 @@
  * this program. If not, see <http://www.gnu.org/licenses/>.
  *
  * Authors:
- *   - Michal "Slynx (˙·٠● S l y n x ●٠·˙)" Přikryl
+ *   - Michal "Slynx (˙·٠● S l y n x ●٠·˙)" Přikryl
  *
  * Project: Source2Mod
  */
