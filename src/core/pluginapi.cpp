@@ -448,9 +448,9 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
         }
 
         // An older revision the core still serves: its frozen vtable, forwarding
-        // to the current one (src/compat/).
-        if (!ptr && (ptr = FrozenInterfaceByName(iface)) != nullptr)
-            FP_INFO("{} was built against {}, an older revision: served through its compat adapter", who, iface);
+        // to the current one (src/compat/). Silently: it simply works.
+        if (!ptr)
+            ptr = FrozenInterfaceByName(iface);
 
         // Not the current revision: the same interface at another one? The
         // name carries the revision ("ISource2ModMenus002"); the C++ name
