@@ -35,7 +35,7 @@
  * (Windows):
  *   - Slynx (˙·٠● S l y n x ●٠·˙) 2026
  *   - Poggu (Source2ZE) 2024-2026
- *   - Phoenix (˙·٠●Феникс●٠·˙) 2023-2025
+ *   - Phoenix (˙·٠●Феникс●٠·˙) 2023-2025
  *   - Asher Baker (asherkin) 2011
  *
  * Project: Source2Mod
