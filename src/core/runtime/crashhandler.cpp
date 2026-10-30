@@ -1350,7 +1350,7 @@ namespace crashhandler
         }
     }
 #else
-    bool CrashListeners::AddListener(ISource2ModCrashListener*) { return true; }
+    bool CrashListeners::AddListener(PluginId, ISource2ModCrashListener*) { return true; }
     void CrashListeners::RemoveListener(ISource2ModCrashListener*) {}
     void CrashListeners::RemoveAllForPlugin(PluginId) {}
 #endif
