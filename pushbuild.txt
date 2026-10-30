@@ -22,3 +22,4 @@ Windows: the net library builds with /bigobj (the previous release failed there 
 Plugins served through a compat adapter no longer log it: it works and says nothing.
 Plugin API 8, every plugin must be rebuilt: each plugin gets its own interface instances, no call takes a plugin id or reads a code address any more. New ISource2ModModules app system owns the modules (LoadModule/FreeModule removed), ISource2ModFunctions takes ISource2ModModule*, HookTarget::Class looks in the common modules or a named one, gamedata "function" objects can name a vtable. Older compat adapters removed.
 Windows: the crash listeners build again (the previous release failed there with C2084).
+Windows: Source2ModModule builds again (windows.h renamed GetModuleHandle, the previous attempt failed with C3668).
