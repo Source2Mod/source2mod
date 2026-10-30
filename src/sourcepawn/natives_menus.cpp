@@ -47,8 +47,8 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/menus.h"
-#include "core/scheduler.h"
+#include "core/ui/menus.h"
+#include "core/runtime/scheduler.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 #include <source2mod/sdk/schema/classes/CCSCustomHudLayout.h>

@@ -44,7 +44,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/utils.h"
+#include "core/runtime/utils.h"
 
 #include <sp_callable.h>
 

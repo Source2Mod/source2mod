@@ -42,8 +42,8 @@
 #include "natives.h"
 #include "scriptplugin.h"
 
-#include "core/features.h"
-#include "core/pluginmanager.h"
+#include "core/plugins/features.h"
+#include "core/plugins/pluginmanager.h"
 #include "utils/log.h"
 
 #include <string>

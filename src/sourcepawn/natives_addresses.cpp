@@ -43,7 +43,7 @@
 #include "scriptplugin.h"
 #include "addresses_list.h"
 
-#include "core/addresses.h"
+#include "core/game/addresses.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 

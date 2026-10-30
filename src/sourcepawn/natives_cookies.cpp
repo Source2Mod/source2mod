@@ -42,11 +42,11 @@
  * and the cookie iterator are not there yet.
  */
 #include "natives.h"
-#include "core/shared.h"
+#include "core/runtime/shared.h"
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/cookies.h"
+#include "core/data/cookies.h"
 
 #include <cstring>
 

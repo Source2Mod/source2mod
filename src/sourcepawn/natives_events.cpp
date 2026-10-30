@@ -44,7 +44,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/shared.h"
+#include "core/runtime/shared.h"
 
 #include <source2mod/sdk/schema/classes/CBasePlayerController.h>
 #include <source2mod/sdk/schema/classes/CBasePlayerPawn.h>

@@ -36,8 +36,8 @@
 #include "scriptplugin.h"
 #include "natives_json.h"
 
-#include "core/configs.h"
-#include "core/pluginmanager.h"
+#include "core/data/configs.h"
+#include "core/plugins/pluginmanager.h"
 
 #include <sp_callable.h>
 
@@ -155,7 +155,7 @@ namespace sourcepawn
             }
 
             char error[512] = "";
-            ISource2ModConfig* config = configs::configsManager.Register(plugin, name, defaults, static_cast<uint32_t>(flags), c, error, sizeof(error));
+            ISource2ModConfig* config = configs::configsManager.RegisterFor(owner, name, defaults, static_cast<uint32_t>(flags), c, error, sizeof(error));
             if (!config)
             {
                 Handles().Free(c->handle, 0, true);

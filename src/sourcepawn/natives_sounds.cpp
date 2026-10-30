@@ -42,7 +42,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/sounds.h"
+#include "core/game/sounds.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 

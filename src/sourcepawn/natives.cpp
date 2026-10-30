@@ -15,12 +15,12 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/commands.h"
-#include "core/events.h"
-#include "core/pluginmanager.h"
-#include "core/scheduler.h"
-#include "core/translations.h"
-#include "core/shared.h"
+#include "core/game/commands.h"
+#include "core/game/events.h"
+#include "core/plugins/pluginmanager.h"
+#include "core/runtime/scheduler.h"
+#include "core/game/translations.h"
+#include "core/runtime/shared.h"
 #include "utils/log.h"
 
 #include <source2mod/sdk/schema/classes/CCSPlayerController.h>

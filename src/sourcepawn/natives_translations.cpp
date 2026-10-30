@@ -42,7 +42,7 @@
 #include "natives.h"
 #include "scriptplugin.h"
 
-#include "core/translations.h"
+#include "core/game/translations.h"
 
 #include <string>
 #include <vector>

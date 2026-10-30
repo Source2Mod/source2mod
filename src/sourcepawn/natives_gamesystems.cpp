@@ -48,7 +48,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/gamesystems.h"
+#include "core/game/gamesystems.h"
 
 #include <entity2/entitysystem.h>
 

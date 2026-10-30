@@ -44,7 +44,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/commands.h"
+#include "core/game/commands.h"
 
 #include <source2mod/ISource2ModScheduler.h>
 

@@ -14,7 +14,7 @@
 #include "crashinfo.h"
 #include "scriptplugin.h"
 
-#include "core/crashhandler.h"
+#include "core/runtime/crashhandler.h"
 
 #include <base-runtime.h>
 #include <environment.h>

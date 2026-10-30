@@ -1,7 +1,7 @@
 """Turns the core's shipped *.example.json files into config_defaults_gen.h.
 
 The same files are the defaults the core registers its configs with
-(core/configs.h) and the examples in the release, so the two cannot drift
+(core/data/configs.h) and the examples in the release, so the two cannot drift
 apart. Each file becomes a string constant k<Name>ConfigDefaults, written as
 short escaped literals (MSVC caps a single literal at 16 KB).
 """

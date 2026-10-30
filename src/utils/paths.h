@@ -35,7 +35,7 @@
  */
 #pragma once
 
-#include "core/shared.h"
+#include "core/runtime/shared.h"
 
 #include <engine2/isource2server.h>
 #include <engine2/ivengineserver2.h>

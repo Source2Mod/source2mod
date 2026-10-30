@@ -42,7 +42,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/scripts.h"
+#include "core/game/scripts.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 #include <source2mod/sdk/schema/classes/CCSCustomHudLayout.h>

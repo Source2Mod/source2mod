@@ -42,7 +42,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/permissions.h"
+#include "core/game/permissions.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 

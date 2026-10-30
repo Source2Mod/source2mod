@@ -46,7 +46,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/networkmessages.h"
+#include "core/game/networkmessages.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 

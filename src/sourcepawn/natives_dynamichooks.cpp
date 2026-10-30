@@ -46,8 +46,8 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/dynamichooks.h"
-#include "core/hooks.h"
+#include "core/hooks/dynamichooks.h"
+#include "core/hooks/hooks.h"
 
 #include <source2mod/ISource2ModCommands.h>
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>

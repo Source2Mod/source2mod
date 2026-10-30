@@ -44,7 +44,7 @@
 #include "natives.h"
 #include "scriptplugin.h"
 
-#include "core/maps.h"
+#include "core/game/maps.h"
 
 #include <functional>
 #include <string>

@@ -43,7 +43,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/transmit.h"
+#include "core/game/transmit.h"
 
 #include <source2mod/sdk/game/shared/movedata.h>
 #include <source2mod/sdk/game/shared/takedamageinfo.h>

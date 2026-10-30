@@ -36,8 +36,8 @@
 
 #include "navphysicsinterface.h"
 
-#include "core/gameconfig.h"
-#include "core/shared.h"
+#include "core/data/gameconfig.h"
+#include "core/runtime/shared.h"
 
 #include <dynlibutils/module.hpp>
 

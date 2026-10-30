@@ -39,11 +39,11 @@
  * ISource2ModClients.
  */
 #include "natives.h"
-#include "core/shared.h"
+#include "core/runtime/shared.h"
 
 #include "scriptplugin.h"
 
-#include "core/clients.h"
+#include "core/game/clients.h"
 
 #include <engine2/serversideclient.h>
 #include <interfaces/interfaces.h>

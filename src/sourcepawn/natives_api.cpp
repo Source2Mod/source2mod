@@ -42,8 +42,8 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/pluginapi.h"
-#include "core/shared.h"
+#include "core/plugins/pluginapi.h"
+#include "core/runtime/shared.h"
 
 #include <source2mod/ISource2ModScheduler.h>
 

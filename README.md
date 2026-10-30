@@ -125,7 +125,7 @@ example in C++ and SourcePawn, guides and the full API reference.
 
 A plugin asks the core for every interface by name and revision
 (`ISource2ModCommands004`); `PluginApi::Source2ModFactory()` in
-`src/core/pluginapi.cpp` answers:
+`src/core/plugins/pluginapi.cpp` answers:
 
 - the **current** revision -- the interface itself;
 - an **older** revision frozen in `src/compat/` -- a generated adapter

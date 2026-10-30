@@ -42,7 +42,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/paths.h"
+#include "core/data/paths.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 

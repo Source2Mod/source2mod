@@ -16,11 +16,11 @@
 #include "handles.h"
 #include "natives.h"
 
-#include "core/convars.h"
-#include "core/pluginmanager.h"
-#include "core/scheduler.h"
-#include "core/pluginapi.h"
-#include "core/shared.h"
+#include "core/game/convars.h"
+#include "core/plugins/pluginmanager.h"
+#include "core/runtime/scheduler.h"
+#include "core/plugins/pluginapi.h"
+#include "core/runtime/shared.h"
 #include "utils/log.h"
 #include "utils/paths.h"
 

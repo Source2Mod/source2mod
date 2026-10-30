@@ -21,7 +21,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/convars.h"
+#include "core/game/convars.h"
 #include "utils/log.h"
 
 #include <sp_callable.h>

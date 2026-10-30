@@ -43,7 +43,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/files.h"
+#include "core/data/files.h"
 
 #include <sp_callable.h>
 

@@ -42,7 +42,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/customhud.h"
+#include "core/ui/customhud.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 #include <source2mod/sdk/schema/classes/CCSCustomHudLayout.h>

@@ -54,8 +54,8 @@ file(GLOB_RECURSE SOURCE_FILES CONFIGURE_DEPENDS
 # until it is ported to KHook's (khook/asm, khook/memory).
 list(FILTER SOURCE_FILES EXCLUDE REGEX "/src/core/dynhooks/")
 
-# src/core/net*.cpp build into source2mod-net (makefiles/net/net.cmake).
-list(FILTER SOURCE_FILES EXCLUDE REGEX "/src/core/net(_[^/]*)?\\.cpp$")
+# src/core/net/net*.cpp build into source2mod-net (makefiles/net/net.cmake).
+list(FILTER SOURCE_FILES EXCLUDE REGEX "/src/core/net/net(_[^/]*)?\\.cpp$")
 
 add_library(${PROJECT_NAME} SHARED ${SOURCE_FILES})
 target_compile_definitions(source2mod-sdk PUBLIC SOURCE2MOD_CORE)

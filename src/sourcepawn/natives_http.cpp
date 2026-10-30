@@ -44,8 +44,8 @@
 #include "scriptplugin.h"
 #include "natives_json.h"
 
-#include "core/http.h"
-#include "core/sqlite.h"
+#include "core/net/http.h"
+#include "core/data/sqlite.h"
 
 #include <sp_callable.h>
 

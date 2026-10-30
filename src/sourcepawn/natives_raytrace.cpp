@@ -44,7 +44,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/raytrace.h"
+#include "core/game/raytrace.h"
 
 #include <source2mod/sdk/navlib/navarea.h>
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>

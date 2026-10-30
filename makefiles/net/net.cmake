@@ -1,4 +1,4 @@
-# The core's own sockets (src/core/net.cpp, net_*.cpp), the only sources that
+# The core's own sockets (src/core/net/net.cpp, net_*.cpp), the only sources that
 # include Boost: Asio and Beast, header-only, out of vendor/boost (the
 # SlynxCZ/boost submodule, the same as InventoryManager's).
 # They build into source2mod-net, which the core links with --exclude-libs like
@@ -7,8 +7,8 @@
 # these headers at all. Needs source2mod_include_directories.
 
 file(GLOB NET_SOURCE_FILES CONFIGURE_DEPENDS
-        ${CMAKE_SOURCE_DIR}/src/core/net.cpp
-        ${CMAKE_SOURCE_DIR}/src/core/net_*.cpp
+        ${CMAKE_SOURCE_DIR}/src/core/net/net.cpp
+        ${CMAKE_SOURCE_DIR}/src/core/net/net_*.cpp
 )
 
 # Before OpenSSL on the core's link line: it is what pulls OpenSSL's TLS

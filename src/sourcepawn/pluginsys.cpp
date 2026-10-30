@@ -24,9 +24,9 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/hookid.h"
-#include "core/pluginmanager.h"
-#include "core/scheduler.h"
+#include "core/hooks/hookid.h"
+#include "core/plugins/pluginmanager.h"
+#include "core/runtime/scheduler.h"
 #include "utils/log.h"
 
 #include <source2mod/ISource2ModNatives.h>

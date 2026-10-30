@@ -49,11 +49,11 @@
  * stale one reads as gone instead of reading freed memory.
  */
 #include "natives.h"
-#include "core/shared.h"
+#include "core/runtime/shared.h"
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/entities.h"
+#include "core/game/entities.h"
 #include "utils/log.h"
 
 #include <source2mod/ISource2ModEntities.h>

@@ -40,9 +40,9 @@
  * ISource2ModGeoIP. GeoipCode3 is not there: GeoLite2 has no three-letter codes.
  */
 #include "natives.h"
-#include "core/shared.h"
+#include "core/runtime/shared.h"
 
-#include "core/geoip.h"
+#include "core/game/geoip.h"
 
 #include <cmath>
 #include <cstdio>

@@ -43,7 +43,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/websockets.h"
+#include "core/net/websockets.h"
 
 #include <sp_callable.h>
 

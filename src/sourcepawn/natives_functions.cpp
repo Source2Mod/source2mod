@@ -57,10 +57,10 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/functions.h"
-#include "core/gameconfig.h"
-#include "core/module.h"
-#include "core/shared.h"
+#include "core/game/functions.h"
+#include "core/data/gameconfig.h"
+#include "core/game/module.h"
+#include "core/runtime/shared.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 

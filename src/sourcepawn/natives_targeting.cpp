@@ -39,11 +39,11 @@
  * ISource2ModTargeting. A script's target filters go when it unloads.
  */
 #include "natives.h"
-#include "core/shared.h"
+#include "core/runtime/shared.h"
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/targeting.h"
+#include "core/game/targeting.h"
 
 #include <sp_callable.h>
 

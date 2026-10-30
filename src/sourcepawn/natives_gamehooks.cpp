@@ -49,7 +49,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/hooks.h"
+#include "core/hooks/hooks.h"
 
 #include <source2mod/sdk/game/shared/movedata.h>
 #include <source2mod/sdk/game/shared/takedamageinfo.h>

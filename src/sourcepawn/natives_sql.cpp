@@ -46,9 +46,9 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
-#include "core/mysql.h"
-#include "core/sqlite.h"
-#include "core/scheduler.h"
+#include "core/data/mysql.h"
+#include "core/data/sqlite.h"
+#include "core/runtime/scheduler.h"
 
 #include <sp_callable.h>
 
