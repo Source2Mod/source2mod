@@ -44,6 +44,7 @@
 #include "core/data/cookies.h"
 #include "core/runtime/crashhandler.h"
 #include "core/hooks/hooks.h"
+#include "core/hooks/pluginkhook.h"
 #include "core/net/http.h"
 #include "core/net/websockets.h"
 #include "core/ui/menus.h"
@@ -447,6 +448,7 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
         stored->listeners.clear();
 
         appsystem::RemoveAllForPlugin(failedId);
+        pluginkhook::WaitForRemovals(failedId);
 
         m_plugins.pop_back();
         ++m_listGeneration;
@@ -531,17 +533,25 @@ bool PluginManager::LoadPlugin(const char* name, char* error, size_t maxlen)
 namespace
 {
     // A plugin's hooks are KHook objects living in its own library, and its
-    // Unload() deletes them, which takes the detours down synchronously -- so
+    // Unload() deletes them, which takes the detours down synchronously; the
+    // ones it forgot go in RemoveAllForPlugin (core/hooks/pluginkhook) -- so
     // by the time the library is closed nothing in the engine points into it
     // any more. What can still point into it is the stack: "s2m unload" is
     // typed at a console, which Source2Mod reaches from inside a hook of its
     // own, and the plugin may well have been on that path too. The close
-    // therefore waits for the next frame, when everything has unwound. A
+    // therefore waits for the next frame, when everything has unwound, and
+    // for the async removals still calling back into the library. A
     // SourcePawn plugin has no library; its runtime is what waits instead.
-    void CloseLibNextFrame(const Source2ModPlugin& plugin, std::string reloadPath = {})
+    void CloseLibNextFrame(PluginId id, LibHandle lib, std::shared_ptr<sourcepawn::ScriptPlugin> script, std::string reloadPath)
     {
-        scheduler::schedulerManager.NextFrame(0, [lib = plugin.lib, script = plugin.script, reloadPath = std::move(reloadPath)]() mutable
+        scheduler::schedulerManager.NextFrame(0, [id, lib, script = std::move(script), reloadPath = std::move(reloadPath)]() mutable
         {
+            if (pluginkhook::HasPendingRemovals(id))
+            {
+                CloseLibNextFrame(id, lib, std::move(script), std::move(reloadPath));
+                return;
+            }
+
             if (lib)
                 CloseLib(lib);
             script.reset();
@@ -556,6 +566,11 @@ namespace
                 pluginManager.LoadPluginFromPath(reloadPath.c_str(), err, sizeof(err), true);
             }
         });
+    }
+
+    void CloseLibNextFrame(const Source2ModPlugin& plugin, std::string reloadPath = {})
+    {
+        CloseLibNextFrame(plugin.id, plugin.lib, plugin.script, std::move(reloadPath));
     }
 }
 
@@ -743,8 +758,11 @@ void PluginManager::UnloadAll()
     // Shutting down: there is no next frame to wait for, and Source2Mod
     // itself is on its way out of every hook, so close right here.
     for (auto& p : m_plugins)
+    {
+        pluginkhook::WaitForRemovals(p->id);
         if (p->lib)
             CloseLib(p->lib);
+    }
 
     m_plugins.clear();
     ++m_listGeneration;

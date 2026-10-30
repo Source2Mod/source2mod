@@ -48,6 +48,7 @@
 #include "core/data/cookies.h"
 #include "core/runtime/crashhandler.h"
 #include "core/hooks/hookid.h"
+#include "core/hooks/pluginkhook.h"
 #include "core/data/paths.h"
 #include "core/runtime/scheduler.h"
 #include "core/ui/customhud.h"
@@ -435,8 +436,9 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
     void* ptr = nullptr;
     const char* who = s_pLoadingPlugin && s_pLoadingPlugin->api ? s_pLoadingPlugin->api->GetName() : "A plugin";
 
-    // The one detour engine on the server, as metamod handed it to Source2Mod.
-    if (!strcmp(iface, SOURCE2MOD_KHOOK_INTERFACE)) ptr = KHook::__exported__khook;
+    // The one detour engine on the server, as metamod handed it to Source2Mod,
+    // behind a wrapper that keeps track of what this plugin leaves on it.
+    if (!strcmp(iface, SOURCE2MOD_KHOOK_INTERFACE)) ptr = pluginkhook::ForPlugin(s_pLoadingPlugin ? s_pLoadingPlugin->id : FP_CALLER_OWNER());
     // ... and which KHook that is: a hash of the khook.hpp the core was
     // compiled against (metamod's third_party/khook, the engine itself -- see
     // the SDK's CMakeLists.txt). A plugin's KHOOK_INIT() compares it with the

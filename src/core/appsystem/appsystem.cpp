@@ -116,9 +116,11 @@ namespace appsystem
         };
 
         // Timers and next-frame tasks (Scheduler) run callbacks inside the library
-        // about to be closed; so do most of the others. SourcePawn last.
+        // about to be closed; so do most of the others. Leftover KHook hooks first:
+        // one firing below would run plugin code on what is already taken away.
+        // SourcePawn last.
         constexpr SystemId kPluginRemovalOrder[] = {
-            SystemId::CrashHandler, SystemId::Events, SystemId::Commands, SystemId::Configs, SystemId::CustomHud, SystemId::ConVars,
+            SystemId::PluginKHook, SystemId::CrashHandler, SystemId::Events, SystemId::Commands, SystemId::Configs, SystemId::CustomHud, SystemId::ConVars,
             SystemId::NetworkMessages, SystemId::Sounds, SystemId::Transmit, SystemId::GameSystems,
             SystemId::Scripts, SystemId::Scheduler, SystemId::HTTP, SystemId::WebSockets, SystemId::MySQL,
             SystemId::Menus, SystemId::Hooks, SystemId::Entities, SystemId::Permissions, SystemId::Cookies,
