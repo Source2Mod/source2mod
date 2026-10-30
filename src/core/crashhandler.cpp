@@ -69,6 +69,7 @@
 #include "common/linux/dump_symbols.h"
 
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <signal.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -138,6 +139,14 @@ namespace crashhandler
         char s_szSessionStatePath[560];
 
         google_breakpad::ExceptionHandler* s_pExceptionHandler = nullptr;
+
+        // ISource2ModCrash.
+        struct CrashListenerSlot
+        {
+            ISource2ModPlugin* plugin;
+            ISource2ModCrashListener* listener;
+        };
+        CrashListenerSlot s_crashListeners[16];
 
         // Memory every dump carries; see RegisterAppMemory().
         struct AppMemory
@@ -307,6 +316,48 @@ namespace crashhandler
         const int kExceptionSignals[] = { SIGSEGV, SIGABRT, SIGFPE, SIGILL, SIGBUS };
         const int kNumHandledSignals = std::size(kExceptionSignals);
 
+        // The first thing the handler does, before the dump: async-signal-safe listeners only.
+        bool filterCallback(void* context)
+        {
+            for (const CrashListenerSlot& slot : s_crashListeners)
+            {
+                if (slot.listener)
+                    slot.listener->OnServerCrashing();
+            }
+            return true;
+        }
+
+        // Once, with the dump on disk. A listener stuck on a held lock or a broken heap
+        // must not keep the process around: nothing here touches the dump, so the alarm
+        // only costs the stack in the .txt, which the next start rebuilds from the dump.
+        void NotifyCrashListeners()
+        {
+            static bool s_bNotified = false;
+            if (s_bNotified)
+                return;
+            s_bNotified = true;
+
+            bool bAny = false;
+            for (const CrashListenerSlot& slot : s_crashListeners)
+                bAny = bAny || slot.listener;
+            if (!bAny)
+                return;
+
+            signal(SIGALRM, SIG_DFL);
+            struct itimerval budget{};
+            budget.it_value.tv_sec = 1;
+            setitimer(ITIMER_REAL, &budget, nullptr);
+
+            for (const CrashListenerSlot& slot : s_crashListeners)
+            {
+                if (slot.listener)
+                    slot.listener->OnServerCrash();
+            }
+
+            budget.it_value.tv_sec = 0;
+            setitimer(ITIMER_REAL, &budget, nullptr);
+        }
+
         bool dumpCallback(const google_breakpad::MinidumpDescriptor& descriptor, void* context, bool succeeded)
         {
             if (succeeded)
@@ -318,7 +369,10 @@ namespace crashhandler
             sys_write(STDOUT_FILENO, "\n", 1);
 
             if (!succeeded)
+            {
+                NotifyCrashListeners();
                 return succeeded;
+            }
 
             // Leave a marker so the next server start knows there is an unprocessed crash.
             int pending = sys_open(s_szPendingCrashPath, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -335,6 +389,7 @@ namespace crashhandler
             if (extra == -1)
             {
                 sys_write(STDOUT_FILENO, "Failed to open metadata file!\n", 30);
+                NotifyCrashListeners();
                 return succeeded;
             }
 
@@ -358,6 +413,8 @@ namespace crashhandler
                 sys_write(extra, "-------- CONSOLE HISTORY END --------\n", 38);
                 sys_write(extra, "\n", 1);
             }
+
+            NotifyCrashListeners();
 
             std::shared_ptr<google_breakpad::SimpleSymbolSupplier> symbolSupplier;
             google_breakpad::BasicSourceLineResolver resolver;
@@ -1141,7 +1198,7 @@ namespace crashhandler
         {
 #if defined(__linux__)
             google_breakpad::MinidumpDescriptor descriptor(s_szDumpStoragePath);
-            s_pExceptionHandler = new google_breakpad::ExceptionHandler(descriptor, NULL, dumpCallback, NULL, true, -1);
+            s_pExceptionHandler = new google_breakpad::ExceptionHandler(descriptor, filterCallback, dumpCallback, NULL, true, -1);
 
             struct sigaction oact;
             sigaction(SIGSEGV, NULL, &oact);
@@ -1251,6 +1308,46 @@ namespace crashhandler
         s_strPendingReport.clear();
         s_strPendingTxtPath.clear();
     }
+
+    CrashListeners crashListeners;
+
+#if defined(__linux__)
+    bool CrashListeners::AddListener(ISource2ModPlugin* plugin, ISource2ModCrashListener* listener)
+    {
+        for (CrashListenerSlot& slot : s_crashListeners)
+        {
+            if (!slot.listener)
+            {
+                slot.plugin = plugin;
+                slot.listener = listener;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void CrashListeners::RemoveListener(ISource2ModCrashListener* listener)
+    {
+        for (CrashListenerSlot& slot : s_crashListeners)
+        {
+            if (slot.listener == listener)
+                slot = {};
+        }
+    }
+
+    void CrashListeners::RemoveAllForPlugin(ISource2ModPlugin* plugin)
+    {
+        for (CrashListenerSlot& slot : s_crashListeners)
+        {
+            if (slot.plugin == plugin)
+                slot = {};
+        }
+    }
+#else
+    bool CrashListeners::AddListener(ISource2ModPlugin*, ISource2ModCrashListener*) { return true; }
+    void CrashListeners::RemoveListener(ISource2ModCrashListener*) {}
+    void CrashListeners::RemoveAllForPlugin(ISource2ModPlugin*) {}
+#endif
 
     void OnGameFrame()
     {

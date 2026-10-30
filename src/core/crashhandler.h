@@ -35,6 +35,8 @@
  */
 #pragma once
 
+#include <source2mod/ISource2ModCrash.h>
+
 #include <cstddef>
 
 /// Crash handler: Google Breakpad minidumps with local symbolization and a
@@ -57,6 +59,17 @@
 /// Linux only; every function below is a no-op on Windows.
 namespace crashhandler
 {
+    /// ISource2ModCrash: a fixed table, so the signal handler walks nothing that
+    /// can have been freed or be mid-update.
+    class CrashListeners final : public ISource2ModCrash
+    {
+    public:
+        bool AddListener(ISource2ModPlugin* plugin, ISource2ModCrashListener* listener) override;
+        void RemoveListener(ISource2ModCrashListener* listener) override;
+        void RemoveAllForPlugin(ISource2ModPlugin* plugin);
+    };
+    extern CrashListeners crashListeners;
+
     /// Installs the exception handler and processes whatever the previous
     /// session left behind. Reads CrashHandlerEnabled and CrashDiscordWebhook
     /// from the core config, so it has to run after that is loaded -- and as

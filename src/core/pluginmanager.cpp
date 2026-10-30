@@ -41,6 +41,7 @@
 #include "configs.h"
 #include "convars.h"
 #include "cookies.h"
+#include "crashhandler.h"
 #include "core/hooks.h"
 #include "core/http.h"
 #include "core/websockets.h"
@@ -594,6 +595,7 @@ bool PluginManager::ReloadPlugin(int id)
         char err[128]{};
         (*it)->api->Unload(err, sizeof(err));
         (*it)->listeners.clear();
+        crashhandler::crashListeners.RemoveAllForPlugin((*it)->api);
 
         events::eventManager.RemoveAllForPlugin(id);
         commands::commandsManager.RemoveAllForPlugin(id);
@@ -667,6 +669,7 @@ bool PluginManager::UnloadPlugin(PluginId id)
         p->api->Unload(err, sizeof(err));
 
         p->listeners.clear();
+        crashhandler::crashListeners.RemoveAllForPlugin(p->api);
 
         events::eventManager.RemoveAllForPlugin(id);
         commands::commandsManager.RemoveAllForPlugin(id);
@@ -798,6 +801,7 @@ void PluginManager::UnloadAll()
         p->api->Unload(err, sizeof(err));
 
         p->listeners.clear();
+        crashhandler::crashListeners.RemoveAllForPlugin(p->api);
 
         events::eventManager.RemoveAllForPlugin(p->id);
         commands::commandsManager.RemoveAllForPlugin(p->id);

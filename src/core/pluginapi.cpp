@@ -46,6 +46,7 @@
 #include "configs.h"
 #include "convars.h"
 #include "cookies.h"
+#include "crashhandler.h"
 #include "core/paths.h"
 #include "core/scheduler.h"
 #include "customhud.h"
@@ -304,6 +305,7 @@ namespace
             { SOURCE2MOD_CONFIGS_INTERFACE, &configs::configsManager },
             { SOURCE2MOD_CONVARS_INTERFACE, &convars::convarsManager },
             { SOURCE2MOD_COOKIES_INTERFACE, &cookies::cookiesManager },
+            { SOURCE2MOD_CRASH_INTERFACE, &crashhandler::crashListeners },
             { SOURCE2MOD_CUSTOMHUD_INTERFACE, &customhud::customHudManager },
             { SOURCE2MOD_ENTITIES_INTERFACE, &entities::entitiesManager },
             { SOURCE2MOD_EVENTS_INTERFACE, &events::eventManager },
