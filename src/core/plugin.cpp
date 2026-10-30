@@ -93,7 +93,7 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
 
     if (late)
     {
-        std::snprintf(error, maxlen, "Late load is not supported");
+        g_SMAPI->Format(error, maxlen, "Late load is not supported");
         return false;
     }
 
