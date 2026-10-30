@@ -55,6 +55,11 @@
 /// returns that one. Every by-name module lookup in the core goes through here.
 bool InitModuleFromName(DynLibUtils::CModule& module, std::string_view name, bool extension = false);
 
+// windows.h can land after the SDK header dropped this macro, which would rename the method below.
+#ifdef GetModuleHandle
+#undef GetModuleHandle
+#endif
+
 class Source2ModModule : public ISource2ModModule
 {
 public:
