@@ -57,7 +57,8 @@ namespace cookies
         int64_t GetCookieTime(CPlayerSlot slot, Source2ModCookieId cookie) override;
         bool SetCookieBySteamID(uint64 steamId, Source2ModCookieId cookie, const char* value) override;
 
-        Source2ModCookiesListenerId AddCookiesCachedListener(CookiesCachedCallback callback) override;
+        Source2ModCookiesListenerId AddCookiesCachedListener(CookiesCachedCallback callback) override { return AddCookiesCachedListener(PluginId(0), std::move(callback)); }
+        Source2ModCookiesListenerId AddCookiesCachedListener(PluginId owner, CookiesCachedCallback callback);
         bool RemoveCookiesCachedListener(Source2ModCookiesListenerId id) override;
 
         /// Opens the database (and loads the players already authorized, for a late load).

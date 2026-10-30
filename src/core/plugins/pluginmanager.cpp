@@ -93,62 +93,6 @@
 PluginManager pluginManager;
 
 // The base of the module an address lies in, or nullptr.
-static const void* ModuleBaseOf(const void* address)
-{
-    if (!address)
-        return nullptr;
-
-#ifdef _WIN32
-    HMODULE module = nullptr;
-    if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
-                            static_cast<LPCSTR>(address), &module))
-        return nullptr;
-    return module;
-#else
-    Dl_info info{};
-    if (!dladdr(address, &info))
-        return nullptr;
-    return info.dli_fbase;
-#endif
-}
-
-PluginId hookid::OwnerOf(const void* address)
-{
-    return pluginManager.OwnerOf(address);
-}
-
-int PluginManager::OwnerOf(const void* address)
-{
-    if (!address)
-        return 0;
-
-    // The plugin list changed since the cache was filled: every answer may be stale.
-    if (m_ownerCacheGeneration != m_listGeneration)
-    {
-        m_ownerCache.clear();
-        m_ownerCacheGeneration = m_listGeneration;
-    }
-
-    if (auto it = m_ownerCache.find(address); it != m_ownerCache.end())
-        return it->second;
-
-    PluginId owner = 0;
-    if (const void* base = ModuleBaseOf(address))
-    {
-        for (const auto& p : m_plugins)
-        {
-            if (p && p->moduleBase == base)
-            {
-                owner = p->id;
-                break;
-            }
-        }
-    }
-
-    m_ownerCache.emplace(address, owner);
-    return owner;
-}
-
 static LibHandle OpenLib(const char* path, std::string& outError)
 {
 #ifdef _WIN32
@@ -373,7 +317,7 @@ bool PluginManager::LoadPluginFromPath(const char* fullPath, char* error, size_t
         FAIL("Invalid plugin interface");
     }
 
-    return AddPlugin(fullPath, lib, ModuleBaseOf(reinterpret_cast<const void*>(fn)), plugin, nullptr, error, maxlen, hotReload);
+    return AddPlugin(fullPath, lib, plugin, nullptr, error, maxlen, hotReload);
 }
 
 bool PluginManager::LoadScriptFromPath(const char* fullPath, char* error, size_t maxlen, bool hotReload)
@@ -389,10 +333,10 @@ bool PluginManager::LoadScriptFromPath(const char* fullPath, char* error, size_t
     }
 
     ISource2ModPlugin* plugin = script.get();
-    return AddPlugin(fullPath, nullptr, nullptr, plugin, std::move(script), error, maxlen, hotReload);
+    return AddPlugin(fullPath, nullptr, plugin, std::move(script), error, maxlen, hotReload);
 }
 
-bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* moduleBase, ISource2ModPlugin* plugin,
+bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, ISource2ModPlugin* plugin,
                               std::shared_ptr<sourcepawn::ScriptPlugin> script, char* error, size_t maxlen, bool hotReload)
 {
 
@@ -417,7 +361,6 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
     auto pl = std::make_unique<Source2ModPlugin>();
     pl->id = m_nextId++;
     pl->lib = lib;
-    pl->moduleBase = moduleBase;
     pl->api = plugin;
     pl->apiVersion = plugin->GetApiVersion();
     pl->path = fullPath;
@@ -434,7 +377,10 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
 
     char err[256]{};
     PluginApi::SetLoadingPlugin(stored.get());
-    const bool loaded = plugin->Load(stored->id, &pluginApi, err, sizeof(err), late);
+    if (script)
+        script->SetId(stored->id);
+    stored->coreApi = std::make_unique<PluginApi>(stored->id);
+    const bool loaded = plugin->Load(stored->coreApi.get(), err, sizeof(err), late);
     PluginApi::SetLoadingPlugin(nullptr);
 
     if (!loaded)

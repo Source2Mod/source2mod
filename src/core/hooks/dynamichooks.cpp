@@ -560,11 +560,12 @@ namespace dynamichooks
             if (!vtable && target.kind == HookTarget::Kind::Instance && target.instance)
                 vtable = *static_cast<void***>(target.instance);
             if (!vtable && target.kind == HookTarget::Kind::Class && target.className)
-                vtable = reinterpret_cast<void**>(Source2ModModule("server").GetVirtualTableByName(target.className).GetAddr());
+                vtable = target.module ? reinterpret_cast<void**>(target.module->GetVirtualTableByName(target.className).GetAddr())
+                                       : modules::modulesManager.FindVirtualTable(target.className);
             if (!vtable)
             {
                 FP_ERROR("Hook on function {}: a virtual needs a vtable -- describe it with FromVirtualTable, or hook it on "
-                         "HookTarget::Instance / HookTarget::Class (a class of libserver)", label);
+                         "HookTarget::Instance / HookTarget::Class", label);
                 return 0;
             }
         }

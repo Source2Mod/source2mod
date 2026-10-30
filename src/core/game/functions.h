@@ -81,22 +81,29 @@ namespace functions
         appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Functions; }
 
         ISource2ModFunction* Find(const char* name) override;
+        ISource2ModFunction* Create(void* address, void** vtable, int vtableIndex, bool isMember, Source2ModType returnType, const Source2ModType* params, int count) override { return Create(PluginId(0), address, vtable, vtableIndex, isMember, returnType, params, count); }
         ISource2ModFunction* Create(PluginId owner, void* address, void** vtable, int vtableIndex, bool isMember,
-                                    Source2ModType returnType, const Source2ModType* params, int count) override;
+                                    Source2ModType returnType, const Source2ModType* params, int count);
         void Destroy(ISource2ModFunction* function) override;
 
-        ISource2ModFunction* FromGameConfig(PluginId owner, const char* name, const FunctionTypes& types) override;
-        ISource2ModFunction* FromSignature(PluginId owner, const char* module, const char* signature,
-                                           const FunctionTypes& types, const char* section = "") override;
-        ISource2ModFunction* FromSignatureRelative(PluginId owner, const char* module, const char* signature, int offset,
-                                                   int nextInstructionOffset, const FunctionTypes& types, const char* section = "") override;
-        ISource2ModFunction* FromSymbol(PluginId owner, const char* module, const char* symbol, const FunctionTypes& types) override;
-        ISource2ModFunction* FromVirtualTable(PluginId owner, const char* module, const char* className, int index,
-                                              const FunctionTypes& types, const char* baseName = "") override;
-        ISource2ModFunction* FromVirtual(PluginId owner, int index, const FunctionTypes& types) override;
+        ISource2ModFunction* FromGameConfig(const char* name, const FunctionTypes& types) override { return FromGameConfig(PluginId(0), name, types); }
+        ISource2ModFunction* FromGameConfig(PluginId owner, const char* name, const FunctionTypes& types);
+        ISource2ModFunction* FromSignature(ISource2ModModule* module, const char* signature, const FunctionTypes& types, const char* section = "") override { return FromSignature(PluginId(0), module, signature, types, section); }
+        ISource2ModFunction* FromSignature(PluginId owner, ISource2ModModule* module, const char* signature,
+                                           const FunctionTypes& types, const char* section = "");
+        ISource2ModFunction* FromSignatureRelative(ISource2ModModule* module, const char* signature, int offset, int nextInstructionOffset, const FunctionTypes& types, const char* section = "") override { return FromSignatureRelative(PluginId(0), module, signature, offset, nextInstructionOffset, types, section); }
+        ISource2ModFunction* FromSignatureRelative(PluginId owner, ISource2ModModule* module, const char* signature, int offset,
+                                                   int nextInstructionOffset, const FunctionTypes& types, const char* section = "");
+        ISource2ModFunction* FromSymbol(ISource2ModModule* module, const char* symbol, const FunctionTypes& types) override { return FromSymbol(PluginId(0), module, symbol, types); }
+        ISource2ModFunction* FromSymbol(PluginId owner, ISource2ModModule* module, const char* symbol, const FunctionTypes& types);
+        ISource2ModFunction* FromVirtualTable(ISource2ModModule* module, const char* className, int index, const FunctionTypes& types, const char* baseName = "") override { return FromVirtualTable(PluginId(0), module, className, index, types, baseName); }
+        ISource2ModFunction* FromVirtualTable(PluginId owner, ISource2ModModule* module, const char* className, int index,
+                                              const FunctionTypes& types, const char* baseName = "");
+        ISource2ModFunction* FromVirtual(int index, const FunctionTypes& types) override { return FromVirtual(PluginId(0), index, types); }
+        ISource2ModFunction* FromVirtual(PluginId owner, int index, const FunctionTypes& types);
 
         /// A signature in a module, optionally only in one section; 0 when it does not match.
-        static uintptr_t FindSignature(const char* module, const char* signature, const char* section);
+        static uintptr_t FindSignature(ISource2ModModule* module, const char* signature, const char* section);
 
         /// What a gamedata "function" names a type, false for an unknown one.
         static bool ParseType(const std::string& text, Source2ModType& out);

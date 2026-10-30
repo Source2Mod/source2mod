@@ -170,7 +170,7 @@ namespace sourcepawn
         cell_t N_SoundNew(IPluginContext* ctx, const cell_t* params)
         {
             const char* name = LocalString(ctx, params[1]);
-            ISource2ModSound* sound = SM().CreateSound(0, *name ? name : nullptr);
+            ISource2ModSound* sound = SM().CreateSound(*name ? name : nullptr);
             if (!sound)
                 return 0;
             const cell_t h = Handles().Create(SoundType(), sound, CallerId(ctx));

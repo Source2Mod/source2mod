@@ -41,7 +41,8 @@ namespace paths
         const char* GamedataDirectory() override;
         const char* PluginsDirectory() override;
         const char* SharedDirectory() override;
-        const char* PluginConfigDirectory(PluginId owner) override;
+        const char* PluginConfigDirectory() override { return PluginConfigDirectory(PluginId(0)); }
+        const char* PluginConfigDirectory(PluginId owner);
 
     private:
         // The interface hands out const char*, so the strings have to outlive

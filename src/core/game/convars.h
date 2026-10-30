@@ -101,14 +101,16 @@ namespace convars {
 
         void DeleteConVar(uint16 accessIndex) override;
 
-        void TrackConVar(PluginId owner, ConVarRefAbstract* ref) override;
-        void TrackConCommand(PluginId owner, ConCommandRef* ref) override;
+        void TrackConVar(ConVarRefAbstract* ref) override { return TrackConVar(PluginId(0), ref); }
+        void TrackConVar(PluginId owner, ConVarRefAbstract* ref);
+        void TrackConCommand(ConCommandRef* ref) override { return TrackConCommand(PluginId(0), ref); }
+        void TrackConCommand(PluginId owner, ConCommandRef* ref);
 
         int QueryClientConVar(CPlayerSlot slot, const char* name, ClientConVarQueryCallback callback) override;
         bool ReplicateConVar(CPlayerSlot slot, const char* name, const char* value) override;
 
-        Source2ModConVarHookId HookConVarChange(ConVarChangeHandler handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookConVarChange(owner, std::move(handler)); }
-        bool UnhookConVarChange(const ConVarChangeHandler& handler) override { return UnhookConVarChange(hookid::OwnerOfHandler(handler), handler); }
+        Source2ModConVarHookId HookConVarChange(ConVarChangeHandler handler) override { const PluginId owner = PluginId(0); return HookConVarChange(owner, std::move(handler)); }
+        bool UnhookConVarChange(const ConVarChangeHandler& handler) override { return UnhookConVarChange(PluginId(0), handler); }
         bool UnhookConVarChange(Source2ModConVarHookId id) override { return UnhookConVarChangeId(id); }
 
         // The same with the owner spelled out: what the calls above resolve

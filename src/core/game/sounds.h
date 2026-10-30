@@ -176,7 +176,8 @@ namespace sounds
         appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Sounds; }
         void OnLevelShutdown() override { Clear(); }
 
-        ISource2ModSound* CreateSound(PluginId owner, const char* name) override;
+        ISource2ModSound* CreateSound(const char* name) override { return CreateSound(PluginId(0), name); }
+        ISource2ModSound* CreateSound(PluginId owner, const char* name);
         void DestroySound(ISource2ModSound* sound) override;
 
         SoundGuid EmitSoundToPlayer(CPlayerSlot slot, const char* name, float volume, float pitch, const char* channel) override;
@@ -198,8 +199,8 @@ namespace sounds
         const char* LookupSoundName(uint32_t hash) override;
 
 
-        Source2ModSoundHookId HookSound(SoundHook handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookSound(owner, std::move(handler)); }
-        bool UnhookSound(const SoundHook& handler) override { return UnhookSound(hookid::OwnerOfHandler(handler), handler); }
+        Source2ModSoundHookId HookSound(SoundHook handler) override { const PluginId owner = PluginId(0); return HookSound(owner, std::move(handler)); }
+        bool UnhookSound(const SoundHook& handler) override { return UnhookSound(PluginId(0), handler); }
         bool UnhookSound(Source2ModSoundHookId id) override { return UnhookSoundId(id); }
 
         // The same with the owner spelled out: what the calls above resolve

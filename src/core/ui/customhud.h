@@ -61,8 +61,8 @@ namespace customhud {
         void OnEntityDeleted(CEntityInstance* pEntity) override;
 
 
-        Source2ModCustomHudHookId HookCustomHudClick(CCSCustomHudLayout* pLayout, CustomHudClickHandler handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookCustomHudClick(owner, pLayout, std::move(handler)); }
-        bool UnhookCustomHudClick(CCSCustomHudLayout* pLayout, const CustomHudClickHandler& handler) override { return UnhookCustomHudClick(hookid::OwnerOfHandler(handler), pLayout, handler); }
+        Source2ModCustomHudHookId HookCustomHudClick(CCSCustomHudLayout* pLayout, CustomHudClickHandler handler) override { const PluginId owner = PluginId(0); return HookCustomHudClick(owner, pLayout, std::move(handler)); }
+        bool UnhookCustomHudClick(CCSCustomHudLayout* pLayout, const CustomHudClickHandler& handler) override { return UnhookCustomHudClick(PluginId(0), pLayout, handler); }
         bool UnhookCustomHudClick(Source2ModCustomHudHookId id) override { return UnhookCustomHudClickId(id); }
 
         // The same with the owner spelled out: what the calls above resolve

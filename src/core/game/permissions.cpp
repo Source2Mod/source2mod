@@ -381,9 +381,8 @@ namespace permissions
     Refused commands
     ========================= */
 
-    Source2ModAccessDeniedHandlerId PermissionsManager::SetAccessDeniedHandler(AccessDeniedHandler handler)
+    Source2ModAccessDeniedHandlerId PermissionsManager::SetAccessDeniedHandler(PluginId owner, AccessDeniedHandler handler)
     {
-        const PluginId owner = hookid::OwnerOfHandler(handler);
         return m_deniedHandlers.Add(owner, std::move(handler));
     }
 

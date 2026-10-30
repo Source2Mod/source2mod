@@ -71,7 +71,8 @@ namespace crashhandler
         void OnGameFrame(bool simulating) override;
         void OnSteamAPIActivated() override;
 
-        bool AddListener(ISource2ModCrashListener* listener) override;
+        bool AddListener(ISource2ModCrashListener* listener) override { return AddListener(PluginId(0), listener); }
+        bool AddListener(PluginId owner, ISource2ModCrashListener* listener);
         void RemoveListener(ISource2ModCrashListener* listener) override;
         void RemoveAllForPlugin(PluginId id) override;
     };

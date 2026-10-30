@@ -121,7 +121,8 @@ namespace transmit
         appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Transmit; }
         void OnLevelShutdown() override { Clear(); }
 
-        bool HookEntity(PluginId owner, CEntityInstance* entity, bool defaultVisible) override;
+        bool HookEntity(CEntityInstance* entity, bool defaultVisible) override { return HookEntity(PluginId(0), entity, defaultVisible); }
+        bool HookEntity(PluginId owner, CEntityInstance* entity, bool defaultVisible);
         void UnhookEntity(CEntityInstance* entity) override;
         bool IsEntityHooked(CEntityInstance* entity) override;
 
@@ -139,8 +140,8 @@ namespace transmit
         void ResetViewer(CPlayerSlot viewer) override;
 
 
-        Source2ModTransmitHookId HookCheckTransmit(CheckTransmitHook handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookCheckTransmit(owner, std::move(handler)); }
-        bool UnhookCheckTransmit(const CheckTransmitHook& handler) override { return UnhookCheckTransmit(hookid::OwnerOfHandler(handler), handler); }
+        Source2ModTransmitHookId HookCheckTransmit(CheckTransmitHook handler) override { const PluginId owner = PluginId(0); return HookCheckTransmit(owner, std::move(handler)); }
+        bool UnhookCheckTransmit(const CheckTransmitHook& handler) override { return UnhookCheckTransmit(PluginId(0), handler); }
         bool UnhookCheckTransmit(Source2ModTransmitHookId id) override { return UnhookCheckTransmitId(id); }
 
         // The same with the owner spelled out: what the calls above resolve

@@ -251,7 +251,7 @@ namespace clients
 
     int ClientsManager::QueryClientConVar(CPlayerSlot slot, const char* name, ClientConVarQueryCallback callback)
     {
-        const PluginId owner = hookid::OwnerOfHandler(callback);
+        const PluginId owner = PluginId(0);
         return QueryClientConVar(owner, slot, name, std::move(callback));
     }
 

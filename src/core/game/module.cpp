@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "core/game/module.h"
+#include "utils/log.h"
 
 #include "core/plugin.h"
 // plugin.h brings in windows.h, whose GetModuleHandle macro would rename
@@ -180,4 +181,119 @@ const char* Source2ModModule::GetModuleName() const
     if (m_cachedName.empty())
         m_cachedName = m_module.GetName();
     return m_cachedName.c_str();
+}
+
+namespace modules
+{
+    ModulesManager modulesManager;
+
+    namespace
+    {
+        const char* NameOf(Source2ModModuleId id)
+        {
+            switch (id)
+            {
+            case Source2ModModuleId::Server: return "server";
+            case Source2ModModuleId::Engine: return "engine2";
+            case Source2ModModuleId::Tier0: return "tier0";
+            case Source2ModModuleId::VScript: return "vscript";
+            case Source2ModModuleId::SchemaSystem: return "schemasystem";
+            case Source2ModModuleId::NetworkSystem: return "networksystem";
+            case Source2ModModuleId::ResourceSystem: return "resourcesystem";
+            case Source2ModModuleId::FileSystem: return "filesystem_stdio";
+#if defined(_WIN32)
+            case Source2ModModuleId::SteamApi: return "steam_api64";
+#else
+            case Source2ModModuleId::SteamApi: return "libsteam_api";
+#endif
+            default: return nullptr;
+            }
+        }
+    }
+
+    void ModulesManager::Shutdown()
+    {
+        std::lock_guard lock(m_lock);
+        m_byName.clear();
+        m_modules.clear();
+    }
+
+    Source2ModModule* ModulesManager::Keep(std::unique_ptr<Source2ModModule> module)
+    {
+        if (!module->GetModuleHandle())
+            return nullptr;
+
+        for (const auto& kept : m_modules)
+        {
+            if (kept->GetModuleHandle() == module->GetModuleHandle())
+                return kept.get();
+        }
+        m_modules.push_back(std::move(module));
+        return m_modules.back().get();
+    }
+
+    Source2ModModule* ModulesManager::Get(Source2ModModuleId id)
+    {
+        const char* name = NameOf(id);
+        return name ? Get(name) : nullptr;
+    }
+
+    Source2ModModule* ModulesManager::Get(const char* name)
+    {
+        if (!name || !*name)
+            return nullptr;
+
+        // engine2 is the module's real name; "engine" is the spelling gamedata
+        // files have always used for it.
+        const std::string key = !strcmp(name, "engine") ? "engine2" : name;
+
+        std::lock_guard lock(m_lock);
+        if (const auto it = m_byName.find(key); it != m_byName.end())
+            return it->second;
+
+        // Not remembered when it is not there: it can load later.
+        Source2ModModule* module = Keep(std::make_unique<Source2ModModule>(key.c_str()));
+        if (module)
+            m_byName.emplace(key, module);
+        return module;
+    }
+
+    Source2ModModule* ModulesManager::GetFromAddress(const void* address)
+    {
+        if (!address)
+            return nullptr;
+
+        std::lock_guard lock(m_lock);
+        return Keep(std::make_unique<Source2ModModule>(reinterpret_cast<uintptr_t>(address)));
+    }
+
+    void** ModulesManager::FindVirtualTable(const char* className, const char* baseName, ISource2ModModule** found)
+    {
+        void** first = nullptr;
+        const char* firstName = nullptr;
+        for (int i = 0; i < static_cast<int>(Source2ModModuleId::Count); i++)
+        {
+            Source2ModModule* module = Get(static_cast<Source2ModModuleId>(i));
+            if (!module)
+                continue;
+
+            const auto table = (baseName && *baseName ? module->GetVirtualTableByBase(className, baseName)
+                                                      : module->GetVirtualTableByName(className)).GetAddr();
+            if (!table)
+                continue;
+
+            if (!first)
+            {
+                first = reinterpret_cast<void**>(table);
+                firstName = module->GetModuleName();
+                if (found)
+                    *found = module;
+            }
+            else
+            {
+                FP_WARN("Class {} is in {} and {}: using {}, name the module to pick", className, firstName, module->GetModuleName(), firstName);
+            }
+        }
+        return first;
+    }
 }

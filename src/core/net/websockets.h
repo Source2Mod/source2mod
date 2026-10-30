@@ -57,8 +57,7 @@ namespace websockets {
         ISource2ModWebSocket* Connect(const char* url, ISource2ModWebSocketListener* listener,
                                       const Source2ModWebSocketOptions& options) override
         {
-            // Whose class the listener is: its vtable lies in that plugin's library.
-            const PluginId owner = hookid::OwnerOf(listener ? *reinterpret_cast<void* const*>(listener) : nullptr);
+            const PluginId owner = PluginId(0);
             return Connect(owner, url, listener, options);
         }
 

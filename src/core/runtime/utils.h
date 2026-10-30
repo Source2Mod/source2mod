@@ -95,7 +95,8 @@ namespace utils
 
         ISource2ModRegex* CompileRegex(const char* pattern, int flags = 0, std::string* error = nullptr) override;
 
-        bool LogToFile(PluginId owner, const char* path, const char* message) override;
+        bool LogToFile(const char* path, const char* message) override { return LogToFile(PluginId(0), path, message); }
+        bool LogToFile(PluginId owner, const char* path, const char* message);
     };
 
     extern UtilsManager utilsManager;

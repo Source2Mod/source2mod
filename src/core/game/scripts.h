@@ -83,17 +83,20 @@ namespace scripts
 
         bool CanRunSource() override;
 
-        CEntityHandle LoadAsset(PluginId owner, const char* pszName, const char* pszAsset, bool bPersistent) override;
-        CEntityHandle RunSource(PluginId owner, const char* pszName, const char* pszVirtualPath, const char* pszSource, bool bPersistent) override;
-        CEntityHandle RunFile(PluginId owner, const char* pszName, const char* pszFilePath, bool bPersistent) override;
+        CEntityHandle LoadAsset(const char* pszName, const char* pszAsset, bool bPersistent) override { return LoadAsset(PluginId(0), pszName, pszAsset, bPersistent); }
+        CEntityHandle LoadAsset(PluginId owner, const char* pszName, const char* pszAsset, bool bPersistent);
+        CEntityHandle RunSource(const char* pszName, const char* pszVirtualPath, const char* pszSource, bool bPersistent) override { return RunSource(PluginId(0), pszName, pszVirtualPath, pszSource, bPersistent); }
+        CEntityHandle RunSource(PluginId owner, const char* pszName, const char* pszVirtualPath, const char* pszSource, bool bPersistent);
+        CEntityHandle RunFile(const char* pszName, const char* pszFilePath, bool bPersistent) override { return RunFile(PluginId(0), pszName, pszFilePath, bPersistent); }
+        CEntityHandle RunFile(PluginId owner, const char* pszName, const char* pszFilePath, bool bPersistent);
         CEntityHandle Reload(const char* pszName) override;
         void Remove(const char* pszName) override;
         CEntityHandle Find(const char* pszName) override;
         bool FireInput(const char* pszName, const char* pszInput) override;
 
 
-        Source2ModScriptMessageHookId HookScriptMessage(const char* pszChannel, ScriptMessageHandler handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookScriptMessage(owner, pszChannel, std::move(handler)); }
-        bool UnhookScriptMessage(const char* pszChannel, const ScriptMessageHandler& handler) override { return UnhookScriptMessage(hookid::OwnerOfHandler(handler), pszChannel, handler); }
+        Source2ModScriptMessageHookId HookScriptMessage(const char* pszChannel, ScriptMessageHandler handler) override { const PluginId owner = PluginId(0); return HookScriptMessage(owner, pszChannel, std::move(handler)); }
+        bool UnhookScriptMessage(const char* pszChannel, const ScriptMessageHandler& handler) override { return UnhookScriptMessage(PluginId(0), pszChannel, handler); }
         bool UnhookScriptMessage(Source2ModScriptMessageHookId id) override { return UnhookScriptMessageId(id); }
 
         // The same with the owner spelled out: what the calls above resolve

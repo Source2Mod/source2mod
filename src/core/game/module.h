@@ -36,7 +36,15 @@
 #pragma once
 #include <dynlibutils/memaddr.hpp>
 #include <dynlibutils/module.hpp>
-#include <source2mod/ISource2ModModule.h>
+#include "core/appsystem/appsystem.h"
+
+#include <source2mod/ISource2ModModules.h>
+
+#include <memory>
+#include <mutex>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include <string>
 #include <string_view>
@@ -54,8 +62,10 @@ public:
     explicit Source2ModModule(const char* name);
     explicit Source2ModModule(uintptr_t ptr);
 
-    bool InitFromName(const char* name, bool extension = false) override;
-    bool InitFromMemory(uintptr_t ptr) override;
+    bool InitFromName(const char* name, bool extension = false);
+    bool InitFromMemory(uintptr_t ptr);
+
+    DynLibUtils::CModule& Raw() { return m_module; }
 
     ISource2ModMemory FindPattern(const char* pattern, ISource2ModMemory startAddress = ISource2ModMemory()) const override;
     ISource2ModMemory FindPatternInSection(const char* pattern, const char* section, ISource2ModMemory startAddress = ISource2ModMemory()) const override;
@@ -76,3 +86,34 @@ private:
     DynLibUtils::CModule m_module;
     mutable std::string  m_cachedName;
 };
+
+namespace modules
+{
+    /// The one object per library everything else reads: the game's modules
+    /// stay mapped, so the objects stay until the core goes.
+    class ModulesManager final : public ISource2ModModules, public appsystem::ISource2ModAppSystem
+    {
+    public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Modules; }
+        bool Init(char*, size_t) override { return true; }
+        void Shutdown() override;
+
+        Source2ModModule* Get(Source2ModModuleId id) override;
+        Source2ModModule* Get(const char* name) override;
+        Source2ModModule* GetFromAddress(const void* address) override;
+
+        /// A class's vtable in the common modules, the first that has it; with
+        /// the module it was found in. Says so when a later one has it too.
+        void** FindVirtualTable(const char* className, const char* baseName = nullptr, ISource2ModModule** found = nullptr);
+
+    private:
+        Source2ModModule* Keep(std::unique_ptr<Source2ModModule> module);
+
+        std::recursive_mutex m_lock;
+        std::vector<std::unique_ptr<Source2ModModule>> m_modules;
+        std::unordered_map<std::string, Source2ModModule*> m_byName;
+    };
+
+    extern ModulesManager modulesManager;
+}
+

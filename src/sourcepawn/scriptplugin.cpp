@@ -377,9 +377,8 @@ namespace sourcepawn
         return true;
     }
 
-    bool ScriptPlugin::Load(PluginId id, ISource2ModAPI* api, char* error, size_t maxlen, bool late)
+    bool ScriptPlugin::Load(ISource2ModAPI* api, char* error, size_t maxlen, bool late)
     {
-        m_id = id;
         m_handle = Handles().Create(Types().plugin, this, 0);
 
         // SourceMod's two passes in one: what exists now is bound before

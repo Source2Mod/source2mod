@@ -80,21 +80,34 @@ namespace permissions
         uint64 GetPlayerSteamID(CPlayerSlot slot) override;
         bool IsPlayerAuthorized(CPlayerSlot slot) override;
 
-        void GrantPermission(PluginId owner, uint64 steamId, const char* permission) override;
-        void RevokePermission(PluginId owner, uint64 steamId, const char* permission) override;
-        void AddToGroup(PluginId owner, uint64 steamId, const char* group) override;
-        void RemoveFromGroup(PluginId owner, uint64 steamId, const char* group) override;
-        void SetImmunity(PluginId owner, uint64 steamId, int immunity) override;
-        void ClearPlayer(PluginId owner, uint64 steamId) override;
+        void GrantPermission(uint64 steamId, const char* permission) override { return GrantPermission(PluginId(0), steamId, permission); }
+        void GrantPermission(PluginId owner, uint64 steamId, const char* permission);
+        void RevokePermission(uint64 steamId, const char* permission) override { return RevokePermission(PluginId(0), steamId, permission); }
+        void RevokePermission(PluginId owner, uint64 steamId, const char* permission);
+        void AddToGroup(uint64 steamId, const char* group) override { return AddToGroup(PluginId(0), steamId, group); }
+        void AddToGroup(PluginId owner, uint64 steamId, const char* group);
+        void RemoveFromGroup(uint64 steamId, const char* group) override { return RemoveFromGroup(PluginId(0), steamId, group); }
+        void RemoveFromGroup(PluginId owner, uint64 steamId, const char* group);
+        void SetImmunity(uint64 steamId, int immunity) override { return SetImmunity(PluginId(0), steamId, immunity); }
+        void SetImmunity(PluginId owner, uint64 steamId, int immunity);
+        void ClearPlayer(uint64 steamId) override { return ClearPlayer(PluginId(0), steamId); }
+        void ClearPlayer(PluginId owner, uint64 steamId);
 
-        void CreateGroup(PluginId owner, const char* group, int immunity) override;
-        void DeleteGroup(PluginId owner, const char* group) override;
-        void AddGroupPermission(PluginId owner, const char* group, const char* permission) override;
-        void RemoveGroupPermission(PluginId owner, const char* group, const char* permission) override;
-        void AddGroupParent(PluginId owner, const char* group, const char* parent) override;
-        void RemoveGroupParent(PluginId owner, const char* group, const char* parent) override;
+        void CreateGroup(const char* group, int immunity) override { return CreateGroup(PluginId(0), group, immunity); }
+        void CreateGroup(PluginId owner, const char* group, int immunity);
+        void DeleteGroup(const char* group) override { return DeleteGroup(PluginId(0), group); }
+        void DeleteGroup(PluginId owner, const char* group);
+        void AddGroupPermission(const char* group, const char* permission) override { return AddGroupPermission(PluginId(0), group, permission); }
+        void AddGroupPermission(PluginId owner, const char* group, const char* permission);
+        void RemoveGroupPermission(const char* group, const char* permission) override { return RemoveGroupPermission(PluginId(0), group, permission); }
+        void RemoveGroupPermission(PluginId owner, const char* group, const char* permission);
+        void AddGroupParent(const char* group, const char* parent) override { return AddGroupParent(PluginId(0), group, parent); }
+        void AddGroupParent(PluginId owner, const char* group, const char* parent);
+        void RemoveGroupParent(const char* group, const char* parent) override { return RemoveGroupParent(PluginId(0), group, parent); }
+        void RemoveGroupParent(PluginId owner, const char* group, const char* parent);
 
-        Source2ModAccessDeniedHandlerId SetAccessDeniedHandler(AccessDeniedHandler handler) override;
+        Source2ModAccessDeniedHandlerId SetAccessDeniedHandler(AccessDeniedHandler handler) override { return SetAccessDeniedHandler(PluginId(0), std::move(handler)); }
+        Source2ModAccessDeniedHandlerId SetAccessDeniedHandler(PluginId owner, AccessDeniedHandler handler);
         bool ClearAccessDeniedHandler(Source2ModAccessDeniedHandlerId id) override;
 
         // Core side

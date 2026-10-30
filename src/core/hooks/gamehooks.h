@@ -63,7 +63,6 @@ namespace gamehooks
         virtual bool IsAvailable() = 0;
         /// @p handler is the point's HookHandler<CONTEXT>*.
         virtual Source2ModHookId Add(PluginId owner, const void* handler, bool post, const HookTarget& target, const HookFilter& filter) = 0;
-        virtual PluginId OwnerOf(const void* handler) const = 0;
         virtual bool Remove(Source2ModHookId id) = 0;
         virtual void RemoveAll(PluginId owner) = 0;
         virtual void RemoveInstance(const void* instance) = 0;
@@ -83,7 +82,6 @@ namespace gamehooks
 
         Source2ModHookId Add(HookPointId point, PluginId owner, const void* handler, bool post,
                              const HookTarget& target, const HookFilter& filter);
-        PluginId OwnerOfHandler(HookPointId point, const void* handler) const;
         bool Remove(Source2ModHookId id);
         bool IsAvailable(HookPointId point);
         /// The core's own use of a point: its detour in place from now on.

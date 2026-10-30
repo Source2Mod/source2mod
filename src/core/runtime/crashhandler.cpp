@@ -1318,13 +1318,13 @@ namespace crashhandler
     void CrashListeners::OnSteamAPIActivated() { crashhandler::OnSteamAPIActivated(); }
 
 #if defined(__linux__)
-    bool CrashListeners::AddListener(ISource2ModCrashListener* listener)
+    bool CrashListeners::AddListener(PluginId owner, ISource2ModCrashListener* listener)
     {
         for (CrashListenerSlot& slot : s_crashListeners)
         {
             if (!slot.listener)
             {
-                slot.owner = hookid::OwnerOfObject(listener);
+                slot.owner = owner;
                 slot.listener = listener;
                 return true;
             }

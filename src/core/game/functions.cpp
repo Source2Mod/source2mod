@@ -312,6 +312,25 @@ namespace functions
                 return nullptr;
             }
             fn->vtableIndex = offset;
+
+            // One class's slot, so it can be hooked for every object of it.
+            if (auto it = d->find("vtable"); it != d->end())
+            {
+                const std::string moduleName = it->value("module", "");
+                const std::string className = it->value("class", "");
+                const std::string baseName = it->value("base", "");
+                // No module named: the common ones.
+                if (moduleName.empty())
+                    fn->vtable = modules::modulesManager.FindVirtualTable(className.c_str(), baseName.c_str());
+                else if (Source2ModModule* m = modules::modulesManager.Get(moduleName.c_str()))
+                    fn->vtable = reinterpret_cast<void**>((baseName.empty() ? m->GetVirtualTableByName(className.c_str())
+                                                                            : m->GetVirtualTableByBase(className.c_str(), baseName.c_str())).GetAddr());
+                if (!fn->vtable)
+                {
+                    FP_ERROR("Function {}: no vtable of {} in {}", name, className, moduleName.empty() ? "the common modules" : moduleName);
+                    return nullptr;
+                }
+            }
         }
 
         slot = std::move(fn);
@@ -336,16 +355,15 @@ namespace functions
         return created_.back().get();
     }
 
-    uintptr_t FunctionsManager::FindSignature(const char* moduleName, const char* signature, const char* section)
+    uintptr_t FunctionsManager::FindSignature(ISource2ModModule* module, const char* signature, const char* section)
     {
-        if (!moduleName || !signature)
+        if (!module || !signature)
             return 0;
-        Source2ModModule module(moduleName);
         if (!section || !*section)
-            return module.FindPattern(signature).GetAddr();
-        if (!module.GetSectionByName(section).IsValid())
+            return module->FindPattern(signature).GetAddr();
+        if (!module->GetSectionByName(section).IsValid())
             return 0;
-        return module.FindPatternInSection(signature, section).GetAddr();
+        return module->FindPatternInSection(signature, section).GetAddr();
     }
 
     namespace
@@ -370,14 +388,14 @@ namespace functions
         return offset >= 0 ? CreateWith(*this, owner, nullptr, nullptr, offset, types) : nullptr;
     }
 
-    ISource2ModFunction* FunctionsManager::FromSignature(PluginId owner, const char* module, const char* signature,
+    ISource2ModFunction* FunctionsManager::FromSignature(PluginId owner, ISource2ModModule* module, const char* signature,
                                                          const FunctionTypes& types, const char* section)
     {
         const uintptr_t address = FindSignature(module, signature, section);
         return address ? CreateWith(*this, owner, reinterpret_cast<void*>(address), nullptr, -1, types) : nullptr;
     }
 
-    ISource2ModFunction* FunctionsManager::FromSignatureRelative(PluginId owner, const char* module, const char* signature, int offset,
+    ISource2ModFunction* FunctionsManager::FromSignatureRelative(PluginId owner, ISource2ModModule* module, const char* signature, int offset,
                                                                  int nextInstructionOffset, const FunctionTypes& types, const char* section)
     {
         const uintptr_t match = FindSignature(module, signature, section);
@@ -387,21 +405,20 @@ namespace functions
         return address ? CreateWith(*this, owner, reinterpret_cast<void*>(address), nullptr, -1, types) : nullptr;
     }
 
-    ISource2ModFunction* FunctionsManager::FromSymbol(PluginId owner, const char* module, const char* symbol, const FunctionTypes& types)
+    ISource2ModFunction* FunctionsManager::FromSymbol(PluginId owner, ISource2ModModule* module, const char* symbol, const FunctionTypes& types)
     {
         if (!module || !symbol)
             return nullptr;
-        const uintptr_t address = Source2ModModule(module).GetFunctionByName(symbol).GetAddr();
+        const uintptr_t address = module->GetFunctionByName(symbol).GetAddr();
         return address ? CreateWith(*this, owner, reinterpret_cast<void*>(address), nullptr, -1, types) : nullptr;
     }
 
-    ISource2ModFunction* FunctionsManager::FromVirtualTable(PluginId owner, const char* module, const char* className, int index,
+    ISource2ModFunction* FunctionsManager::FromVirtualTable(PluginId owner, ISource2ModModule* module, const char* className, int index,
                                                             const FunctionTypes& types, const char* baseName)
     {
         if (!module || !className || index < 0)
             return nullptr;
-        Source2ModModule m(module);
-        const uintptr_t vtable = (baseName && *baseName ? m.GetVirtualTableByBase(className, baseName) : m.GetVirtualTableByName(className)).GetAddr();
+        const uintptr_t vtable = (baseName && *baseName ? module->GetVirtualTableByBase(className, baseName) : module->GetVirtualTableByName(className)).GetAddr();
         return vtable ? CreateWith(*this, owner, nullptr, reinterpret_cast<void**>(vtable), index, types) : nullptr;
     }
 

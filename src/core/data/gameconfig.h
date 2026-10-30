@@ -100,7 +100,6 @@ namespace gameconfig
         std::unordered_map<std::string, json> m_umFunctions;
 
         /// Modules loaded on demand by GetModule, keyed by library name.
-        std::unordered_map<std::string, DynLibUtils::CModule> m_umModules;
     };
 
     extern GameConfig gameConfig;

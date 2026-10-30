@@ -65,12 +65,15 @@ namespace scheduler
 
         void NextFrame(TimerCallback task) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(task);
+            NextFrameFor(PluginId(0), std::move(task));
+        }
+        void NextFrameFor(PluginId owner, TimerCallback task)
+        {
             NextFrame(owner, std::function<void()>([task = std::move(task)]() { task(); }));
         }
         Timer* AddTimer(float interval, TimerCallback callback, int flags = 0) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(callback);
+            const PluginId owner = PluginId(0);
             return AddTimer(owner, interval, std::move(callback), flags);
         }
 

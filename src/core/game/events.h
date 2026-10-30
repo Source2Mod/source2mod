@@ -68,8 +68,8 @@ namespace events {
         void Shutdown() override;
 
 
-        Source2ModEventHookId HookGameEvent(const char* pchName, GameEventHandler handler, bool post) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookGameEvent(owner, pchName, std::move(handler), post); }
-        bool UnhookGameEvent(const char* pchName, const GameEventHandler& handler, bool post) override { return UnhookGameEvent(hookid::OwnerOfHandler(handler), pchName, handler, post); }
+        Source2ModEventHookId HookGameEvent(const char* pchName, GameEventHandler handler, bool post) override { const PluginId owner = PluginId(0); return HookGameEvent(owner, pchName, std::move(handler), post); }
+        bool UnhookGameEvent(const char* pchName, const GameEventHandler& handler, bool post) override { return UnhookGameEvent(PluginId(0), pchName, handler, post); }
         bool UnhookGameEvent(Source2ModEventHookId id) override { return Unhook(id); }
         void FireEventToClient(CPlayerSlot slot, IGameEvent* event) override;
 

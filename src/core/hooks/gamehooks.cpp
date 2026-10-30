@@ -172,10 +172,6 @@ namespace gamehooks
                 return id;
             }
 
-            PluginId OwnerOf(const void* handler) const override
-            {
-                return hookid::OwnerOfHandler(*static_cast<const HookHandler<CONTEXT>*>(handler));
-            }
 
             bool Remove(Source2ModHookId id) override { return m_listeners.Remove(id); }
 
@@ -643,10 +639,6 @@ namespace gamehooks
         return m_hooks[static_cast<size_t>(point)]->Add(owner, handler, post, target, filter);
     }
 
-    PluginId GameHooksManager::OwnerOfHandler(HookPointId point, const void* handler) const
-    {
-        return InTable(point) ? m_hooks[static_cast<size_t>(point)]->OwnerOf(handler) : 0;
-    }
 
     // The detour stays (gamehooks.h); an Unhook() may come from inside the
     // hook's own dispatch, which iterates a copy of the list.

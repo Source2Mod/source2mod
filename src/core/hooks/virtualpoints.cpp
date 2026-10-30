@@ -184,11 +184,6 @@ namespace virtualpoints
             });
         }
 
-        template <typename CONTEXT>
-        PluginId OwnerOfHandler(const void* handler)
-        {
-            return hookid::OwnerOfHandler(*static_cast<const HookHandler<CONTEXT>*>(handler));
-        }
 
         // Calls visit(Context*) with the point's context type.
         template <typename VISIT>
@@ -233,12 +228,6 @@ namespace virtualpoints
         return def ? def->name : "?";
     }
 
-    PluginId OwnerOf(HookPointId point, const void* handler)
-    {
-        if (!Is(point) || !handler)
-            return 0;
-        return WithContext(point, [handler](auto* tag) { return OwnerOfHandler<std::remove_pointer_t<decltype(tag)>>(handler); });
-    }
 
     Source2ModHookId Add(HookPointId point, PluginId owner, const void* handler, bool post, const HookTarget& target,
                          const HookFilter& filter)

@@ -95,7 +95,8 @@ namespace sourcepawn
         ~ScriptPlugin() override;
 
         // ISource2ModPlugin
-        bool Load(PluginId id, ISource2ModAPI* api, char* error, size_t maxlen, bool late) override;
+        void SetId(PluginId id) { m_id = id; }
+        bool Load(ISource2ModAPI* api, char* error, size_t maxlen, bool late) override;
         bool Unload(char* error, size_t maxlen) override;
         const char* GetAuthor() override { return m_author.c_str(); }
         const char* GetName() override { return m_name.c_str(); }

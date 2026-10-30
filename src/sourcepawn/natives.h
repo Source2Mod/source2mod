@@ -165,6 +165,8 @@ namespace sourcepawn
 
     /// ISource2ModNatives001, for native plugins (pluginsys.cpp).
     ISource2ModNatives* NativesInterface();
+    /// A plugin's own instance of it.
+    ISource2ModNatives* CreateNativesForPlugin(PluginId owner);
 
     /// The object behind a SchemaObject handle, nullptr (and a script error) when it is gone.
     void* SchemaObjectPointer(SourcePawn::IPluginContext* ctx, cell_t handle);

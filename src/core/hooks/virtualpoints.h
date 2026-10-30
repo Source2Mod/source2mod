@@ -47,7 +47,6 @@ namespace virtualpoints
     const char* Name(HookPointId point);
 
     /// Whose the handler is (a HookHandler of the point's context).
-    PluginId OwnerOf(HookPointId point, const void* handler);
 
     Source2ModHookId Add(HookPointId point, PluginId owner, const void* handler, bool post,
                          const HookTarget& target, const HookFilter& filter);

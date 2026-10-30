@@ -411,7 +411,7 @@ namespace gamesystems
 
     Source2ModHookId GameSystemsManager::Hook(Source2ModGameSystemId system, GameSystemEvent event, GameSystemHandler handler)
     {
-        return Hook(hookid::OwnerOfHandler(handler), system, event, std::move(handler));
+        return Hook(PluginId(0), system, event, std::move(handler));
     }
 
     Source2ModHookId GameSystemsManager::Hook(PluginId owner, Source2ModGameSystemId system, GameSystemEvent event, GameSystemHandler handler)

@@ -46,6 +46,9 @@ struct Source2ModPlugin;
 class PluginApi : public ISource2ModAPI
 {
 public:
+    /// One per plugin (Load() gets its own); owner 0 is the core's.
+    explicit PluginApi(PluginId owner = 0) : m_owner(owner) {}
+
     /// The plugin whose Load() is running: Source2ModFactory records what it
     /// asks for and names it in its messages. Null outside a Load().
     static void SetLoadingPlugin(Source2ModPlugin* plugin);
@@ -90,10 +93,6 @@ public:
     ISource2ModHooks* Hooks() override;
     ISource2ModPaths* Paths() override;
 
-    ISource2ModModule* LoadModule(const char* name) override;
-    ISource2ModModule* LoadModuleFromMemory(uintptr_t ptr) override;
-    void FreeModule(ISource2ModModule* module) override;
-
     ISource2Server* GetSource2Server() override;
     ISource2ServerConfig* GetSource2ServerConfig() override;
     ISource2GameClients* GetSource2GameClients() override;
@@ -120,6 +119,9 @@ public:
 
     size_t Format(char *buffer, size_t maxlength, const char *format, ...) override;
     size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap) override;
+
+private:
+    PluginId m_owner;
 };
 
 extern PluginApi pluginApi;

@@ -355,8 +355,10 @@ namespace mysql {
         appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::MySQL; }
         void OnPostSimulate() override { RunFrame(); }
 
-        ISource2ModSQLConnection* CreateConnection(PluginId owner, Source2ModSQLConnectionInfo info) override;
-        ISource2ModSQLServerless* CreateServerless(PluginId owner, Source2ModSQLConnectionInfo info) override;
+        ISource2ModSQLConnection* CreateConnection(Source2ModSQLConnectionInfo info) override { return CreateConnection(PluginId(0), info); }
+        ISource2ModSQLConnection* CreateConnection(PluginId owner, Source2ModSQLConnectionInfo info);
+        ISource2ModSQLServerless* CreateServerless(Source2ModSQLConnectionInfo info) override { return CreateServerless(PluginId(0), info); }
+        ISource2ModSQLServerless* CreateServerless(PluginId owner, Source2ModSQLConnectionInfo info);
         bool GetNamedConnection(const char* name, Source2ModSQLConnectionInfo& info) override;
 
     public:

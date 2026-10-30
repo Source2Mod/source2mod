@@ -35,6 +35,7 @@
  */
 #pragma once
 
+#include "core/plugins/pluginapi.h"
 #include <engine2/inetworkserverservice.h>
 #include <engine2/isource2server.h>
 #include <engine2/ivengineserver2.h>
@@ -73,10 +74,9 @@ struct Source2ModPlugin
     int id;
     std::string path;
     LibHandle lib;
-    // Where the library is mapped: a handler's code address in it makes the
-    // handler this plugin's (PluginManager::OwnerOf).
-    const void* moduleBase = nullptr;
     ISource2ModPlugin* api;
+    // What its Load() got: the API that knows it is this plugin's.
+    std::unique_ptr<PluginApi> coreApi;
     // What the plugin was built against (SOURCE2MOD_PLAPI_VERSION then): the
     // engine callbacks came with 2, so a listener from an older plugin is
     // not asked for them.
@@ -153,7 +153,6 @@ public:
     /// Whose code an address is: the plugin whose library it lies in, or 0
     /// (the core, or no plugin) -- how every source2mod call that takes a handler
     /// finds its owner (Source2ModCallback::Origin()).
-    int OwnerOf(const void* address);
 public:
     std::vector<std::unique_ptr<Source2ModPlugin>> m_plugins;
     int m_nextId = 1;
@@ -172,13 +171,10 @@ private:
     // after it still hears OnAllMetamodPluginsLoaded, from AddPlugin().
     bool m_bMetamodAllLoaded = false;
 
-    // OwnerOf(): module base per address seen, dropped when the list changes.
-    std::unordered_map<const void*, int> m_ownerCache;
     size_t m_listGeneration = 0;        // bumped on every add / remove
-    size_t m_ownerCacheGeneration = 0;
 
     // Either kind once it is open: lists it, runs its Load(), tells the others.
-    bool AddPlugin(const char* fullPath, LibHandle lib, const void* moduleBase, ISource2ModPlugin* plugin,
+    bool AddPlugin(const char* fullPath, LibHandle lib, ISource2ModPlugin* plugin,
                    std::shared_ptr<sourcepawn::ScriptPlugin> script, char* error, size_t maxlen, bool hotReload);
 
     std::vector<int> m_unloadRequests;

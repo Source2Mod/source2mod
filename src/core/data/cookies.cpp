@@ -419,9 +419,8 @@ namespace cookies
 
     // ---- listeners ---------------------------------------------------------------
 
-    Source2ModCookiesListenerId CookiesManager::AddCookiesCachedListener(CookiesCachedCallback callback)
+    Source2ModCookiesListenerId CookiesManager::AddCookiesCachedListener(PluginId owner, CookiesCachedCallback callback)
     {
-        const PluginId owner = hookid::OwnerOfHandler(callback);
         const Source2ModHookId id = hookid::Next();
         m_listeners.push_back({ id, owner, std::move(callback) });
         return id;

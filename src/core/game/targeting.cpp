@@ -380,7 +380,7 @@ namespace targeting
 
     Source2ModTargetFilterId TargetingManager::AddTargetFilter(const char* name, Source2ModTargetFilter filter, const char* phrase, bool phraseIsTranslation)
     {
-        const PluginId owner = hookid::OwnerOfHandler(filter);
+        const PluginId owner = PluginId(0);
         return AddTargetFilterFor(owner, name, std::move(filter), phrase, phraseIsTranslation);
     }
 

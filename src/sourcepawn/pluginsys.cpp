@@ -1463,7 +1463,8 @@ namespace sourcepawn
         class NativesApi final : public ISource2ModNatives
         {
         public:
-            bool AddNatives(PluginId owner, const sp_nativeinfo_t* natives) override
+            bool AddNatives(const sp_nativeinfo_t* natives) override { return AddNatives(PluginId(0), natives); }
+            bool AddNatives(PluginId owner, const sp_nativeinfo_t* natives)
             {
                 if (!natives)
                     return false;
@@ -1474,7 +1475,8 @@ namespace sourcepawn
                 return all;
             }
 
-            bool RegisterLibrary(PluginId owner, const char* name) override
+            bool RegisterLibrary(const char* name) override { return RegisterLibrary(PluginId(0), name); }
+            bool RegisterLibrary(PluginId owner, const char* name)
             {
                 if (!name || !*name)
                     return false;
@@ -1497,7 +1499,8 @@ namespace sourcepawn
                 return FormatParams(ctx, params, fmtParam, buffer, maxlen, written);
             }
 
-            Source2ModHandleType CreateHandleType(PluginId owner, const char* name, Source2ModHandleDestructor destroy) override
+            Source2ModHandleType CreateHandleType(const char* name, Source2ModHandleDestructor destroy) override { return CreateHandleType(PluginId(0), name, destroy); }
+            Source2ModHandleType CreateHandleType(PluginId owner, const char* name, Source2ModHandleDestructor destroy)
             {
                 std::function<void(void*)> fn;
                 if (destroy)
@@ -1540,11 +1543,11 @@ namespace sourcepawn
                 return ref.get();
             }
 
-            Source2ModHookId HookScriptForward(const char* name, Source2ModScriptForwardHandler handler) override
+            Source2ModHookId HookScriptForward(const char* name, Source2ModScriptForwardHandler handler) override { return HookScriptForward(PluginId(0), name, std::move(handler)); }
+            Source2ModHookId HookScriptForward(PluginId owner, const char* name, Source2ModScriptForwardHandler handler)
             {
                 if (!name || !*name || !handler)
                     return 0;
-                const PluginId owner = hookid::OwnerOfHandler(handler);
                 return g_forwardHooks[name].Add(owner, std::move(handler));
             }
 
@@ -1556,11 +1559,11 @@ namespace sourcepawn
                 return false;
             }
 
-            Source2ModHookId AddLibraryListener(Source2ModLibraryHandler handler, bool replay) override
+            Source2ModHookId AddLibraryListener(Source2ModLibraryHandler handler, bool replay) override { return AddLibraryListener(PluginId(0), std::move(handler), replay); }
+            Source2ModHookId AddLibraryListener(PluginId owner, Source2ModLibraryHandler handler, bool replay)
             {
                 if (!handler)
                     return 0;
-                const PluginId owner = hookid::OwnerOfHandler(handler);
                 const Source2ModLibraryHandler first = handler;
                 const Source2ModHookId id = g_libraryListeners.Add(owner, std::move(handler));
                 if (replay)
@@ -1592,6 +1595,8 @@ namespace sourcepawn
         };
 
         NativesApi g_nativesApi;
+
+#include "sourcepawn/gen/nativesforplugin.gen.inc"
     }
 
     const sp_nativeinfo_t* GetPluginSysNatives()
@@ -1602,6 +1607,11 @@ namespace sourcepawn
     ISource2ModNatives* NativesInterface()
     {
         return &g_nativesApi;
+    }
+
+    ISource2ModNatives* CreateNativesForPlugin(PluginId owner)
+    {
+        return new NativesForPlugin(owner);
     }
 
     namespace pluginsys

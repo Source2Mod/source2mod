@@ -44,6 +44,7 @@ namespace appsystem
         // Each one before whatever reads it. Scheduler: nothing else needs it yet,
         // but its clocks are zero from here on.
         constexpr SystemId kInitOrder[] = {
+            SystemId::Modules,
             SystemId::Scheduler,
             SystemId::CoreConfig,
             // As soon as the config allows and before anything else: whatever
@@ -113,6 +114,8 @@ namespace appsystem
             SystemId::ConVarRegistration,
             // Last: a crash anywhere in the teardown above is still worth a dump.
             SystemId::CrashHandler,
+            // Last: everything above may still read a module.
+            SystemId::Modules,
         };
 
         // Timers and next-frame tasks (Scheduler) run callbacks inside the library

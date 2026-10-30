@@ -71,18 +71,28 @@ namespace translations
         int GetPlayerLanguage(CPlayerSlot slot) override;
         void SetPlayerLanguage(CPlayerSlot slot, int language) override;
 
-        bool LoadPhraseFile(PluginId owner, const char* file, char* error, size_t maxlen) override;
-        bool LoadPhrasesJson(PluginId owner, const char* json, char* error, size_t maxlen) override;
-        void AddPhrase(PluginId owner, const char* phrase, const char* language, const char* text, const char* format = nullptr) override;
-        bool RemovePhrase(PluginId owner, const char* phrase, const char* language = nullptr) override;
-        void ClearPhrases(PluginId owner) override;
-        bool PhraseExists(PluginId owner, const char* phrase) override;
-        bool IsTranslatedFor(PluginId owner, const char* phrase, int language) override;
+        bool LoadPhraseFile(const char* file, char* error, size_t maxlen) override { return LoadPhraseFile(PluginId(0), file, error, maxlen); }
+        bool LoadPhraseFile(PluginId owner, const char* file, char* error, size_t maxlen);
+        bool LoadPhrasesJson(const char* json, char* error, size_t maxlen) override { return LoadPhrasesJson(PluginId(0), json, error, maxlen); }
+        bool LoadPhrasesJson(PluginId owner, const char* json, char* error, size_t maxlen);
+        void AddPhrase(const char* phrase, const char* language, const char* text, const char* format = nullptr) override { return AddPhrase(PluginId(0), phrase, language, text, format); }
+        void AddPhrase(PluginId owner, const char* phrase, const char* language, const char* text, const char* format = nullptr);
+        bool RemovePhrase(const char* phrase, const char* language = nullptr) override { return RemovePhrase(PluginId(0), phrase, language); }
+        bool RemovePhrase(PluginId owner, const char* phrase, const char* language = nullptr);
+        void ClearPhrases() override { return ClearPhrases(PluginId(0)); }
+        void ClearPhrases(PluginId owner);
+        bool PhraseExists(const char* phrase) override { return PhraseExists(PluginId(0), phrase); }
+        bool PhraseExists(PluginId owner, const char* phrase);
+        bool IsTranslatedFor(const char* phrase, int language) override { return IsTranslatedFor(PluginId(0), phrase, language); }
+        bool IsTranslatedFor(PluginId owner, const char* phrase, int language);
 
-        size_t Translate(PluginId owner, const char* phrase, CPlayerSlot target, char* buffer, size_t maxlen) override;
+        size_t Translate(const char* phrase, CPlayerSlot target, char* buffer, size_t maxlen) override { return Translate(PluginId(0), phrase, target, buffer, maxlen); }
+        size_t Translate(PluginId owner, const char* phrase, CPlayerSlot target, char* buffer, size_t maxlen);
+        size_t FormatPhrase(const char* phrase, CPlayerSlot target, const char* const* args, int numArgs, char* buffer, size_t maxlen) override { return FormatPhrase(PluginId(0), phrase, target, args, numArgs, buffer, maxlen); }
         size_t FormatPhrase(PluginId owner, const char* phrase, CPlayerSlot target,
-                            const char* const* args, int numArgs, char* buffer, size_t maxlen) override;
-        size_t TranslateLanguage(PluginId owner, const char* phrase, int language, char* buffer, size_t maxlen) override;
+                            const char* const* args, int numArgs, char* buffer, size_t maxlen);
+        size_t TranslateLanguage(const char* phrase, int language, char* buffer, size_t maxlen) override { return TranslateLanguage(PluginId(0), phrase, language, buffer, maxlen); }
+        size_t TranslateLanguage(PluginId owner, const char* phrase, int language, char* buffer, size_t maxlen);
 
         // ---- core side ----
 

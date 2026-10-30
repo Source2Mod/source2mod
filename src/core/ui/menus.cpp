@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "core/ui/menus.h"
+#include "core/plugins/pluginmanager.h"
 
 #include "core/runtime/slowguard.h"
 
@@ -419,6 +420,17 @@ namespace menus
     }
 
     // ---- MenuManager ------------------------------------------------------------------------
+
+    void MenuManager::OpenMenuFor(ISource2ModPlugin* owner, CCSPlayerController* player, IMenuInstance* instance)
+    {
+        PluginId id = 0;
+        for (const auto& p : pluginManager.m_plugins)
+        {
+            if (p && p->api == owner)
+                id = p->id;
+        }
+        OpenMenu(id, player, instance);
+    }
 
     PluginId MenuManager::OwnerOf(CCSPlayerController* player) const
     {

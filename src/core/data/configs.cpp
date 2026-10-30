@@ -543,7 +543,7 @@ namespace configs
         return m_configs.back().get();
     }
 
-    bool ConfigsManager::AddListener(ISource2ModConfigListener* listener, char* error, size_t maxlen)
+    bool ConfigsManager::AddListener(PluginId owner, ISource2ModConfigListener* listener, char* error, size_t maxlen)
     {
         auto fail = [&](const std::string& why)
         {
@@ -554,7 +554,6 @@ namespace configs
 
         if (!listener)
             return fail("AddListener: no listener");
-        const PluginId owner = hookid::OwnerOfObject(listener);
         if (owner <= 0)
             return fail("AddListener: the listener is not a plugin's");
 
@@ -599,9 +598,8 @@ namespace configs
         return true;
     }
 
-    void ConfigsManager::RemoveListener(ISource2ModConfigListener* listener)
+    void ConfigsManager::RemoveListener(PluginId owner, ISource2ModConfigListener* listener)
     {
-        const PluginId owner = hookid::OwnerOfObject(listener);
         if (owner <= 0)
             return;
 
@@ -616,7 +614,7 @@ namespace configs
     ISource2ModConfig* ConfigsManager::Register(const char* pszName, const char* pszDefaults, uint32_t nFlags,
                                                 ISource2ModConfigListener* listener, char* error, size_t maxlen)
     {
-        return RegisterFor(FP_CALLER_OWNER(), pszName, pszDefaults, nFlags, listener, error, maxlen);
+        return RegisterFor(PluginId(0), pszName, pszDefaults, nFlags, listener, error, maxlen);
     }
 
     ISource2ModConfig* ConfigsManager::RegisterFor(PluginId owner, const char* pszName, const char* pszDefaults, uint32_t nFlags,

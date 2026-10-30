@@ -87,7 +87,8 @@ namespace gamesystems {
 
         bool IsAvailable() const override;
         IGameSystem* FindByName(const char* name) override;
-        Source2ModGameSystemId Create(PluginId owner, const char* name) override;
+        Source2ModGameSystemId Create(const char* name) override { return Create(PluginId(0), name); }
+        Source2ModGameSystemId Create(PluginId owner, const char* name);
         Source2ModHookId Hook(Source2ModGameSystemId system, GameSystemEvent event, GameSystemHandler handler) override;
         bool Unhook(Source2ModHookId hook) override;
         bool Register(Source2ModGameSystemId system) override;

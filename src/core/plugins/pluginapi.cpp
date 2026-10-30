@@ -40,6 +40,7 @@
 #include "core/game/targeting.h"
 #include "core/game/functions.h"
 #include "core/plugins/pluginapi.h"
+#include "core/plugins/pluginifaces.h"
 
 #include "core/game/addresses.h"
 #include "core/game/commands.h"
@@ -116,7 +117,7 @@ void FillSource2ModGlobals()
 
 void PluginApi::Log(const char* msg, ...)
 {
-    const PluginId owner = FP_CALLER_OWNER();
+    const PluginId owner = m_owner;
     const char* name = "Source2Mod";
     for (const auto& p : pluginManager.m_plugins)
     {
@@ -153,7 +154,7 @@ void PluginApi::ConPrintf(const char* fmt, ...)
 
 void PluginApi::AddListener(ISource2ModListener* pListener)
 {
-    const PluginId owner = hookid::OwnerOfObject(pListener);
+    const PluginId owner = m_owner;
     for (const auto& p : pluginManager.m_plugins)
     {
         if (p && p->id == owner)
@@ -332,6 +333,7 @@ namespace
             { SOURCE2MOD_HTTP_INTERFACE, &http::httpManager },
             { SOURCE2MOD_JSON_INTERFACE, &json::jsonManager },
             { SOURCE2MOD_MAPS_INTERFACE, &maps::mapsManager },
+            { SOURCE2MOD_MODULES_INTERFACE, &modules::modulesManager },
             { SOURCE2MOD_MENUS_INTERFACE, &menus::menuManager },
             { SOURCE2MOD_SQL_INTERFACE, &mysql::mysqlManager },
             { SOURCE2MOD_NETWORKMESSAGES_INTERFACE, &networkmessages::networkMessagesManager },
@@ -438,7 +440,7 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
 
     // The one detour engine on the server, as metamod handed it to Source2Mod,
     // behind a wrapper that keeps track of what this plugin leaves on it.
-    if (!strcmp(iface, SOURCE2MOD_KHOOK_INTERFACE)) ptr = pluginkhook::ForPlugin(s_pLoadingPlugin ? s_pLoadingPlugin->id : FP_CALLER_OWNER());
+    if (!strcmp(iface, SOURCE2MOD_KHOOK_INTERFACE)) ptr = pluginkhook::ForPlugin(m_owner);
     // ... and which KHook that is: a hash of the khook.hpp the core was
     // compiled against (metamod's third_party/khook, the engine itself -- see
     // the SDK's CMakeLists.txt). A plugin's KHOOK_INIT() compares it with the
@@ -462,7 +464,7 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
         for (size_t i = 0; i < count && !ptr; i++)
         {
             if (!strcmp(iface, current[i].iface))
-                ptr = current[i].ptr;
+                ptr = m_owner ? pluginifaces::ForPlugin(iface, m_owner, current[i].ptr) : current[i].ptr;
         }
 
         // An older revision the core still serves: its frozen vtable, forwarding
@@ -525,107 +527,110 @@ void* PluginApi::MetaFactory(const char* iface, int* ret, PluginId* id)
 
 ISource2ModAddresses* PluginApi::Addresses()
 {
-    return &addresses::source2modAddresses;
+    ISource2ModAddresses* shared = &addresses::source2modAddresses;
+    return m_owner ? static_cast<ISource2ModAddresses*>(pluginifaces::ForPlugin(SOURCE2MOD_ADDRESSES_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModCommands* PluginApi::Commands()
 {
-    return &commands::commandsManager;
+    ISource2ModCommands* shared = &commands::commandsManager;
+    return m_owner ? static_cast<ISource2ModCommands*>(pluginifaces::ForPlugin(SOURCE2MOD_COMMANDS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModConVars* PluginApi::ConVars()
 {
-    return &convars::convarsManager;
+    ISource2ModConVars* shared = &convars::convarsManager;
+    return m_owner ? static_cast<ISource2ModConVars*>(pluginifaces::ForPlugin(SOURCE2MOD_CONVARS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModCustomHud* PluginApi::CustomHud()
 {
-    return &customhud::customHudManager;
+    ISource2ModCustomHud* shared = &customhud::customHudManager;
+    return m_owner ? static_cast<ISource2ModCustomHud*>(pluginifaces::ForPlugin(SOURCE2MOD_CUSTOMHUD_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModSounds* PluginApi::Sounds()
 {
-    return &sounds::soundsManager;
+    ISource2ModSounds* shared = &sounds::soundsManager;
+    return m_owner ? static_cast<ISource2ModSounds*>(pluginifaces::ForPlugin(SOURCE2MOD_SOUNDS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModHooks* PluginApi::Hooks()
 {
-    return &hooks::hooksManager;
+    ISource2ModHooks* shared = &hooks::hooksManager;
+    return m_owner ? static_cast<ISource2ModHooks*>(pluginifaces::ForPlugin(SOURCE2MOD_HOOKS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModTransmit* PluginApi::Transmit()
 {
-    return &transmit::transmitManager;
+    ISource2ModTransmit* shared = &transmit::transmitManager;
+    return m_owner ? static_cast<ISource2ModTransmit*>(pluginifaces::ForPlugin(SOURCE2MOD_TRANSMIT_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModEntities* PluginApi::Entities()
 {
-    return &entities::entitiesManager;
+    ISource2ModEntities* shared = &entities::entitiesManager;
+    return m_owner ? static_cast<ISource2ModEntities*>(pluginifaces::ForPlugin(SOURCE2MOD_ENTITIES_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModEvents* PluginApi::Events()
 {
-    return &events::eventManager;
+    ISource2ModEvents* shared = &events::eventManager;
+    return m_owner ? static_cast<ISource2ModEvents*>(pluginifaces::ForPlugin(SOURCE2MOD_EVENTS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModGameConfig* PluginApi::GameConfig()
 {
-    return &gameconfig::gameConfig;
+    ISource2ModGameConfig* shared = &gameconfig::gameConfig;
+    return m_owner ? static_cast<ISource2ModGameConfig*>(pluginifaces::ForPlugin(SOURCE2MOD_GAMECONFIG_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModGameSystems* PluginApi::GameSystems()
 {
-    return &gamesystems::gameSystemsManager;
+    ISource2ModGameSystems* shared = &gamesystems::gameSystemsManager;
+    return m_owner ? static_cast<ISource2ModGameSystems*>(pluginifaces::ForPlugin(SOURCE2MOD_GAMESYSTEMS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModHTTP* PluginApi::HTTP()
 {
-    return &http::httpManager;
+    ISource2ModHTTP* shared = &http::httpManager;
+    return m_owner ? static_cast<ISource2ModHTTP*>(pluginifaces::ForPlugin(SOURCE2MOD_HTTP_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModMenus* PluginApi::Menus()
 {
-    return &menus::menuManager;
+    ISource2ModMenus* shared = &menus::menuManager;
+    return m_owner ? static_cast<ISource2ModMenus*>(pluginifaces::ForPlugin(SOURCE2MOD_MENUS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModSQL* PluginApi::SQL()
 {
-    return &mysql::mysqlManager;
+    ISource2ModSQL* shared = &mysql::mysqlManager;
+    return m_owner ? static_cast<ISource2ModSQL*>(pluginifaces::ForPlugin(SOURCE2MOD_SQL_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModNetworkMessages* PluginApi::NetworkMessages()
 {
-    return &networkmessages::networkMessagesManager;
+    ISource2ModNetworkMessages* shared = &networkmessages::networkMessagesManager;
+    return m_owner ? static_cast<ISource2ModNetworkMessages*>(pluginifaces::ForPlugin(SOURCE2MOD_NETWORKMESSAGES_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModScheduler* PluginApi::Scheduler()
 {
-    return &scheduler::schedulerManager;
+    ISource2ModScheduler* shared = &scheduler::schedulerManager;
+    return m_owner ? static_cast<ISource2ModScheduler*>(pluginifaces::ForPlugin(SOURCE2MOD_SCHEDULER_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModTrace* PluginApi::Trace()
 {
-    return &raytrace::rayTrace;
+    ISource2ModTrace* shared = &raytrace::rayTrace;
+    return m_owner ? static_cast<ISource2ModTrace*>(pluginifaces::ForPlugin(SOURCE2MOD_TRACE_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModPaths* PluginApi::Paths()
 {
-    return &paths::pathsManager;
-}
-
-ISource2ModModule* PluginApi::LoadModule(const char* name)
-{
-    return new Source2ModModule(name);
-}
-
-ISource2ModModule* PluginApi::LoadModuleFromMemory(uintptr_t ptr)
-{
-    return new Source2ModModule(ptr);
-}
-
-void PluginApi::FreeModule(ISource2ModModule* module)
-{
-    delete module;
+    ISource2ModPaths* shared = &paths::pathsManager;
+    return m_owner ? static_cast<ISource2ModPaths*>(pluginifaces::ForPlugin(SOURCE2MOD_PATHS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2Server* PluginApi::GetSource2Server()

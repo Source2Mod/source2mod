@@ -233,7 +233,6 @@ namespace addresses
         DynLibUtils::CMemory Cmd_ExecuteCommandAddr;
         DynLibUtils::CMemory GiveNamedItem;
     private:
-        std::unordered_map<uintptr_t, DynLibUtils::CModule> m_Modules;
     };
 
     extern Addresses source2modAddresses;

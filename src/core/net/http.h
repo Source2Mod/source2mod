@@ -55,32 +55,32 @@ namespace http {
         void Request(ESource2ModHTTPMethod method, const char* pszUrl, const char* pszBody, Source2ModHTTPCallback callback,
                      const std::vector<Source2ModHTTPHeader>* pHeaders) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(callback);
+            const PluginId owner = PluginId(0);
             Request(owner, method, pszUrl, pszBody, std::move(callback), pHeaders);
         }
         void Get(const char* pszUrl, Source2ModHTTPCallback callback, const std::vector<Source2ModHTTPHeader>* pHeaders) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(callback);
+            const PluginId owner = PluginId(0);
             Get(owner, pszUrl, std::move(callback), pHeaders);
         }
         void Post(const char* pszUrl, const char* pszBody, Source2ModHTTPCallback callback, const std::vector<Source2ModHTTPHeader>* pHeaders) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(callback);
+            const PluginId owner = PluginId(0);
             Post(owner, pszUrl, pszBody, std::move(callback), pHeaders);
         }
         void Put(const char* pszUrl, const char* pszBody, Source2ModHTTPCallback callback, const std::vector<Source2ModHTTPHeader>* pHeaders) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(callback);
+            const PluginId owner = PluginId(0);
             Put(owner, pszUrl, pszBody, std::move(callback), pHeaders);
         }
         void Patch(const char* pszUrl, const char* pszBody, Source2ModHTTPCallback callback, const std::vector<Source2ModHTTPHeader>* pHeaders) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(callback);
+            const PluginId owner = PluginId(0);
             Patch(owner, pszUrl, pszBody, std::move(callback), pHeaders);
         }
         void Delete(const char* pszUrl, const char* pszBody, Source2ModHTTPCallback callback, const std::vector<Source2ModHTTPHeader>* pHeaders) override
         {
-            const PluginId owner = hookid::OwnerOfHandler(callback);
+            const PluginId owner = PluginId(0);
             Delete(owner, pszUrl, pszBody, std::move(callback), pHeaders);
         }
 

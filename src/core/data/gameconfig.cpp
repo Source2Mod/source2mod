@@ -224,24 +224,13 @@ namespace gameconfig
         if (!pszLibrary)
             return nullptr;
 
-        // engine2 is the module's real name; "engine" is the spelling gamedata
-        // files have always used for it.
-        std::string sModule = pszLibrary;
-        if (sModule == "engine")
-            sModule = "engine2";
-
-        if (auto it = m_umModules.find(sModule); it != m_umModules.end())
-            return &it->second;
-
-        auto [it, inserted] = m_umModules.try_emplace(sModule);
-        if (!InitModuleFromName(it->second, sModule))
+        Source2ModModule* module = modules::modulesManager.Get(pszLibrary);
+        if (!module)
         {
-            m_umModules.erase(it);
-            FP_ERROR("Failed to load module '{}' for {}", sModule, pchName ? pchName : "(null)");
+            FP_ERROR("Failed to load module '{}' for {}", pszLibrary, pchName ? pchName : "(null)");
             return nullptr;
         }
-
-        return &it->second;
+        return &module->Raw();
     }
 
     ISource2ModMemory GameConfig::ResolveSignature(const char* pchName)

@@ -117,8 +117,10 @@ namespace configs
     public:
         appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Configs; }
 
-        bool AddListener(ISource2ModConfigListener* listener, char* error, size_t maxlen) override;
-        void RemoveListener(ISource2ModConfigListener* listener) override;
+        bool AddListener(ISource2ModConfigListener* listener, char* error, size_t maxlen) override { return AddListener(PluginId(0), listener, error, maxlen); }
+        bool AddListener(PluginId owner, ISource2ModConfigListener* listener, char* error, size_t maxlen);
+        void RemoveListener(ISource2ModConfigListener* listener) override { RemoveListener(PluginId(0), listener); }
+        void RemoveListener(PluginId owner, ISource2ModConfigListener* listener);
         ISource2ModConfig* Register(const char* pszName, const char* pszDefaults, uint32_t nFlags,
             ISource2ModConfigListener* listener, char* error, size_t maxlen) override;
         /// Register() for the core's own callers, which know whose it is: a
@@ -126,7 +128,8 @@ namespace configs
         ISource2ModConfig* RegisterFor(PluginId owner, const char* pszName, const char* pszDefaults, uint32_t nFlags,
             ISource2ModConfigListener* listener, char* error, size_t maxlen);
         void Unregister(ISource2ModConfig* config) override;
-        ISource2ModConfig* Get(PluginId owner, const char* pszName) override;
+        ISource2ModConfig* Get(const char* pszName) override { return Get(PluginId(0), pszName); }
+        ISource2ModConfig* Get(PluginId owner, const char* pszName);
 
         /// One of the core's own files, directly in configs/ (owner 0).
         ConfigFile* RegisterCore(const char* pszName, const char* pszDefaults, uint32_t nFlags,

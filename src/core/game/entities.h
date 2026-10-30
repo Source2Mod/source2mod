@@ -64,17 +64,16 @@ namespace entities {
         void AcceptInput(CEntityInstance* pTarget, const char* pszInput, CEntityInstance* pActivator, CEntityInstance* pCaller, const char* pszValue = "") override;
         void AddEntityIOEvent(CEntityInstance* pTarget, const char* pszInput, CEntityInstance* pActivator = nullptr, CEntityInstance* pCaller = nullptr, const char* pszValue = "", float flDelay = 0.0f) override;
 
-        // The listeners belong to the plugin whose class they are (read off the vtable).
         void AddEntityListener(IEntityListener* pListener, const char* pszDesignerName = nullptr, CEntityInstance* pEntity = nullptr) override
         {
-            AddEntityListener(pListener ? hookid::OwnerOf(*reinterpret_cast<void* const*>(pListener)) : 0, pListener, pszDesignerName, pEntity);
+            AddEntityListener(PluginId(0), pListener, pszDesignerName, pEntity);
         }
         void AddEntityListener(PluginId owner, IEntityListener* pListener, const char* pszDesignerName, CEntityInstance* pEntity);
         void RemoveEntityListener(IEntityListener* pListener) override;
 
         void AddEntityOutputListener(IEntityOutputListener* pListener, const char* pszDesignerName = nullptr, const char* pszOutput = nullptr, CEntityInstance* pEntity = nullptr) override
         {
-            AddEntityOutputListener(pListener ? hookid::OwnerOf(*reinterpret_cast<void* const*>(pListener)) : 0, pListener, pszDesignerName, pszOutput, pEntity);
+            AddEntityOutputListener(PluginId(0), pListener, pszDesignerName, pszOutput, pEntity);
         }
         void AddEntityOutputListener(PluginId owner, IEntityOutputListener* pListener, const char* pszDesignerName, const char* pszOutput, CEntityInstance* pEntity);
         void RemoveEntityOutputListener(IEntityOutputListener* pListener) override;

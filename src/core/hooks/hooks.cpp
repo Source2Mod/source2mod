@@ -365,30 +365,7 @@ namespace hooks
         }
 
         // The owner of a handler from the point's context type.
-        template <typename CONTEXT>
-        PluginId OwnerOf(const void* handler)
-        {
-            return hookid::OwnerOfHandler(*static_cast<const HookHandler<CONTEXT>*>(handler));
-        }
 
-        PluginId OwnerOfEnginePoint(HookPointId point, const void* handler)
-        {
-            switch (point)
-            {
-            case HookPointId::GameFrame: return OwnerOf<GameFrameContext>(handler);
-            case HookPointId::StartupServer: return OwnerOf<StartupServerContext>(handler);
-            case HookPointId::ClientConnect: return OwnerOf<ClientConnectContext>(handler);
-            case HookPointId::ClientConnected: return OwnerOf<ClientConnectedContext>(handler);
-            case HookPointId::ClientPutInServer: return OwnerOf<ClientPutInServerContext>(handler);
-            case HookPointId::ClientDisconnect: return OwnerOf<ClientDisconnectContext>(handler);
-            case HookPointId::ClientVoice:
-            case HookPointId::ClientSettingsChanged: return OwnerOf<ClientSlotContext>(handler);
-            case HookPointId::GameServerSteamAPIActivated:
-            case HookPointId::GameServerSteamAPIDeactivated: return OwnerOf<EmptyContext>(handler);
-            case HookPointId::LoadEventsFromFile: return OwnerOf<LoadEventsFromFileContext>(handler);
-            default: return 0;
-            }
-        }
 
         template <typename CONTEXT>
         Source2ModHookId AddTo(IPointList* list, PluginId owner, const void* handler, bool post, const HookTarget& target, const HookFilter& filter)
@@ -403,16 +380,7 @@ namespace hooks
         if (!handler)
             return 0;
 
-        PluginId owner;
-        if (IsGameFunction(point))
-            owner = gamehooks::gameHooksManager.OwnerOfHandler(point, handler);
-        else if (virtualpoints::Is(point))
-            owner = virtualpoints::OwnerOf(point, handler);
-        else if (point == HookPointId::Function)
-            owner = OwnerOf<FunctionContext>(handler);
-        else
-            owner = OwnerOfEnginePoint(point, handler);
-        return AddHookFor(owner, point, function, target, filter, handler, post);
+        return AddHookFor(PluginId(0), point, function, target, filter, handler, post);
     }
 
     Source2ModHookId HooksManager::AddHookFor(PluginId owner, HookPointId point, ISource2ModFunction* function, const HookTarget& target,

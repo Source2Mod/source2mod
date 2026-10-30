@@ -47,35 +47,8 @@
 #include <utility>
 #include <vector>
 
-#ifdef _WIN32
-#include <intrin.h>
-/// The plugin whose code called the current function, directly from an
-/// interface's vtable: 0 for the core.
-#define FP_CALLER_OWNER() ::hookid::OwnerOf(_ReturnAddress())
-#else
-/// The plugin whose code called the current function, directly from an
-/// interface's vtable: 0 for the core.
-#define FP_CALLER_OWNER() ::hookid::OwnerOf(__builtin_return_address(0))
-#endif
-
 namespace hookid
 {
-    /// Whose code the address is (PluginManager::OwnerOf); 0 for the core.
-    PluginId OwnerOf(const void* address);
-
-    /// The owner of a listener object: the plugin its vtable lies in.
-    inline PluginId OwnerOfObject(const void* object)
-    {
-        return object ? OwnerOf(*static_cast<const void* const*>(object)) : 0;
-    }
-
-    /// The owner of a handler: the plugin its code lies in.
-    template <typename HANDLER>
-    PluginId OwnerOfHandler(const HANDLER& handler)
-    {
-        return OwnerOf(handler.Origin());
-    }
-
     inline Source2ModHookId Next()
     {
         static Source2ModHookId s_last = 0;

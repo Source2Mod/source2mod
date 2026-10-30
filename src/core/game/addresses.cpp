@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "core/game/addresses.h"
+#include "core/game/module.h"
 
 #include "core/data/gameconfig.h"
 #include "core/runtime/shared.h"
@@ -130,14 +131,7 @@ namespace addresses
 
     DynLibUtils::CModule& Addresses::GetOrLoadModule(void* ptr)
     {
-        uintptr_t key = reinterpret_cast<uintptr_t>(ptr);
-
-        auto it = m_Modules.find(key);
-        if (it != m_Modules.end())
-            return it->second;
-
-        auto [iter, _] = m_Modules.emplace(key, DynLibUtils::CModule(DynLibUtils::CMemory(ptr)));
-        return iter->second;
+        return modules::modulesManager.GetFromAddress(ptr)->Raw();
     }
 
     CBaseEntity_CreateEntityByName_t Addresses::CBaseEntity_CreateEntityByName()

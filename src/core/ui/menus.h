@@ -108,11 +108,14 @@ namespace menus {
         appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Menus; }
         void OnGameFrame(bool) override { Tick(); }
 
-        void OpenCenterHtmlMenu(PluginId owner, CCSPlayerController *player, CenterHtmlMenu *menu) override;
+        void OpenCenterHtmlMenu(CCSPlayerController *player, CenterHtmlMenu *menu) override { return OpenCenterHtmlMenu(PluginId(0), player, menu); }
+        void OpenCenterHtmlMenu(PluginId owner, CCSPlayerController *player, CenterHtmlMenu *menu);
         IMenuInstance *GetActiveMenu(CCSPlayerController *player) override;
         void CloseActiveMenu(CCSPlayerController *player) override;
         void OnKeyPress(CCSPlayerController *player, int key) override;
-        void OpenMenu(PluginId owner, CCSPlayerController* player, IMenuInstance* instance) override;
+        void OpenMenu(CCSPlayerController* player, IMenuInstance* instance) override { return OpenMenu(PluginId(0), player, instance); }
+        void OpenMenuFor(ISource2ModPlugin* owner, CCSPlayerController* player, IMenuInstance* instance) override;
+        void OpenMenu(PluginId owner, CCSPlayerController* player, IMenuInstance* instance);
         void CloseMenu(IMenu* menu) override;
         bool IsMenuOpen(CCSPlayerController* player, IMenu* menu) override;
         IMenu* GetOpenMenu(CCSPlayerController* player) override;
