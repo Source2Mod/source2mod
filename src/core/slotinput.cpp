@@ -98,6 +98,19 @@ namespace slotinput {
             { 7, "weapon_flashbang",    43, "weapon_knife" },
             { 8, "weapon_smokegrenade", 45, "weapon_knife" },
             { 9, "weapon_decoy",        47, "weapon_knife" },
+            // Decoys, one per gear slot: the mouse wheel is not a menu key.
+            // invnext/invprev walk m_hMyWeapons by gear slot and position and
+            // on a tie take the FIRST, the keys 1..5 the LAST -- so a fake at
+            // the very front catches the wheel and the key's fake at the end
+            // still gets the key. Without them the wheel landed on 7, 8 or 9
+            // (front of the knife slot) and turned the page. Selecting one
+            // does nothing. The grenade's definition is not 44: key 6 finds
+            // its fake by that.
+            { 10, "weapon_ak47",        7, "weapon_ak47" },
+            { 11, "weapon_p250",        36, "weapon_p250" },
+            { 12, "weapon_knife",       42, "weapon_knife" },
+            { 13, "weapon_molotov",     46, "44" },
+            { 14, "weapon_c4",          49, "weapon_c4" },
         };
 
         constexpr int kMaxKey = 9;
@@ -425,7 +438,7 @@ namespace slotinput {
                 if (it != s.Fakes.end())
                     static_cast<CCSWeaponBase*>(it->Weapon.Get())->m_numRemoveUnownedWeaponThink() = 0;
 
-                const bool wanted = learned.Source[def.Key] != KeySource::CommandBound;
+                const bool wanted = def.Key > kMaxKey || learned.Source[def.Key] != KeySource::CommandBound;
 
                 if (!wanted && it != s.Fakes.end())
                 {
@@ -558,7 +571,8 @@ namespace slotinput {
                     if (weapon && weapon->GetEntityIndex().Get() == index)
                     {
                         cmd->mutable_base()->clear_weaponselect();
-                        OnSlotKey(slot, player, fake.Key);
+                        if (fake.Key <= kMaxKey)
+                            OnSlotKey(slot, player, fake.Key);
                         return true;
                     }
                 }
@@ -848,12 +862,14 @@ namespace slotinput {
 
             // Only the keys the page uses. 6..9 are found by item definition,
             // the FIRST match wins: in front. 1..5 by gear slot, and on a tie
-            // the LAST one wins: at the end.
+            // the LAST one wins: at the end. The decoys come last in kKeys and
+            // go in front of everything.
             auto& myWeapons = pawn->m_pWeaponServices()->m_hMyWeapons();
             int front = 0;
+            int decoyFront = 0;
             for (const KeyDef& def : kKeys)
             {
-                if (!(s.MenuKeys & (1u << def.Key)))
+                if (def.Key <= kMaxKey && !(s.MenuKeys & (1u << def.Key)))
                     continue;
 
                 for (const Fake& fake : s.Fakes)
@@ -861,7 +877,9 @@ namespace slotinput {
                     if (fake.Key != def.Key || !Alive(fake))
                         continue;
 
-                    if (def.Key >= 6)
+                    if (def.Key > kMaxKey)
+                        myWeapons.InsertBefore(decoyFront++, fake.Weapon);
+                    else if (def.Key >= 6)
                         myWeapons.InsertBefore(front++, fake.Weapon);
                     else
                         myWeapons.AddToTail(fake.Weapon);
