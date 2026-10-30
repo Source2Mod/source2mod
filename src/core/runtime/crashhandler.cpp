@@ -1246,7 +1246,7 @@ namespace crashhandler
     {
         if (!coreconfig::coreConfig.CrashHandlerEnabled)
         {
-            FP_INFO("Crash handler disabled by CrashHandlerEnabled.");
+            FP_DEBUG("Crash handler disabled by CrashHandlerEnabled.");
             return;
         }
 
@@ -1277,7 +1277,7 @@ namespace crashhandler
         strncpy(s_szDiscordWebhook, coreconfig::coreConfig.CrashDiscordWebhook.c_str(), sizeof(s_szDiscordWebhook) - 1);
 
         if (!s_szDiscordWebhook[0])
-            FP_INFO("CrashDiscordWebhook is empty, Discord crash reporting disabled.");
+            FP_DEBUG("CrashDiscordWebhook is empty, Discord crash reporting disabled.");
 
         // Was the previous session healthy (reached StartupServer) before it died?
         bool bPrevSessionStarted = false;
@@ -1299,7 +1299,7 @@ namespace crashhandler
 
         strncpy(s_szCrashCommandLine, CommandLine()->GetCmdLine(), sizeof(s_szCrashCommandLine) - 1);
 
-        FP_INFO("Crash handler installed, dumps go to '{}'.", s_szDumpStoragePath);
+        FP_DEBUG("Crash handler installed, dumps go to '{}'.", s_szDumpStoragePath);
     }
 
     void Shutdown()

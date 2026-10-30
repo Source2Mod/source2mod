@@ -60,7 +60,7 @@ namespace paths
             if (fs::create_directories(dir, ec); ec)
                 FP_WARN("Could not create '{}': {}", dir, ec.message());
             else
-                FP_INFO("Created '{}'", dir);
+                FP_DEBUG("Created '{}'", dir);
         }
     }
 

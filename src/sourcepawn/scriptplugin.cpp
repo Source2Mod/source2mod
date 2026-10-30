@@ -111,7 +111,7 @@ namespace sourcepawn
                 // A script stuck in a loop takes the server with it; ten
                 // seconds without returning is an error, as in SourceMod.
                 g_pEnv->InstallWatchdogTimer(10000);
-                FP_INFO("SourcePawn VM ready ({})", g_pEnv->IsJitAllowed() ? "JIT" : "interpreter");
+                FP_DEBUG("SourcePawn VM ready ({})", g_pEnv->IsJitAllowed() ? "JIT" : "interpreter");
             }
             return g_pEnv;
         }
@@ -655,7 +655,7 @@ namespace sourcepawn
                 }
                 out << c.name << " \"" << c.defaultValue << "\"\n\n";
             }
-            FP_INFO("[{}] AutoExecConfig: wrote {}", m_file, file.string());
+            FP_DEBUG("[{}] AutoExecConfig: wrote {}", m_file, file.string());
         }
 
         ApplyConfigFile(file);

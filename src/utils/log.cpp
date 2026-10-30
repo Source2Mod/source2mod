@@ -58,6 +58,9 @@ void log::Init() {
 
     auto color_sink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
     color_sink->set_pattern("%^[%T.%e] %n: %v%$");
+    // A healthy start says nothing on the console, as in SourceMod: the routine
+    // lines are FP_DEBUG and go to Source2Mod.log only.
+    color_sink->set_level(spdlog::level::info);
 
     auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("Source2Mod.log", true);
     file_sink->set_pattern("[%T.%e] [%^%l%$] %n: %v");
@@ -68,7 +71,7 @@ void log::Init() {
     m_FP_logger = std::make_shared<spdlog::logger>("Source2Mod", sinks.begin(), sinks.end());
     register_logger(m_FP_logger);
     m_FP_logger->set_level(spdlog::level::trace);
-    m_FP_logger->flush_on(spdlog::level::info);
+    m_FP_logger->flush_on(spdlog::level::debug);
 
     // Same file, same name in it, not registered (the name is taken).
     m_FP_fileLogger = std::make_shared<spdlog::logger>("Source2Mod", file_sink);

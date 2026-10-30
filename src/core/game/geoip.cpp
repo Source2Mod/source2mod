@@ -173,7 +173,7 @@ namespace geoip
             }
             m_db = db;
             m_path = candidate.string();
-            FP_INFO("GeoIP: {} loaded from '{}'", GetDatabaseType(), m_path);
+            FP_DEBUG("GeoIP: {} loaded from '{}'", GetDatabaseType(), m_path);
             return true;
         }
 

@@ -393,7 +393,7 @@ namespace configs
         {
             std::string why;
             if (Write(m_sDefaultsText, why))
-                FP_INFO("{} not found, created it from the defaults.", m_sPath);
+                FP_DEBUG("{} not found, created it from the defaults.", m_sPath);
             else
                 FP_WARN("{} not found and not created: {}", m_sPath, why);
         }
@@ -456,8 +456,8 @@ namespace configs
             }
             else
             {
-                FP_INFO("{}: {} new setting(s) from the defaults ({}), see {}", m_sPath, added.size(), Join(added, ", "),
-                        (m_nFlags & SOURCE2MOD_CONFIG_NO_EXAMPLE) ? "the plugin's documentation" : m_sExamplePath.c_str());
+                FP_DEBUG("{}: {} new setting(s) from the defaults ({}), see {}", m_sPath, added.size(), Join(added, ", "),
+                         (m_nFlags & SOURCE2MOD_CONFIG_NO_EXAMPLE) ? "the plugin's documentation" : m_sExamplePath.c_str());
             }
         }
 

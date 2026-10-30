@@ -486,7 +486,10 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
         }
     }
 
-    FP_INFO("{} plugin {}", hotReload ? "Hot reloaded" : "Loaded", std::filesystem::path(fullPath).stem().string());
+    if (hotReload)
+        FP_INFO("Hot reloaded plugin {}", std::filesystem::path(fullPath).stem().string());
+    else
+        FP_DEBUG("Loaded plugin {}", std::filesystem::path(fullPath).stem().string());
     return true;
 }
 

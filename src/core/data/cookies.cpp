@@ -155,7 +155,7 @@ namespace cookies
             return true;
         }
 
-        FP_INFO("ClientPrefs: database '{}'", path.string());
+        FP_DEBUG("ClientPrefs: database '{}'", path.string());
 
         // Loaded mid-map: the players already authorized get theirs now.
         for (int slot = 0, n = shared::MaxClients(); slot < n; slot++)

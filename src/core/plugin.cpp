@@ -144,7 +144,7 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
 
     g_SMAPI->AddListener(this, this);
 
-    FP_INFO("Load() success!");
+    FP_DEBUG("Load() success!");
 
     if (!pluginManager.LoadAll())
     {
@@ -173,7 +173,7 @@ bool Source2ModCore::Unload(char* error, size_t maxlen)
     // A refused late load returned before log::Init(), and Metamod still calls
     // Unload() on a plugin whose Load() failed: no logger to write to then.
     if (log::GetLogger())
-        FP_INFO("Unload() success!");
+        FP_DEBUG("Unload() success!");
 
     log::Close();
 

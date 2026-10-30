@@ -301,7 +301,7 @@ namespace gamesystems
         UpdateHost();
 
         m_hostAttached = AttachHost();
-        FP_INFO("Game systems {} ({} factories, {} active).", m_hostAttached ? "ready" : "unavailable", factories->Count(), active->Count());
+        FP_DEBUG("Game systems {} ({} factories, {} active).", m_hostAttached ? "ready" : "unavailable", factories->Count(), active->Count());
         return m_hostAttached;
     }
 
