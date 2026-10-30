@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 
 #include <source2mod/ISource2ModSounds.h>
@@ -169,9 +170,12 @@ namespace sounds
         SoundRecipients recipients = SOUND_RECIPIENTS_NONE;
     };
 
-    class SoundsManager : public ISource2ModSounds
+    class SoundsManager : public ISource2ModSounds, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Sounds; }
+        void OnLevelShutdown() override { Clear(); }
+
         ISource2ModSound* CreateSound(PluginId owner, const char* name) override;
         void DestroySound(ISource2ModSound* sound) override;
 
@@ -206,7 +210,7 @@ namespace sounds
 
     public:
         /// Resolves the engine's sound system, which is where guids come from.
-        void Init();
+        bool Init(char* error, size_t maxlen) override;
 
         SoundGuid Emit(Source2ModSound& sound);
 
@@ -217,13 +221,13 @@ namespace sounds
         /// Every recipient bit of a connected, human player.
         static SoundRecipients AllPlayers();
 
-        void OnClientDisconnect(CPlayerSlot slot);
+        void OnClientDisconnect(CPlayerSlot slot) override;
 
         /// Called by ~Source2ModSound().
         void Forget(Source2ModSound* sound);
 
         // Called when a plugin unloads, like every other plugin-owned registry.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
         /// Level change: nothing that was playing survives it on the clients.
         void Clear();
 

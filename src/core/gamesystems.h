@@ -35,6 +35,7 @@
  */
 
 #pragma once
+#include "appsystem.h"
 #include "source2mod/ISource2ModGameSystems.h"
 
 #include <map>
@@ -74,8 +75,13 @@ namespace gamesystems {
      * factories (whose Shutdown does nothing), which the engine then never
      * touches; a core loaded again takes the entry back by name.
      */
-    class GameSystemsManager final : public ISource2ModGameSystems {
+    class GameSystemsManager final : public ISource2ModGameSystems, public appsystem::ISource2ModAppSystem {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::GameSystems; }
+        // Not fatal: a failed scan only means plugins cannot register game
+        // systems, which most do not. ISource2ModGameSystems::IsAvailable() says so.
+        bool Init(char*, size_t) override { Init(); return true; }
+
         GameSystemsManager();
         ~GameSystemsManager();
 
@@ -98,10 +104,10 @@ namespace gamesystems {
         bool Init();
 
         /// Takes the host out of the engine (the core unloads).
-        void Shutdown();
+        void Shutdown() override;
 
         /// The systems and handlers of a plugin that unloads.
-        void RemoveAllForPlugin(PluginId owner);
+        void RemoveAllForPlugin(PluginId owner) override;
 
         /// From the host: one event, to the registered systems' handlers.
         void Fire(GameSystemEvent event, const void* msg);

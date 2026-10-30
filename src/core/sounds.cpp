@@ -480,12 +480,14 @@ namespace sounds
     Setup
     ========================= */
 
-    void SoundsManager::Init()
+    bool SoundsManager::Init(char*, size_t)
     {
         m_nTakeGuidOffset = gameconfig::gameConfig.GetOffset("CSoundSystem::TakeGuid");
 
         if (!g_pSoundSystem || m_nTakeGuidOffset < 0)
             FP_WARN("Sounds: {} not available, sound guids come from a private counter", !g_pSoundSystem ? SOUNDSYSTEM_INTERFACE_VERSION : "CSoundSystem::TakeGuid");
+
+        return true;
     }
 
     SoundGuid SoundsManager::TakeGuid()

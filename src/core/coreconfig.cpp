@@ -37,6 +37,7 @@
 #include "core/coreconfig.h"
 
 #include "core/configs.h"
+#include "utils/paths.h"
 #include "core/permissions.h"
 #include "core/slowguard.h"
 #include "utils/log.h"
@@ -49,7 +50,22 @@ namespace coreconfig
 {
     CoreConfig coreConfig;
 
-    bool CoreConfig::Init(const std::string& path, char* conf_error, int conf_error_size)
+    bool CoreConfig::Init(char* error, size_t maxlen)
+    {
+        const std::string path = paths::GetConfigsDirectory() + "/core";
+        char confError[255] = "";
+
+        if (!LoadFrom(path, confError, sizeof(confError)))
+        {
+            snprintf(error, maxlen, "Failed to load the core config. Could not read '%s'. Error: %s", path.c_str(), confError);
+            return false;
+        }
+
+        slow::g_flWarnMs = SlowCallbackWarnMs;
+        return true;
+    }
+
+    bool CoreConfig::LoadFrom(const std::string& path, char* conf_error, int conf_error_size)
     {
         m_sPath = path;
 

@@ -552,7 +552,7 @@ namespace permissions
         m_deniedMessage = coreconfig::coreConfig.AccessDeniedMessage.empty() ? kDefaultDeniedMessage : coreconfig::coreConfig.AccessDeniedMessage;
     }
 
-    void PermissionsManager::Init()
+    bool PermissionsManager::Init(char*, size_t)
     {
         ApplyCoreConfig();
 
@@ -564,6 +564,8 @@ namespace permissions
         // start; the activation hook registers it then).
         if (SteamGameServer())
             OnSteamAPIActivated();
+
+        return true;
     }
 
     void PermissionsManager::Shutdown()
@@ -663,7 +665,7 @@ namespace permissions
         }
     }
 
-    void PermissionsManager::OnClientDisconnect(CPlayerSlot slot)
+    void PermissionsManager::OnClientDisconnectPost(CPlayerSlot slot)
     {
         if (SlotState* st = Slot(slot))
             *st = {};

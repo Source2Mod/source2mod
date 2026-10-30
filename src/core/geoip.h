@@ -24,6 +24,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModGeoIP.h>
 
@@ -34,9 +35,11 @@ struct MMDB_s;
 namespace geoip
 {
     /// ISource2ModGeoIP on libmaxminddb and a GeoLite2 database.
-    class GeoIPManager : public ISource2ModGeoIP
+    class GeoIPManager : public ISource2ModGeoIP, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::GeoIP; }
+
         bool IsLoaded() override { return m_db != nullptr; }
         const char* GetDatabaseType() override;
         bool Lookup(const char* ip, Source2ModGeoIPField field, char* out, size_t maxlen, const char* language = nullptr) override;
@@ -46,8 +49,8 @@ namespace geoip
         bool GetPlayerIP(CPlayerSlot slot, char* out, size_t maxlen) override;
 
         /// Opens core.json's "GeoIPDatabase"; logs where it looked when it is not there.
-        void Init();
-        void Shutdown();
+        bool Init(char* error, size_t maxlen) override;
+        void Shutdown() override;
 
     private:
         MMDB_s* m_db = nullptr;

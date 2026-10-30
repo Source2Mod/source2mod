@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 
 #include <source2mod/ISource2ModConVars.h>
@@ -48,9 +49,11 @@ namespace convars {
         Source2ModHookId id;
     };
 
-    class ConVarsManager final : public ISource2ModConVars
+    class ConVarsManager final : public ISource2ModConVars, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::ConVars; }
+
         uint16 GetConvarAccessIndexByName(const char* name) override;
         ConVarRefAbstract GetConvarRef(uint16 accessIndex) override;
 
@@ -123,8 +126,8 @@ namespace convars {
 
         // A handler is a std::function holding code inside the plugin's library,
         // so it cannot outlive it.
-        void RemoveAllForPlugin(PluginId id);
-        void Shutdown();
+        void RemoveAllForPlugin(PluginId id) override;
+        void Shutdown() override;
 
     private:
         void EnsureGlobalCallbackInstalled();

@@ -321,7 +321,7 @@ namespace clients
         query.callback(slot, query.cookie, result, query.name.c_str(), value.c_str());
     }
 
-    void ClientsManager::OnClientDisconnect(CPlayerSlot slot)
+    void ClientsManager::OnClientDisconnectPost(CPlayerSlot slot)
     {
         std::vector<PendingQuery> cancelled;
         for (auto it = m_queries.begin(); it != m_queries.end();)

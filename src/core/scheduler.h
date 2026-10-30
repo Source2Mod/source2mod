@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include "hookid.h"
 
@@ -54,9 +55,14 @@ namespace scheduler
     void Tick(bool simulating = true);
     void RemoveMapChangeTimers();
 
-    class Scheduler : public ISource2ModScheduler
+    class Scheduler : public ISource2ModScheduler, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Scheduler; }
+        bool Init(char*, size_t) override { scheduler::Init(); return true; }
+        void Shutdown() override { scheduler::Shutdown(); }
+        void OnGameFrame(bool simulating) override { Tick(simulating); }
+
         void NextFrame(TimerCallback task) override
         {
             const PluginId owner = hookid::OwnerOfHandler(task);
@@ -76,7 +82,7 @@ namespace scheduler
 
         /// Drops every timer and pending next-frame task this plugin owns.
         /// Called while its library is still mapped -- see Timer::Owner.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
     };
 
     extern Scheduler schedulerManager;

@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include <playerslot.h>
 #include <source2mod/ISource2ModMenus.h>
 
@@ -101,9 +102,12 @@ namespace menus {
         float sentAt_ = -1.0e9f;
     };
 
-    class MenuManager : public ISource2ModMenus
+    class MenuManager : public ISource2ModMenus, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Menus; }
+        void OnGameFrame(bool) override { Tick(); }
+
         void OpenCenterHtmlMenu(PluginId owner, CCSPlayerController *player, CenterHtmlMenu *menu) override;
         IMenuInstance *GetActiveMenu(CCSPlayerController *player) override;
         void CloseActiveMenu(CCSPlayerController *player) override;
@@ -126,12 +130,12 @@ namespace menus {
         /// Closes the player's menu while the controller still exists, so a
         /// HUD menu can hide itself and the next occupant of the slot does
         /// not inherit it.
-        void OnClientDisconnect(CPlayerSlot slot);
+        void OnClientDisconnect(CPlayerSlot slot) override;
 
         /// Closes whatever this plugin still has open. The menu object and the
         /// option handlers behind it live inside its library, so a menu left
         /// on someone's screen is a key press away from a closed library.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
         /// Whether the menu opened under this serial is still the one the
         /// player has open. An option handler can close its menu or open

@@ -34,6 +34,7 @@
  */
 
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModHooks.h>
 
@@ -223,9 +224,11 @@ namespace hooks
         LogHookAnswer(pointName, post, owner, a);
     }
 
-    class HooksManager final : public ISource2ModHooks
+    class HooksManager final : public ISource2ModHooks, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Hooks; }
+
         HooksManager();
 
         Source2ModHookId AddHook(HookPointId point, ISource2ModFunction* function, const HookTarget& target,
@@ -238,7 +241,7 @@ namespace hooks
         Source2ModHookId AddHookFor(PluginId owner, HookPointId point, ISource2ModFunction* function, const HookTarget& target,
                                     const HookFilter& filter, const void* handler, bool post);
 
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
         void RemoveInstance(const void* instance);
 
         /// The list of an engine or entity point.

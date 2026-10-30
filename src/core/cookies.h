@@ -24,6 +24,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModCookies.h>
 
@@ -36,9 +37,11 @@ struct sqlite3;
 namespace cookies
 {
     /// ISource2ModCookies: SourceMod's clientprefs on a database of SourceMod's layout.
-    class CookiesManager : public ISource2ModCookies
+    class CookiesManager : public ISource2ModCookies, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Cookies; }
+
         bool IsConnected() override { return m_db != nullptr; }
 
         Source2ModCookieId RegisterCookie(const char* name, const char* description, Source2ModCookieAccess access) override;
@@ -58,12 +61,12 @@ namespace cookies
         bool RemoveCookiesCachedListener(Source2ModCookiesListenerId id) override;
 
         /// Opens the database (and loads the players already authorized, for a late load).
-        void Init();
-        void Shutdown();
+        bool Init(char* error, size_t maxlen) override;
+        void Shutdown() override;
 
         void OnClientAuthorized(CPlayerSlot slot, uint64 steamId);
-        void OnClientDisconnect(CPlayerSlot slot);
-        void RemoveAllForPlugin(PluginId id);
+        void OnClientDisconnectPost(CPlayerSlot slot) override;
+        void RemoveAllForPlugin(PluginId id) override;
 
         /// SteamID64 -> "STEAM_1:Y:Z", how SourceMod's tables key players.
         static std::string AuthId(uint64 steamId);

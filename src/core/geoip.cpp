@@ -142,7 +142,7 @@ namespace geoip
         }
     }
 
-    void GeoIPManager::Init()
+    bool GeoIPManager::Init(char*, size_t)
     {
         std::string configured = coreconfig::coreConfig.GeoIPDatabase;
         if (configured.empty())
@@ -174,11 +174,13 @@ namespace geoip
             m_db = db;
             m_path = candidate.string();
             FP_INFO("GeoIP: {} loaded from '{}'", GetDatabaseType(), m_path);
-            return;
+            return true;
         }
 
         FP_WARN("GeoIP: no database at '{}' -- GeoIP lookups are off. Download GeoLite2-City.mmdb (or GeoLite2-Country.mmdb) "
                 "from MaxMind and put it there, or point core.json's \"GeoIPDatabase\" at it.", path.string());
+
+        return true;
     }
 
     void GeoIPManager::Shutdown()

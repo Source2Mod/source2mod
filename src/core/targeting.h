@@ -39,6 +39,7 @@
  * SteamIDs, names, filters plugins add, immunity through permissions.
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModTargeting.h>
 
@@ -47,9 +48,11 @@
 
 namespace targeting
 {
-    class TargetingManager final : public ISource2ModTargeting
+    class TargetingManager final : public ISource2ModTargeting, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Targeting; }
+
         int ProcessTargetString(const char* pattern, CPlayerSlot caller, int flags,
                                 std::vector<CPlayerSlot>& targets, Source2ModTargetName* name = nullptr) override;
         int FindTarget(const char* pattern, CPlayerSlot caller, int flags, CPlayerSlot& target) override;
@@ -62,7 +65,7 @@ namespace targeting
 
         /// AddTargetFilter for an owner the callback's code does not tell (scripts).
         Source2ModHookId AddTargetFilterFor(PluginId owner, const char* name, Source2ModTargetFilter filter, const char* phrase, bool phraseIsTranslation);
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
     private:
         struct Filter

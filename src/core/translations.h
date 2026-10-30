@@ -39,6 +39,7 @@
  * and added at runtime, phrases per plugin from phrase files, JSON or calls.
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModTranslations.h>
 
@@ -57,9 +58,11 @@ namespace translations
         std::unordered_map<int, std::string> text;
     };
 
-    class TranslationsManager final : public ISource2ModTranslations
+    class TranslationsManager final : public ISource2ModTranslations, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Translations; }
+
         int GetLanguageCount() override;
         bool GetLanguageInfo(int language, const char** code, const char** name) override;
         int FindLanguage(const char* codeOrName) override;
@@ -94,7 +97,7 @@ namespace translations
         /// Parses "{1:s},{2:d}" into a phrase's format.
         static void ParseFormat(Phrase& phrase, const char* format);
 
-        void RemoveAllForPlugin(PluginId owner);
+        void RemoveAllForPlugin(PluginId owner) override;
 
     private:
         struct Language

@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 #include "shared.h"
 #include "virtualhooks.h"
@@ -60,9 +61,12 @@ namespace events {
         void FireGameEvent(IGameEvent* pEvent) override;
     };
 
-    class EventManager : public ISource2ModEvents
+    class EventManager : public ISource2ModEvents, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Events; }
+        void Shutdown() override;
+
 
         Source2ModEventHookId HookGameEvent(const char* pchName, GameEventHandler handler, bool post) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookGameEvent(owner, pchName, std::move(handler), post); }
         bool UnhookGameEvent(const char* pchName, const GameEventHandler& handler, bool post) override { return UnhookGameEvent(hookid::OwnerOfHandler(handler), pchName, handler, post); }
@@ -75,7 +79,7 @@ namespace events {
         bool UnhookGameEvent(PluginId owner, const char* pchName, const GameEventHandler& handler, bool post);
         bool Unhook(Source2ModHookId id);
     public:
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
     };
 
     extern EventManager eventManager;

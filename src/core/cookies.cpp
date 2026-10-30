@@ -117,7 +117,7 @@ namespace cookies
 
     // ---- database ---------------------------------------------------------------
 
-    void CookiesManager::Init()
+    bool CookiesManager::Init(char*, size_t)
     {
         std::string configured = coreconfig::coreConfig.ClientPrefsDatabase;
         if (configured.empty())
@@ -135,7 +135,7 @@ namespace cookies
             FP_ERROR("ClientPrefs: could not open '{}': {} -- cookies are kept for this session only", path.string(), m_db ? sqlite3_errmsg(m_db) : "out of memory");
             sqlite3_close(m_db);
             m_db = nullptr;
-            return;
+            return true;
         }
 
         // A write-ahead log and no fsync per commit: a cookie write costs a
@@ -152,7 +152,7 @@ namespace cookies
         {
             sqlite3_close(m_db);
             m_db = nullptr;
-            return;
+            return true;
         }
 
         FP_INFO("ClientPrefs: database '{}'", path.string());
@@ -164,6 +164,8 @@ namespace cookies
                 if (const uint64 steamId = permissions::permissionsManager.GetPlayerSteamID(CPlayerSlot(slot)))
                     OnClientAuthorized(CPlayerSlot(slot), steamId);
         }
+
+        return true;
     }
 
     void CookiesManager::Shutdown()
@@ -279,7 +281,7 @@ namespace cookies
         Load(slot.Get());
     }
 
-    void CookiesManager::OnClientDisconnect(CPlayerSlot slot)
+    void CookiesManager::OnClientDisconnectPost(CPlayerSlot slot)
     {
         // The array's bound, not maxClients: a disconnect at shutdown, with
         // the globals gone, still has to clear the slot.

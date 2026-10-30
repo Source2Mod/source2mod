@@ -1311,6 +1311,11 @@ namespace crashhandler
 
     CrashListeners crashListeners;
 
+    bool CrashListeners::Init(char*, size_t) { crashhandler::Init(); return true; }
+    void CrashListeners::Shutdown() { crashhandler::Shutdown(); }
+    void CrashListeners::OnGameFrame(bool) { crashhandler::OnGameFrame(); }
+    void CrashListeners::OnSteamAPIActivated() { crashhandler::OnSteamAPIActivated(); }
+
 #if defined(__linux__)
     bool CrashListeners::AddListener(ISource2ModPlugin* plugin, ISource2ModCrashListener* listener)
     {

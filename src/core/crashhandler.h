@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModCrash.h>
 
@@ -61,9 +62,15 @@ namespace crashhandler
 {
     /// ISource2ModCrash: a fixed table, so the signal handler walks nothing that
     /// can have been freed or be mid-update.
-    class CrashListeners final : public ISource2ModCrash
+    class CrashListeners final : public ISource2ModCrash, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::CrashHandler; }
+        bool Init(char* error, size_t maxlen) override;
+        void Shutdown() override;
+        void OnGameFrame(bool simulating) override;
+        void OnSteamAPIActivated() override;
+
         bool AddListener(ISource2ModPlugin* plugin, ISource2ModCrashListener* listener) override;
         void RemoveListener(ISource2ModCrashListener* listener) override;
         void RemoveAllForPlugin(ISource2ModPlugin* plugin);

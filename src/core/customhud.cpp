@@ -197,6 +197,15 @@ namespace customhud
         });
     }
 
+    void CustomHudManager::OnEntityDeleted(CEntityInstance* pEntity)
+    {
+        // Drop a layout's click callbacks the moment the entity goes, rather
+        // than waiting for the next click to notice the handle went stale --
+        // the handlers hold plugin code and there may never be another click.
+        if (!V_strcmp("custom_hud_layout", pEntity->GetClassname()))
+            UnhookCustomHudClick(static_cast<CCSCustomHudLayout*>(pEntity));
+    }
+
     void CustomHudManager::Clear()
     {
         m_callbacks.clear();

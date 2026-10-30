@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 #include "shared.h"
 
@@ -45,9 +46,11 @@ class CNetMessage;
 
 namespace networkmessages
 {
-    class NetworkMessagesManager : public ISource2ModNetworkMessages
+    class NetworkMessagesManager : public ISource2ModNetworkMessages, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::NetworkMessages; }
+
         void* AllocateNetMessageByID(int msgid) override;
         void* AllocateNetMessageByPartialName(const char* name) override;
         void DeallocateNetMessage(void* msg) override;
@@ -166,7 +169,7 @@ namespace networkmessages
         bool UnhookNetMessage(Source2ModHookId id);
 
         // Called when a plugin unloads, like every other plugin-owned registry.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
     public:
 

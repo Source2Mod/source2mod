@@ -110,6 +110,8 @@ namespace events {
         clients::clientsManager.FireEventToClient(slot, event);
     }
 
+    void EventManager::Shutdown() { DestructEvents(); }
+
     void EventManager::RemoveAllForPlugin(PluginId id)
     {
         for (auto it = gameEvents.begin(); it != gameEvents.end(); )

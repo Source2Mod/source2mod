@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include <dynlibutils/module.hpp>
 #include <keyvalues.h>
 #include <nlohmann/json.hpp>
@@ -46,9 +47,12 @@
 
 namespace gameconfig
 {
-    class GameConfig : public ISource2ModGameConfig
+    class GameConfig : public ISource2ModGameConfig, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::GameConfig; }
+        bool Init(char* error, size_t maxlen) override;
+
         using json = nlohmann::json;
         bool LoadSingle(const std::string& path, char* conf_error, int conf_error_size);
         bool InitAll(const std::string& folder, char* conf_error, int conf_error_size);

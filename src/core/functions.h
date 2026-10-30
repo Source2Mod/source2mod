@@ -34,6 +34,7 @@
  */
 
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModFunctions.h>
 
@@ -74,9 +75,11 @@ namespace functions
         mutable std::unordered_set<std::string> reported_;
     };
 
-    class FunctionsManager final : public ISource2ModFunctions
+    class FunctionsManager final : public ISource2ModFunctions, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Functions; }
+
         ISource2ModFunction* Find(const char* name) override;
         ISource2ModFunction* Create(PluginId owner, void* address, void** vtable, int vtableIndex, bool isMember,
                                     Source2ModType returnType, const Source2ModType* params, int count) override;
@@ -99,7 +102,7 @@ namespace functions
         static bool ParseType(const std::string& text, Source2ModType& out);
         static const char* TypeName(Source2ModType type);
 
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
     private:
         // Find() results, misses included (null), so a missing entry is

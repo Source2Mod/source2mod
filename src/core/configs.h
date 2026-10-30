@@ -24,6 +24,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModConfigs.h>
 
@@ -111,9 +112,11 @@ namespace configs
         std::filesystem::file_time_type m_PendingWrite{};
     };
 
-    class ConfigsManager final : public ISource2ModConfigs
+    class ConfigsManager final : public ISource2ModConfigs, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Configs; }
+
         bool AddListener(ISource2ModPlugin* plugin, ISource2ModConfigListener* listener, char* error, size_t maxlen) override;
         void RemoveListener(ISource2ModPlugin* plugin) override;
         ISource2ModConfig* Register(ISource2ModPlugin* plugin, const char* pszName, const char* pszDefaults, uint32_t nFlags,
@@ -130,8 +133,8 @@ namespace configs
 
         /// Polls the watched files once a second (core.json ConfigHotReloadEnabled).
         void StartWatching();
-        void Shutdown();
-        void RemoveAllForPlugin(PluginId id);
+        void Shutdown() override;
+        void RemoveAllForPlugin(PluginId id) override;
 
         /// Keeps a replaced document readable until the next frame.
         void Retire(std::unique_ptr<json::CJSONDocument> doc);

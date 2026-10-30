@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "pluginmanager.h"
+#include "appsystem.h"
 #include "gamesystems.h"
 
 #include "clients.h"
@@ -445,29 +446,7 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, const void* m
         const PluginId failedId = stored->id;
         stored->listeners.clear();
 
-        events::eventManager.RemoveAllForPlugin(failedId);
-        commands::commandsManager.RemoveAllForPlugin(failedId);
-        customhud::customHudManager.RemoveAllForPlugin(failedId);
-        convars::convarsManager.RemoveAllForPlugin(failedId);
-        networkmessages::networkMessagesManager.RemoveAllForPlugin(failedId);
-        sounds::soundsManager.RemoveAllForPlugin(failedId);
-        transmit::transmitManager.RemoveAllForPlugin(failedId);
-        gamesystems::gameSystemsManager.RemoveAllForPlugin(failedId);
-        scripts::scriptsManager.RemoveAllForPlugin(failedId);
-        scheduler::schedulerManager.RemoveAllForPlugin(failedId);
-        http::httpManager.RemoveAllForPlugin(failedId);
-        websockets::webSocketsManager.RemoveAllForPlugin(failedId);
-        mysql::mysqlManager.RemoveAllForPlugin(failedId);
-        menus::menuManager.RemoveAllForPlugin(failedId);
-        hooks::hooksManager.RemoveAllForPlugin(failedId);
-        entities::entitiesManager.RemoveAllForPlugin(failedId);
-        permissions::permissionsManager.RemoveAllForPlugin(failedId);
-        cookies::cookiesManager.RemoveAllForPlugin(failedId);
-        clients::clientsManager.RemoveAllForPlugin(failedId);
-        translations::translationsManager.RemoveAllForPlugin(failedId);
-        targeting::targetingManager.RemoveAllForPlugin(failedId);
-        functions::functionsManager.RemoveAllForPlugin(failedId);
-        sourcepawn::RemoveAllForPlugin(failedId);
+        appsystem::RemoveAllForPlugin(failedId);
 
         m_plugins.pop_back();
         ++m_listGeneration;
@@ -597,33 +576,7 @@ bool PluginManager::ReloadPlugin(int id)
         (*it)->listeners.clear();
         crashhandler::crashListeners.RemoveAllForPlugin((*it)->api);
 
-        events::eventManager.RemoveAllForPlugin(id);
-        commands::commandsManager.RemoveAllForPlugin(id);
-        configs::configsManager.RemoveAllForPlugin(id);
-        customhud::customHudManager.RemoveAllForPlugin(id);
-        convars::convarsManager.RemoveAllForPlugin(id);
-        networkmessages::networkMessagesManager.RemoveAllForPlugin(id);
-        sounds::soundsManager.RemoveAllForPlugin(id);
-        transmit::transmitManager.RemoveAllForPlugin(id);
-        gamesystems::gameSystemsManager.RemoveAllForPlugin(id);
-        scripts::scriptsManager.RemoveAllForPlugin(id);
-        // Timers and next-frame tasks run callbacks that live inside the
-        // library about to be closed; both the call and destroying the
-        // std::function would land in unmapped memory afterwards.
-        scheduler::schedulerManager.RemoveAllForPlugin(id);
-        http::httpManager.RemoveAllForPlugin(id);
-        websockets::webSocketsManager.RemoveAllForPlugin(id);
-        mysql::mysqlManager.RemoveAllForPlugin(id);
-        menus::menuManager.RemoveAllForPlugin(id);
-        hooks::hooksManager.RemoveAllForPlugin(id);
-        entities::entitiesManager.RemoveAllForPlugin(id);
-        permissions::permissionsManager.RemoveAllForPlugin(id);
-        cookies::cookiesManager.RemoveAllForPlugin(id);
-        clients::clientsManager.RemoveAllForPlugin(id);
-        translations::translationsManager.RemoveAllForPlugin(id);
-        targeting::targetingManager.RemoveAllForPlugin(id);
-        functions::functionsManager.RemoveAllForPlugin(id);
-        sourcepawn::RemoveAllForPlugin(id);
+        appsystem::RemoveAllForPlugin(id);
 
         CloseLibNextFrame(**it, path);
 
@@ -671,30 +624,7 @@ bool PluginManager::UnloadPlugin(PluginId id)
         p->listeners.clear();
         crashhandler::crashListeners.RemoveAllForPlugin(p->api);
 
-        events::eventManager.RemoveAllForPlugin(id);
-        commands::commandsManager.RemoveAllForPlugin(id);
-        configs::configsManager.RemoveAllForPlugin(id);
-        customhud::customHudManager.RemoveAllForPlugin(id);
-        convars::convarsManager.RemoveAllForPlugin(id);
-        networkmessages::networkMessagesManager.RemoveAllForPlugin(id);
-        sounds::soundsManager.RemoveAllForPlugin(id);
-        transmit::transmitManager.RemoveAllForPlugin(id);
-        gamesystems::gameSystemsManager.RemoveAllForPlugin(id);
-        scripts::scriptsManager.RemoveAllForPlugin(id);
-        scheduler::schedulerManager.RemoveAllForPlugin(id);
-        http::httpManager.RemoveAllForPlugin(id);
-        websockets::webSocketsManager.RemoveAllForPlugin(id);
-        mysql::mysqlManager.RemoveAllForPlugin(id);
-        menus::menuManager.RemoveAllForPlugin(id);
-        hooks::hooksManager.RemoveAllForPlugin(id);
-        entities::entitiesManager.RemoveAllForPlugin(id);
-        permissions::permissionsManager.RemoveAllForPlugin(id);
-        cookies::cookiesManager.RemoveAllForPlugin(id);
-        clients::clientsManager.RemoveAllForPlugin(id);
-        translations::translationsManager.RemoveAllForPlugin(id);
-        targeting::targetingManager.RemoveAllForPlugin(id);
-        functions::functionsManager.RemoveAllForPlugin(id);
-        sourcepawn::RemoveAllForPlugin(id);
+        appsystem::RemoveAllForPlugin(id);
 
         CloseLibNextFrame(*p);
 
@@ -803,29 +733,7 @@ void PluginManager::UnloadAll()
         p->listeners.clear();
         crashhandler::crashListeners.RemoveAllForPlugin(p->api);
 
-        events::eventManager.RemoveAllForPlugin(p->id);
-        commands::commandsManager.RemoveAllForPlugin(p->id);
-        customhud::customHudManager.RemoveAllForPlugin(p->id);
-        convars::convarsManager.RemoveAllForPlugin(p->id);
-        networkmessages::networkMessagesManager.RemoveAllForPlugin(p->id);
-        sounds::soundsManager.RemoveAllForPlugin(p->id);
-        transmit::transmitManager.RemoveAllForPlugin(p->id);
-        gamesystems::gameSystemsManager.RemoveAllForPlugin(p->id);
-        scripts::scriptsManager.RemoveAllForPlugin(p->id);
-        scheduler::schedulerManager.RemoveAllForPlugin(p->id);
-        http::httpManager.RemoveAllForPlugin(p->id);
-        websockets::webSocketsManager.RemoveAllForPlugin(p->id);
-        mysql::mysqlManager.RemoveAllForPlugin(p->id);
-        menus::menuManager.RemoveAllForPlugin(p->id);
-        hooks::hooksManager.RemoveAllForPlugin(p->id);
-        entities::entitiesManager.RemoveAllForPlugin(p->id);
-        permissions::permissionsManager.RemoveAllForPlugin(p->id);
-        cookies::cookiesManager.RemoveAllForPlugin(p->id);
-        clients::clientsManager.RemoveAllForPlugin(p->id);
-        translations::translationsManager.RemoveAllForPlugin(p->id);
-        targeting::targetingManager.RemoveAllForPlugin(p->id);
-        functions::functionsManager.RemoveAllForPlugin(p->id);
-        sourcepawn::RemoveAllForPlugin(p->id);
+        appsystem::RemoveAllForPlugin(p->id);
     }
 
     // Only once every plugin's registrations are gone. What one plugin owns can

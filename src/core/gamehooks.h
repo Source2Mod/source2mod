@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModHooks.h>
 
@@ -72,9 +73,11 @@ namespace gamehooks
         virtual void InstallNow() = 0;
     };
 
-    class GameHooksManager final
+    class GameHooksManager final : public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::GameHooks; }
+
         GameHooksManager();
         ~GameHooksManager();
 
@@ -86,7 +89,7 @@ namespace gamehooks
         /// The core's own use of a point: its detour in place from now on.
         void Install(HookPointId point);
 
-        void Shutdown();
+        void Shutdown() override;
         void RemoveAllForPlugin(PluginId id);
         void RemoveInstance(const void* instance);
 

@@ -35,6 +35,7 @@
  */
 #include "virtualhooks.h"
 
+#include "appsystem.h"
 #include "clients.h"
 #include "commands.h"
 #include "core/entities.h"
@@ -411,35 +412,10 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::GameFrame");
 
-        // First, and before the early return below: a signal handler someone
-        // replaced has to go back regardless of whether the world is up.
-        crashhandler::OnGameFrame();
-
-        scheduler::Tick(simulating);
-
-        // Center HTML menus fade, so the open ones have to be redrawn every
-        // frame. MenuManager::Tick() existed but nothing called it, which left
-        // a menu on screen for a moment and then gone.
-        menus::menuManager.Tick();
-
-        // After the redraw: the key mask of the page now on screen.
-        slotinput::OnFrame();
-
-        // Persistent scripts whose entity went away (round restart, map
-        // change) are spawned again here, never inside the deletion itself.
-        scripts::scriptsManager.OnGameFrame(simulating);
-
         if (pluginApi.GetGlobalVars())
             g_bHasTicked = true;
 
-        // Players Steam validated since the last frame, and permission changes
-        // that were held back to be announced from here.
-        permissions::permissionsManager.OnGameFrame();
-
-        // Results of the core's own sockets (HTTP through Beast). Here and not
-        // in PostSimulate: Steam's HTTP results arrive while the server
-        // hibernates, and Beast's must not wait for a player.
-        net::RunFrame();
+        appsystem::GameFrame(simulating);
 
         {
             GameFrameContext ctx{ simulating, bFirstTick, bLastTick };
@@ -449,7 +425,7 @@ namespace virtualhooks
         // Function-point detours that lost their last handler come out here,
         // outside their own dispatch. Plugin unloads never run from here: see
         // PluginManager::RequestUnload.
-        dynamichooks::dynamicHooksManager.Tick();
+        appsystem::GameFramePost();
 
         if (m_bSelfUnloadPending)
         {
@@ -517,10 +493,8 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::ClientPutInServer");
 
-        slotinput::ResetPlayer(slot);
-
         // First: a plugin's OnClientPutInServer may already check permissions.
-        permissions::permissionsManager.OnClientPutInServer(slot, type, xuid);
+        appsystem::ClientPutInServer(slot, type, xuid);
 
         ClientPutInServerContext ctx{ slot, pszName, type, xuid };
         hooks::hooksManager.Dispatch(HookPointId::ClientPutInServer, ctx, true);
@@ -726,12 +700,7 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::GameServerSteamAPIActivated");
 
-        http::httpManager.OnSteamAPIActivated();
-        // After the HTTP manager: the crash report waiting for Steam goes out
-        // through it.
-        crashhandler::OnSteamAPIActivated();
-
-        permissions::permissionsManager.OnSteamAPIActivated();
+        appsystem::SteamAPIActivated();
 
         EmptyContext ctx;
         hooks::hooksManager.Dispatch(HookPointId::GameServerSteamAPIActivated, ctx, true);
@@ -749,9 +718,7 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::GameServerSteamAPIDeactivated");
 
-        http::httpManager.OnSteamAPIDeactivated();
-
-        permissions::permissionsManager.OnSteamAPIDeactivated();
+        appsystem::SteamAPIDeactivated();
 
         EmptyContext ctx;
         return { PreAction(hooks::hooksManager.Dispatch(HookPointId::GameServerSteamAPIDeactivated, ctx, false)) };
@@ -845,9 +812,7 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::ClientDisconnectPost");
 
-        sounds::soundsManager.OnClientDisconnect(slot);
-        transmit::transmitManager.OnClientDisconnect(slot);
-        menus::menuManager.OnClientDisconnect(slot);
+        appsystem::ClientDisconnect(slot);
 
         {
             ClientDisconnectContext ctx{ slot, reason, pszName, xuid, pszNetworkID };
@@ -855,9 +820,7 @@ namespace virtualhooks
         }
 
         // After the plugins: theirs is the last look at who the player was.
-        permissions::permissionsManager.OnClientDisconnect(slot);
-        cookies::cookiesManager.OnClientDisconnect(slot);
-        clients::clientsManager.OnClientDisconnect(slot);
+        appsystem::ClientDisconnectPost(slot);
 
         return { KHook::Action::Ignore };
     }
@@ -926,7 +889,7 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::OnServerGamePostSimulate");
 
-        mysql::mysqlManager.RunFrame();
+        appsystem::PostSimulate();
         return { KHook::Action::Ignore };
     }
 
@@ -1120,14 +1083,7 @@ namespace virtualhooks
         entities::entitiesManager.NotifyDeleted(pEntity);
         hooks::ForgetInstance(pEntity);
 
-        transmit::transmitManager.OnEntityDeleted(pEntity);
-        scripts::scriptsManager.OnEntityDeleted(pEntity);
-
-        // Drop a layout's click callbacks the moment the entity goes, rather
-        // than waiting for the next click to notice the handle went stale --
-        // the handlers hold plugin code and there may never be another click.
-        if (!V_strcmp("custom_hud_layout", pEntity->GetClassname()))
-            customhud::customHudManager.UnhookCustomHudClick(static_cast<CCSCustomHudLayout*>(pEntity));
+        appsystem::EntityDeleted(pEntity);
     }
 
     void CEntityListener::OnEntityParentChanged(CEntityInstance* pEntity, CEntityInstance* pNewParent)

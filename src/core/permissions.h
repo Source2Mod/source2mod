@@ -35,6 +35,7 @@
  */
 
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 
 #include <const.h>
@@ -63,9 +64,12 @@ namespace permissions
 
     SteamAuthMode ParseSteamAuthMode(const std::string& mode);
 
-    class PermissionsManager : public ISource2ModPermissions, public ISource2ModConfigListener
+    class PermissionsManager : public ISource2ModPermissions, public ISource2ModConfigListener, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Permissions; }
+        void OnGameFrame(bool) override { OnGameFrame(); }
+
         // ISource2ModPermissions
         bool HasPermission(uint64 steamId, const char* permission) override;
         bool PlayerHasPermission(CPlayerSlot slot, const char* permission) override;
@@ -94,8 +98,8 @@ namespace permissions
         bool ClearAccessDeniedHandler(Source2ModAccessDeniedHandlerId id) override;
 
         // Core side
-        void Init();
-        void Shutdown();
+        bool Init(char* error, size_t maxlen) override;
+        void Shutdown() override;
 
         /// Re-reads permissions.json into the file's layer. False with `error` when it does not parse.
         bool LoadFile(std::string& error);
@@ -108,13 +112,13 @@ namespace permissions
         /// Tells a refused player so: the plugin handler set last, else the core's line.
         void Deny(const Source2ModCommandContext& ctx, const Source2ModCommandArgs& args, const std::string& permission);
 
-        void OnClientPutInServer(CPlayerSlot slot, int type, uint64 xuid);
-        void OnClientDisconnect(CPlayerSlot slot);
+        void OnClientPutInServer(CPlayerSlot slot, int type, uint64 xuid) override;
+        void OnClientDisconnectPost(CPlayerSlot slot) override;
         void OnGameFrame();
-        void OnSteamAPIActivated();
-        void OnSteamAPIDeactivated();
+        void OnSteamAPIActivated() override;
+        void OnSteamAPIDeactivated() override;
 
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
         /// For "s2m admins": one line per connected player, and what one SteamID holds.
         std::vector<std::string> DescribePlayers();

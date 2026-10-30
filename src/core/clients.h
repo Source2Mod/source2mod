@@ -38,6 +38,7 @@
  * Player helpers the controller classes do not have (ISource2ModClients).
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModClients.h>
 
@@ -51,9 +52,11 @@ class CCLCMsg_RespondCvarValue;
 
 namespace clients
 {
-    class ClientsManager final : public ISource2ModClients
+    class ClientsManager final : public ISource2ModClients, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Clients; }
+
         CServerSideClient* GetServerSideClient(CPlayerSlot slot) override;
         bool IsConnected(CPlayerSlot slot) override;
         bool IsInGame(CPlayerSlot slot) override;
@@ -91,9 +94,9 @@ namespace clients
         /// A CLC_RespondCvarValue off the wire (FilterMessage).
         void OnRespondCvarValue(CPlayerSlot slot, const CCLCMsg_RespondCvarValue& msg);
         /// The slot's open queries answer CANCELLED.
-        void OnClientDisconnect(CPlayerSlot slot);
+        void OnClientDisconnectPost(CPlayerSlot slot) override;
         /// Drops a plugin's open queries unanswered: its callbacks are about to go.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
     private:
         struct PendingQuery

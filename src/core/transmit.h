@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 
 #include <bitvec.h>
@@ -114,9 +115,12 @@ namespace transmit
     Manager
     ========================= */
 
-    class TransmitManager : public ISource2ModTransmit
+    class TransmitManager : public ISource2ModTransmit, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Transmit; }
+        void OnLevelShutdown() override { Clear(); }
+
         bool HookEntity(PluginId owner, CEntityInstance* entity, bool defaultVisible) override;
         void UnhookEntity(CEntityInstance* entity) override;
         bool IsEntityHooked(CEntityInstance* entity) override;
@@ -151,10 +155,10 @@ namespace transmit
         /// runs the plugins' handlers.
         void OnCheckTransmit(CCheckTransmitInfo** ppInfoList, int infoCount, const uint16_t* pEntityIndices, int nEntities);
 
-        void OnClientDisconnect(CPlayerSlot slot);
-        void OnEntityDeleted(CEntityInstance* entity);
+        void OnClientDisconnect(CPlayerSlot slot) override;
+        void OnEntityDeleted(CEntityInstance* entity) override;
 
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
         void Clear();
 
     private:

@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 #include "net.h"
 
@@ -44,8 +45,10 @@
 #include <vector>
 
 namespace http {
-    class HTTPManager final : public ISource2ModHTTP {
+    class HTTPManager final : public ISource2ModHTTP, public appsystem::ISource2ModAppSystem {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::HTTP; }
+
         bool IsAvailable() const override;
         int PendingCount() const override;
 
@@ -110,19 +113,19 @@ namespace http {
 
         /// Steam handed its HTTP client over -- sends whatever was queued while
         /// it was not there yet. Driven by the ISource2Server vtable hook.
-        void OnSteamAPIActivated();
+        void OnSteamAPIActivated() override;
 
         /// Steam took it away again; Beast (or the queue) from here on.
-        void OnSteamAPIDeactivated();
+        void OnSteamAPIDeactivated() override;
 
         /// Drops every in-flight and queued request. Called on unload -- a
         /// callback is a std::function holding code inside a plugin's library.
-        void Shutdown();
+        void Shutdown() override;
 
         /// Cancels this plugin's requests, in flight and queued alike, while
         /// its library is still mapped. A request that outlived its plugin
         /// would land on a callback that is no longer there.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
     private:
         /// One request Steam is already working on. Owns its own call result,

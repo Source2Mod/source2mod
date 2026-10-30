@@ -206,7 +206,7 @@ namespace scripts
     Setup
     ========================= */
 
-    void ScriptsManager::Init()
+    bool ScriptsManager::Init(char*, size_t)
     {
         m_pfnRunScript = addresses::FindSignature("CSScript::RunScript").RCast<RunScript_t>();
         if (!m_pfnRunScript)
@@ -223,6 +223,8 @@ namespace scripts
         }
         else
             FP_WARN("FilterWorkshopCommands not found: scripts on a workshop map cannot message plugins");
+
+        return true;
     }
 
     void ScriptsManager::Shutdown()

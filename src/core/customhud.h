@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 
 #include <ehandle.h>
@@ -53,8 +54,12 @@ namespace customhud {
         Source2ModHookId id;
     };
 
-    class CustomHudManager : public ISource2ModCustomHud {
+    class CustomHudManager : public ISource2ModCustomHud, public appsystem::ISource2ModAppSystem {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::CustomHud; }
+        void OnLevelShutdown() override { Clear(); }
+        void OnEntityDeleted(CEntityInstance* pEntity) override;
+
 
         Source2ModCustomHudHookId HookCustomHudClick(CCSCustomHudLayout* pLayout, CustomHudClickHandler handler) override { const PluginId owner = hookid::OwnerOfHandler(handler); return HookCustomHudClick(owner, pLayout, std::move(handler)); }
         bool UnhookCustomHudClick(CCSCustomHudLayout* pLayout, const CustomHudClickHandler& handler) override { return UnhookCustomHudClick(hookid::OwnerOfHandler(handler), pLayout, handler); }
@@ -74,7 +79,7 @@ namespace customhud {
         /// A callback outlives neither its plugin nor the entity it points at:
         /// the handler is a std::function holding code inside the plugin's
         /// library, so it has to go before that library is closed.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
         void Clear();
     protected:
         std::vector<ClickCallbackEntry> m_callbacks;

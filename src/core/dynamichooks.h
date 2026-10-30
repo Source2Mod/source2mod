@@ -34,6 +34,7 @@
  */
 
 #pragma once
+#include "appsystem.h"
 
 #include "hooks.h"
 
@@ -105,9 +106,12 @@ namespace dynamichooks
         void CallOriginalRaw(void* out, size_t size) override;
     };
 
-    class DynamicHooksManager final
+    class DynamicHooksManager final : public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::DynamicHooks; }
+        void OnGameFramePost() override { Tick(); }
+
         Source2ModHookId Add(ISource2ModFunction* function, PluginId owner, HookHandler<FunctionContext> handler, bool post,
                              const HookTarget& target, const HookFilter& filter);
         bool Remove(Source2ModHookId id);
@@ -119,7 +123,7 @@ namespace dynamichooks
 
         /// Takes out the KHooks nobody listens to any more.
         void Tick();
-        void Shutdown();
+        void Shutdown() override;
 
     private:
         // (function, vtable) -> its hook; a function on the vtables of

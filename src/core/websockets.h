@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include "hookid.h"
 #include "net.h"
@@ -49,8 +50,10 @@
 namespace websockets {
     class Socket;
 
-    class WebSocketsManager final : public ISource2ModWebSockets {
+    class WebSocketsManager final : public ISource2ModWebSockets, public appsystem::ISource2ModAppSystem {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::WebSockets; }
+
         ISource2ModWebSocket* Connect(const char* url, ISource2ModWebSocketListener* listener,
                                       const Source2ModWebSocketOptions& options) override
         {
@@ -70,10 +73,10 @@ namespace websockets {
 
         /// Destroys this plugin's sockets while its library is still mapped:
         /// a listener call into an unloaded plugin would land in nothing.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
         /// Destroys every socket. On unload, before net::Shutdown().
-        void Shutdown();
+        void Shutdown() override;
 
     private:
         std::vector<std::shared_ptr<Socket>> m_sockets;

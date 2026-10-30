@@ -36,6 +36,7 @@
 #include "gameconfig.h"
 
 #include "module.h"
+#include "utils/paths.h"
 #include "plugin.h"
 #include "utils/log.h"
 
@@ -111,6 +112,16 @@ namespace gameconfig
         }
 
         return true;
+    }
+
+    bool GameConfig::Init(char* error, size_t maxlen)
+    {
+        char confError[255] = {};
+        if (InitAll(paths::GetGamedataDirectory(), confError, sizeof(confError)))
+            return true;
+
+        snprintf(error, maxlen, "Failed to load the gamedata. Error: %s", confError);
+        return false;
     }
 
     bool GameConfig::InitAll(const std::string& folder, char* conf_error, int conf_error_size)

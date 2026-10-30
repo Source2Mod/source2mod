@@ -35,6 +35,7 @@
  */
 
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModConfigs.h>
 
@@ -45,9 +46,12 @@
 namespace coreconfig
 {
     /// configs/core.json, on the configs manager like any plugin's config.
-    class CoreConfig final : public ISource2ModConfigListener
+    class CoreConfig final : public ISource2ModConfigListener, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::CoreConfig; }
+        bool Init(char* error, size_t maxlen) override;
+
         std::vector<std::string> PublicChatTrigger = { std::string("!") };
         std::vector<std::string> SilentChatTrigger = { std::string("/") };
         bool PluginHotReloadEnabled = true;
@@ -101,7 +105,7 @@ namespace coreconfig
 
         /// Registers <path>.json (configs/core.json) with the shipped
         /// core.example.json as its defaults; reads it now and on every change.
-        bool Init(const std::string& path, char* conf_error, int conf_error_size);
+        bool LoadFrom(const std::string& path, char* conf_error, int conf_error_size);
         const std::string GetPath() const;
 
         void OnConfigChanged(ISource2ModConfig* config, ConfigChange reason) override;

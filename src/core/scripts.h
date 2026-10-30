@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 
 #include <entityhandle.h>
@@ -74,9 +75,12 @@ namespace scripts
         bool pending = false;
     };
 
-    class ScriptsManager : public ISource2ModScripts
+    class ScriptsManager : public ISource2ModScripts, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Scripts; }
+        void OnLevelInit(const char*) override { OnLevelInit(); }
+
         bool CanRunSource() override;
 
         CEntityHandle LoadAsset(PluginId owner, const char* pszName, const char* pszAsset, bool bPersistent) override;
@@ -101,15 +105,15 @@ namespace scripts
     public:
         /// Resolves the loader and registers `source2mod_script`. Not fatal: without
         /// the loader only LoadAsset() works.
-        void Init();
-        void Shutdown();
+        bool Init(char* error, size_t maxlen) override;
+        void Shutdown() override;
 
         void OnLevelInit();
-        void OnLevelShutdown();
-        void OnGameFrame(bool simulating);
-        void OnEntityDeleted(CEntityInstance* pEntity);
+        void OnLevelShutdown() override;
+        void OnGameFrame(bool simulating) override;
+        void OnEntityDeleted(CEntityInstance* pEntity) override;
 
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
         /// `source2mod_script <channel> <payload>`, from the server only.
         void DispatchMessage(const char* pszChannel, const char* pszPayload);

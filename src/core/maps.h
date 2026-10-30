@@ -24,6 +24,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include <source2mod/ISource2ModMaps.h>
 
@@ -35,9 +36,11 @@ namespace maps
 {
     /// ISource2ModMaps: the current and next map, map changes, map history
     /// and the map lists of configs/maplists.json.
-    class MapsManager : public ISource2ModMaps
+    class MapsManager : public ISource2ModMaps, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Maps; }
+
         const char* GetCurrentMap() override;
         bool IsMapValid(const char* map) override;
         Source2ModFindMapResult FindMap(const char* map, std::string& found) override;
@@ -49,10 +52,10 @@ namespace maps
         bool ReadMapList(const char* name, std::vector<std::string>& maps, int flags) override;
 
         /// Takes the match end hook back out.
-        void Shutdown();
+        void Shutdown() override;
 
         /// The core's OnLevelInit, before the plugins hear of it.
-        void OnLevelInit(const char* mapName);
+        void OnLevelInit(const char* mapName) override;
 
         /// "workshop/123", "workshop/123/name" or "123": true and the ID.
         static bool WorkshopId(const char* map, std::string& id);

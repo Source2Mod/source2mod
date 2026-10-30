@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "hookid.h"
 #include "shared.h"
 #include "virtualhooks.h"
@@ -83,9 +84,13 @@ namespace commands {
     /// @p expectedIndex is given and the name now belongs to another command.
     bool ReleaseConCommandName(const char* name, uint16 expectedIndex = 0xFFFF);
 
-    class CommandsManager : public ISource2ModCommands
+    class CommandsManager : public ISource2ModCommands, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Commands; }
+        bool Init(char*, size_t) override { InitCommands(); return true; }
+        void Shutdown() override { DestructCommands(); }
+
 
         Source2ModChatListenerId RegisterChatListener(const char* pchName, ChatHandler handler, const char* pchPermission) override { const PluginId owner = hookid::OwnerOfHandler(handler); return RegisterChatListener(owner, pchName, std::move(handler), pchPermission); }
         bool UnregisterChatListener(const char* pchName, const ChatHandler& handler) override { return UnregisterChatListener(hookid::OwnerOfHandler(handler), pchName, handler); }
@@ -110,7 +115,7 @@ namespace commands {
         bool UnhookConCommand(PluginId owner, const char* pchName, const CommandHandler& handler, bool post);
         bool Unregister(Source2ModHookId id);
     public:
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
         void UnlockConCommands();
 
     private:

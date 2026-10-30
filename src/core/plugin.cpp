@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "plugin.h"
+#include "appsystem.h"
 
 #include "addresses.h"
 #include "commands.h"
@@ -130,81 +131,16 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
     shared::g_pSchemaSystem = static_cast<CSchemaSystem*>(g_pSchemaSystem);
 
     log::Init();
-    scheduler::Init();
 
     // Before anything below goes looking for one of them.
     paths::EnsureLayout();
 
-    auto coreconfig_path = std::string(paths::GetConfigsDirectory() + "/core");
-    char coreconfig_error[255] = "";
-
-    if (!coreconfig::coreConfig.Init(coreconfig_path, coreconfig_error, sizeof(coreconfig_error)))
+    char initError[512] = "";
+    if (!appsystem::InitAll(initError, sizeof(initError)))
     {
-        FP_ERROR("Failed to load the core config. Could not read \'{}\'. Error: {}", coreconfig_path, coreconfig_error);
+        FP_ERROR("{}", initError);
         return false;
     }
-
-    // As soon as the config allows and before anything else: whatever below
-    // this line dies, plugins included, is caught and reported next start.
-    crashhandler::Init();
-
-    auto gamedata_folder = paths::GetGamedataDirectory();
-    char conf_error[255] = {};
-
-    if (!gameconfig::gameConfig.InitAll(gamedata_folder, conf_error, sizeof(conf_error)))
-    {
-        FP_ERROR("Failed to load the gamedata. Error: {}", conf_error);
-        return false;
-    }
-
-    // Before anything below can reach SDK code that reads them.
-    FillSource2ModGlobals();
-
-    if (!addresses::Initialize())
-    {
-        FP_ERROR("Could not initialize addresses.");
-        return false;
-    }
-
-    // Not fatal: a failed scan only means plugins cannot register game
-    // systems, which most do not. ISource2ModGameSystems::IsAvailable() says so.
-    gamesystems::gameSystemsManager.Init();
-
-    // Not fatal either: without the engine's sound system the guids come from
-    // a counter of Source2Mod's own.
-    sounds::soundsManager.Init();
-
-    if (!patches::Initialize())
-    {
-        FP_ERROR("Could not initialize patches.");
-        return false;
-    }
-
-    // Before InitCommands: a ConCommand made before ConVar_Register goes on
-    // tier1's registration list, and ConVar_Unregister walks that list. The
-    // source2mod's commands are heap objects DestructCommands deletes first, so
-    // the walk would read freed memory (SIGSEGV in UnregisterConCommandCallbacks
-    // on unload). Made after it, they register directly and stay off the list.
-    ConVar_Register(FCVAR_RELEASE | FCVAR_CLIENT_CAN_EXECUTE | FCVAR_GAMEDLL);
-
-    commands::InitCommands();
-    slotinput::Init();
-    slow::g_flWarnMs = coreconfig::coreConfig.SlowCallbackWarnMs;
-
-    // Before plugins load: their Load() may already grant and check.
-    permissions::permissionsManager.Init();
-
-    // Not fatal: without a database every lookup says no.
-    geoip::geoIpManager.Init();
-    cookies::cookiesManager.Init();
-
-    // Not fatal: without the script loader, compiled assets still run.
-    scripts::scriptsManager.Init();
-
-    commands::commandsManager.UnlockConCommands();
-    convars::convarsManager.UnlockConVars();
-    inlinehooks::inlines.InitListeners();
-    virtualhooks::virtuals.InitListeners();
 
     g_SMAPI->AddListener(this, this);
 
@@ -232,48 +168,7 @@ bool Source2ModCore::Unload(char* error, size_t maxlen)
     // mapped. See the RemoveAllForPlugin() calls in PluginManager.
     pluginManager.UnloadAll();
 
-    commands::DestructCommands();
-    slotinput::Shutdown();
-    events::DestructEvents();
-    // None of the hooked game functions is on the stack here, so these come
-    // out synchronously like the rest.
-    gamehooks::gameHooksManager.Shutdown();
-    dynamichooks::dynamicHooksManager.Shutdown();
-    inlinehooks::inlines.DestructListeners();
-    virtualhooks::virtuals.DestructListeners();
-    scripts::scriptsManager.Shutdown();
-    // Before the scheduler: it kills its poll timer there.
-    configs::configsManager.Shutdown();
-    // Only Source2Mod's own are left by now.
-    scheduler::Shutdown();
-    // After the scheduler: a next-frame close still holding a script runtime
-    // drops it there, and the runtimes have to go before the VM.
-    sourcepawn::Shutdown();
-    // Plugins and scripts are gone; the host game system leaves the engine.
-    gamesystems::gameSystemsManager.Shutdown();
-    // Takes the engine-level change callback back out with it.
-    convars::convarsManager.Shutdown();
-    http::httpManager.Shutdown();
-    websockets::webSocketsManager.Shutdown();
-    // Joins the IO thread: after HTTP and the WebSockets, whose connections run on it.
-    net::Shutdown();
-    // Takes the Steam ticket callback back out.
-    permissions::permissionsManager.Shutdown();
-    // Its last writes go out through the SQL layer, so before that shuts down.
-    cookies::cookiesManager.Shutdown();
-    // Joins the worker threads. They run code from this library, so leaving
-    // one running is a crash the moment Metamod unmaps it.
-    mysql::mysqlManager.Shutdown();
-    maps::mapsManager.Shutdown();
-    geoip::geoIpManager.Shutdown();
-
-    if (CGameEntitySystem* pEntitySystem = pluginApi.GetEntitySystem())
-        pEntitySystem->RemoveListenerEntity(&virtualhooks::entityListener);
-
-    ConVar_Unregister();
-
-    // Last: a crash anywhere in the teardown above is still worth a dump.
-    crashhandler::Shutdown();
+    appsystem::ShutdownAll();
 
     // A refused late load returned before log::Init(), and Metamod still calls
     // Unload() on a plugin whose Load() failed: no logger to write to then.
@@ -306,8 +201,7 @@ void Source2ModCore::OnPluginUnload(PluginId id)
 void Source2ModCore::OnLevelInit(char const* pMapName, char const* pMapEntities, char const* pOldLevel,
                               char const* pLandmarkName, bool loadGame, bool background)
 {
-    scripts::scriptsManager.OnLevelInit();
-    maps::mapsManager.OnLevelInit(pMapName);
+    appsystem::LevelInit(pMapName);
 
     pluginManager.OnLevelInit(pMapName, pMapEntities, pOldLevel, pLandmarkName, loadGame, background);
 }
@@ -338,18 +232,9 @@ void Source2ModCore::OnLevelShutdown()
 {
     pluginManager.OnLevelShutdown();
 
-    // The layouts these point at do not survive the level change.
-    customhud::customHudManager.Clear();
-
-    // Neither do the sounds that were playing.
-    sounds::soundsManager.Clear();
-
-    // Nor the entities whose visibility was being managed.
-    transmit::transmitManager.Clear();
-
-    // Nor the scripts' entities; the persistent ones come back on the
-    // next map.
-    scripts::scriptsManager.OnLevelShutdown();
+    // Layouts, playing sounds, managed visibility and the scripts' entities do
+    // not survive the level change; persistent scripts come back on the next map.
+    appsystem::LevelShutdown();
 }
 
 const char* Source2ModCore::GetAuthor() { return PLUGIN_AUTHOR; }

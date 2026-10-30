@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 #include "source2mod/ISource2ModSQL.h"
 
 #ifdef WIN32
@@ -348,9 +349,12 @@ namespace mysql {
         OwnedConnectionInfo m_Info;
     };
 
-    class MySQLManager final : public ISource2ModSQL
+    class MySQLManager final : public ISource2ModSQL, public appsystem::ISource2ModAppSystem
     {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::MySQL; }
+        void OnPostSimulate() override { RunFrame(); }
+
         ISource2ModSQLConnection* CreateConnection(PluginId owner, Source2ModSQLConnectionInfo info) override;
         ISource2ModSQLServerless* CreateServerless(PluginId owner, Source2ModSQLConnectionInfo info) override;
         bool GetNamedConnection(const char* name, Source2ModSQLConnectionInfo& info) override;
@@ -366,11 +370,11 @@ namespace mysql {
         /// in the air. Has to run while its library is still mapped: the
         /// worker threads are running code from it, and every pending callback
         /// is a std::function holding more of it.
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
         /// Same for whatever is left, Source2Mod's own included. The worker
         /// threads would otherwise outlive Source2Mod library itself.
-        void Shutdown();
+        void Shutdown() override;
 
         /// Hands one query to the shared worker. Takes ownership of @p op.
         void QueueServerless(ServerlessOp *op);

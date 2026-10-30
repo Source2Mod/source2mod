@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #pragma once
+#include "appsystem.h"
 
 #include <engine2/isource2server.h>
 #include <engine2/ivengineserver2.h>
@@ -47,8 +48,10 @@
 #include <vector>
 
 namespace entities {
-    class EntitiesManager : public ISource2ModEntities {
+    class EntitiesManager : public ISource2ModEntities, public appsystem::ISource2ModAppSystem {
     public:
+        appsystem::SystemId GetSystemId() const override { return appsystem::SystemId::Entities; }
+
         CCSGameRules* GetGameRules() override;
         CBaseEntity* FindPickerEntity(CBasePlayerController* pPlayer, CCSGameRules* pGameRules = nullptr) override;
         CBaseEntity* FindEntityByClassname(CEntityInstance* pStart, const char* name) override;
@@ -76,7 +79,7 @@ namespace entities {
         void AddEntityOutputListener(PluginId owner, IEntityOutputListener* pListener, const char* pszDesignerName, const char* pszOutput, CEntityInstance* pEntity);
         void RemoveEntityOutputListener(IEntityOutputListener* pListener) override;
 
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
 
         // From the core's own entity listener and FireOutputInternal.
         void NotifyCreated(CEntityInstance* pEntity);
