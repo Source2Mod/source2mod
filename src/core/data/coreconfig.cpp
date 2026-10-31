@@ -88,6 +88,7 @@ namespace coreconfig
         ConfigHotReloadEnabled = data.value("ConfigHotReloadEnabled", ConfigHotReloadEnabled);
         UnlockConCommands = data.value("UnlockConCommands", UnlockConCommands);
         UnlockConVars = data.value("UnlockConVars", UnlockConVars);
+        FollowCS2ServerGuidelines = data.value("FollowCS2ServerGuidelines", FollowCS2ServerGuidelines);
         CrashHandlerEnabled = data.value("CrashHandlerEnabled", CrashHandlerEnabled);
         CrashDiscordWebhook = data.value("CrashDiscordWebhook", CrashDiscordWebhook);
         HttpFallback = data.value("HttpFallback", HttpFallback);

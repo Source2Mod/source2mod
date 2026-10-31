@@ -27,6 +27,7 @@
 #include "core/game/translations.h"
 #include "core/game/transmit.h"
 #include "core/runtime/utils.h"
+#include "core/game/voice.h"
 #include "core/net/websockets.h"
 #include "sourcepawn/natives.h"
 
@@ -254,6 +255,7 @@ public:
     ISource2ModFunction* FromSymbol(ISource2ModModule* module, const char* symbol, const FunctionTypes& types) override { return functions::functionsManager.FromSymbol(m_owner, static_cast<decltype(module)&&>(module), static_cast<decltype(symbol)&&>(symbol), static_cast<decltype(types)&&>(types)); }
     ISource2ModFunction* FromVirtualTable(ISource2ModModule* module, const char* className, int index, const FunctionTypes& types, const char* baseName) override { return functions::functionsManager.FromVirtualTable(m_owner, static_cast<decltype(module)&&>(module), static_cast<decltype(className)&&>(className), static_cast<decltype(index)&&>(index), static_cast<decltype(types)&&>(types), static_cast<decltype(baseName)&&>(baseName)); }
     ISource2ModFunction* FromVirtual(int index, const FunctionTypes& types) override { return functions::functionsManager.FromVirtual(m_owner, static_cast<decltype(index)&&>(index), static_cast<decltype(types)&&>(types)); }
+    ISource2ModFunction* FromDatamap(const char* className, const char* functionName, const FunctionTypes& types) override { return functions::functionsManager.FromDatamap(m_owner, static_cast<decltype(className)&&>(className), static_cast<decltype(functionName)&&>(functionName), static_cast<decltype(types)&&>(types)); }
 
 private:
     PluginId m_owner;
@@ -639,6 +641,21 @@ private:
     PluginId m_owner;
 };
 
+class VoiceForPlugin final : public ISource2ModVoice
+{
+public:
+    explicit VoiceForPlugin(PluginId owner) : m_owner(owner) {}
+
+    void SetVoiceFlags(CPlayerSlot slot, int flags) override { return voice::voiceManager.SetVoiceFlags(m_owner, static_cast<decltype(slot)&&>(slot), static_cast<decltype(flags)&&>(flags)); }
+    int GetVoiceFlags(CPlayerSlot slot) override { return voice::voiceManager.GetVoiceFlags(static_cast<decltype(slot)&&>(slot)); }
+    void SetListenOverride(CPlayerSlot receiver, CPlayerSlot sender, Source2ModListen listen) override { return voice::voiceManager.SetListenOverride(m_owner, static_cast<decltype(receiver)&&>(receiver), static_cast<decltype(sender)&&>(sender), static_cast<decltype(listen)&&>(listen)); }
+    Source2ModListen GetListenOverride(CPlayerSlot receiver, CPlayerSlot sender) override { return voice::voiceManager.GetListenOverride(static_cast<decltype(receiver)&&>(receiver), static_cast<decltype(sender)&&>(sender)); }
+    bool IsSelfMuted(CPlayerSlot receiver, CPlayerSlot sender) override { return voice::voiceManager.IsSelfMuted(static_cast<decltype(receiver)&&>(receiver), static_cast<decltype(sender)&&>(sender)); }
+
+private:
+    PluginId m_owner;
+};
+
 class WebSocketsForPlugin final : public ISource2ModWebSockets
 {
 public:
@@ -679,6 +696,7 @@ void* Create(const char* iface, PluginId owner)
     if (!strcmp(iface, SOURCE2MOD_TRANSLATIONS_INTERFACE)) return static_cast<ISource2ModTranslations*>(new TranslationsForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_TRANSMIT_INTERFACE)) return static_cast<ISource2ModTransmit*>(new TransmitForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_UTILS_INTERFACE)) return static_cast<ISource2ModUtils*>(new UtilsForPlugin(owner));
+    if (!strcmp(iface, SOURCE2MOD_VOICE_INTERFACE)) return static_cast<ISource2ModVoice*>(new VoiceForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_WEBSOCKETS_INTERFACE)) return static_cast<ISource2ModWebSockets*>(new WebSocketsForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_NATIVES_INTERFACE)) return sourcepawn::CreateNativesForPlugin(owner);
     return nullptr;

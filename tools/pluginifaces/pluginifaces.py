@@ -44,6 +44,7 @@ IFACES = [
     ("Translations", "TRANSLATIONS", "translations::translationsManager", "core/game/translations"),
     ("Transmit", "TRANSMIT", "transmit::transmitManager", "core/game/transmit"),
     ("Utils", "UTILS", "utils::utilsManager", "core/runtime/utils"),
+    ("Voice", "VOICE", "voice::voiceManager", "core/game/voice"),
     ("WebSockets", "WEBSOCKETS", "websockets::webSocketsManager", "core/net/websockets"),
 ]
 # Lives in a .cpp: its instance is generated into an include of that file.

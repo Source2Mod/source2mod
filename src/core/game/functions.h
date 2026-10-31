@@ -100,6 +100,10 @@ namespace functions
         ISource2ModFunction* FromVirtualTable(PluginId owner, ISource2ModModule* module, const char* className, int index,
                                               const FunctionTypes& types, const char* baseName = "");
         ISource2ModFunction* FromVirtual(int index, const FunctionTypes& types) override { return FromVirtual(PluginId(0), index, types); }
+        ISource2ModFunction* FromDatamap(const char* className, const char* functionName, const FunctionTypes& types) override { return FromDatamap(PluginId(0), className, functionName, types); }
+        ISource2ModFunction* FromDatamap(PluginId owner, const char* className, const char* functionName, const FunctionTypes& types);
+        /// The address of a think, touch or use function by name; null when the class or the name is unknown.
+        static void* FindDatamapFunction(const char* className, const char* functionName);
         ISource2ModFunction* FromVirtual(PluginId owner, int index, const FunctionTypes& types);
 
         /// A signature in a module, optionally only in one section; 0 when it does not match.

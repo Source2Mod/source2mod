@@ -72,11 +72,13 @@ namespace appsystem
             SystemId::Unlock,
             SystemId::InlineHooks,
             SystemId::VirtualHooks,
+            SystemId::Voice,
         };
 
         // Not the reverse of the above: what matters here is who still needs whom
         // while going down, and plugins are gone by the time this runs.
         constexpr SystemId kShutdownOrder[] = {
+            SystemId::Voice,
             SystemId::Commands,
             SystemId::SlotInput,
             SystemId::Events,
@@ -123,6 +125,7 @@ namespace appsystem
         // one firing below would run plugin code on what is already taken away.
         // SourcePawn last.
         constexpr SystemId kPluginRemovalOrder[] = {
+            SystemId::Voice,
             SystemId::PluginKHook, SystemId::CrashHandler, SystemId::Events, SystemId::Commands, SystemId::Configs, SystemId::CustomHud, SystemId::ConVars,
             SystemId::NetworkMessages, SystemId::Sounds, SystemId::Transmit, SystemId::GameSystems,
             SystemId::Scripts, SystemId::Scheduler, SystemId::HTTP, SystemId::WebSockets, SystemId::MySQL,
@@ -136,6 +139,7 @@ namespace appsystem
         // frame: a signal handler someone replaced goes back regardless. Menus
         // before the slot keys: the key mask of the page now on screen.
         constexpr SystemId kEventOrder[] = {
+            SystemId::Voice,
             SystemId::HTTP, SystemId::CrashHandler, SystemId::Scheduler, SystemId::CustomHud, SystemId::Sounds,
             SystemId::Transmit, SystemId::Menus, SystemId::SlotInput, SystemId::Scripts, SystemId::Maps,
             SystemId::Permissions, SystemId::Cookies, SystemId::Clients, SystemId::Net, SystemId::DynamicHooks,

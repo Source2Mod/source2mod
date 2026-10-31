@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "core/hooks/virtualhooks.h"
+#include "core/game/voice.h"
 
 #include "core/appsystem/appsystem.h"
 #include "core/game/clients.h"
@@ -668,6 +669,7 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::ClientCommand");
 
+        voice::voiceManager.OnClientCommand(slot, args);
         slotinput::Eject();
 
         if (slot != -1 && !V_strncmp(args.Arg(0), "jointeam", 8))

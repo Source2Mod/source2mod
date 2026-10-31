@@ -246,6 +246,13 @@ namespace sourcepawn
             return addr ? NewFunction(ctx, reinterpret_cast<void*>(addr), nullptr, -1, params[3]) : 0;
         }
 
+        // FromDatamap(const char[] className, const char[] functionName, Source2ModType returnType)
+        cell_t N_FnFromDatamap(IPluginContext* ctx, const cell_t* params)
+        {
+            void* addr = functions::FunctionsManager::FindDatamapFunction(LocalString(ctx, params[1]), LocalString(ctx, params[2]));
+            return addr ? NewFunction(ctx, addr, nullptr, -1, params[3]) : 0;
+        }
+
         // FromVirtual(int vtableIndex, Source2ModType returnType)
         cell_t N_FnFromVirtual(IPluginContext* ctx, const cell_t* params)
         {
@@ -856,6 +863,7 @@ namespace sourcepawn
             { "Source2ModFunction.FromSignature", N_FnFromSignature },
             { "Source2ModFunction.FromSignatureRelative", N_FnFromSignatureRelative },
             { "Source2ModFunction.FromSymbol", N_FnFromSymbol },
+            { "Source2ModFunction.FromDatamap", N_FnFromDatamap },
             { "Source2ModFunction.FromVirtual", N_FnFromVirtual },
             { "Source2ModFunction.FromVirtualTable", N_FnFromVirtualTable },
             { "Source2ModFunction.FromAddress", N_FnFromAddress },

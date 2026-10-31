@@ -100,6 +100,7 @@ namespace sourcepawn
     const sp_nativeinfo_t* GetGeoIPNatives();         // natives_geoip.cpp
     const sp_nativeinfo_t* GetHttpNatives();          // natives_http.cpp
     const sp_nativeinfo_t* GetJsonNatives();          // natives_json.cpp
+    const sp_nativeinfo_t* GetVoiceNatives();         // natives_voice.cpp
     const sp_nativeinfo_t* GetMapNatives();           // natives_maps.cpp
     const sp_nativeinfo_t* GetMathNatives();          // natives_math.cpp
     const sp_nativeinfo_t* GetMenuNatives();          // natives_menus.cpp

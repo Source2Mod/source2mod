@@ -49,6 +49,7 @@
  * stale one reads as gone instead of reading freed memory.
  */
 #include "natives.h"
+#include "core/data/coreconfig.h"
 #include "core/runtime/shared.h"
 #include "handles.h"
 #include "scriptplugin.h"
@@ -567,6 +568,17 @@ namespace sourcepawn
         {
             Access a;
             return Lookup(ctx, params, a, Kind::Int, "an integer") && Not64(ctx, a, "GetInt64") ? ReadInt(a.addr, a.field->size, a.field->isSigned) : 0;
+        }
+
+        // Source2ModSchema.Set*(object, class, field, ...) under "FollowCS2ServerGuidelines".
+        template <cell_t (*SET)(IPluginContext*, const cell_t*)>
+        cell_t Guarded(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* cls = LocalString(ctx, params[2]);
+            const char* name = LocalString(ctx, params[3]);
+            if (schema::IsGuidelineField(name) && coreconfig::coreConfig.FollowCS2ServerGuidelines)
+                return ctx->ThrowNativeError("Cannot set %s::%s with \"FollowCS2ServerGuidelines\" enabled", cls, name);
+            return SET(ctx, params);
         }
 
         cell_t N_SetInt(IPluginContext* ctx, const cell_t* params)
@@ -2241,35 +2253,35 @@ namespace sourcepawn
         const sp_nativeinfo_t g_entityNatives[] = {
             // source2mod/schema.inc
             { "Source2ModSchema.GetInt", N_GetInt },
-            { "Source2ModSchema.SetInt", N_SetInt },
+            { "Source2ModSchema.SetInt", Guarded<N_SetInt> },
             { "Source2ModSchema.GetInt64", N_GetInt64 },
-            { "Source2ModSchema.SetInt64", N_SetInt64 },
+            { "Source2ModSchema.SetInt64", Guarded<N_SetInt64> },
             { "Source2ModSchema.GetArraySize", N_GetArraySize },
             { "Source2ModSchema.GetArrayInt", N_GetArrayInt },
-            { "Source2ModSchema.SetArrayInt", N_SetArrayInt },
+            { "Source2ModSchema.SetArrayInt", Guarded<N_SetArrayInt> },
             { "Source2ModSchema.GetArrayInt64", N_GetArrayInt64 },
-            { "Source2ModSchema.SetArrayInt64", N_SetArrayInt64 },
+            { "Source2ModSchema.SetArrayInt64", Guarded<N_SetArrayInt64> },
             { "Source2ModSchema.GetArrayFloat", N_GetArrayFloat },
-            { "Source2ModSchema.SetArrayFloat", N_SetArrayFloat },
+            { "Source2ModSchema.SetArrayFloat", Guarded<N_SetArrayFloat> },
             { "Source2ModSchema.GetArrayVector", N_GetArrayVector },
-            { "Source2ModSchema.SetArrayVector", N_SetArrayVector },
+            { "Source2ModSchema.SetArrayVector", Guarded<N_SetArrayVector> },
             { "Source2ModSchema.GetArrayHandle", N_GetArrayHandle },
-            { "Source2ModSchema.SetArrayHandle", N_SetArrayHandle },
+            { "Source2ModSchema.SetArrayHandle", Guarded<N_SetArrayHandle> },
             { "Source2ModSchema.GetArrayString", N_GetArrayString },
             { "Source2ModSchema.GetFloat", N_GetFloat },
-            { "Source2ModSchema.SetFloat", N_SetFloat },
+            { "Source2ModSchema.SetFloat", Guarded<N_SetFloat> },
             { "Source2ModSchema.GetBool", N_GetBool },
-            { "Source2ModSchema.SetBool", N_SetBool },
+            { "Source2ModSchema.SetBool", Guarded<N_SetBool> },
             { "Source2ModSchema.GetHandle", N_GetHandle },
-            { "Source2ModSchema.SetHandle", N_SetHandle },
+            { "Source2ModSchema.SetHandle", Guarded<N_SetHandle> },
             { "Source2ModSchema.GetEntityPointer", N_GetEntityPointer },
             { "Source2ModSchema.GetObject", N_GetObject },
             { "Source2ModSchema.GetVector", N_GetVector },
-            { "Source2ModSchema.SetVector", N_SetVector },
+            { "Source2ModSchema.SetVector", Guarded<N_SetVector> },
             { "Source2ModSchema.GetColor", N_GetColor },
-            { "Source2ModSchema.SetColor", N_SetColor },
+            { "Source2ModSchema.SetColor", Guarded<N_SetColor> },
             { "Source2ModSchema.GetString", N_GetString },
-            { "Source2ModSchema.SetString", N_SetString },
+            { "Source2ModSchema.SetString", Guarded<N_SetString> },
             { "Source2ModSchema.GetOffset", N_GetOffset },
             { "Source2ModSchema.StateChanged", N_StateChanged },
             { "Source2ModSchema.GetIntAt", N_GetIntAt },

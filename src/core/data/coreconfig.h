@@ -62,6 +62,11 @@ namespace coreconfig
         bool UnlockConCommands = true;
         bool UnlockConVars = true;
 
+        /// Refuses what is known to get a server's GSLTs banned: setting the
+        /// inventory, rank and Valve DS fields, giving knife skins. No guarantee
+        /// against a ban. Off at your own risk.
+        bool FollowCS2ServerGuidelines = true;
+
         /// Breakpad crash handler (Linux only): minidumps, local symbolization
         /// and, when the webhook is set, a report posted to Discord.
         bool CrashHandlerEnabled = true;

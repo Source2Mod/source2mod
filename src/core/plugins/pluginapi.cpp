@@ -40,7 +40,9 @@
 #include "core/game/targeting.h"
 #include "core/game/functions.h"
 #include "core/plugins/pluginapi.h"
+#include "core/data/coreconfig.h"
 #include "core/plugins/pluginifaces.h"
+#include "core/game/voice.h"
 
 #include "core/game/addresses.h"
 #include "core/game/commands.h"
@@ -333,6 +335,7 @@ namespace
             { SOURCE2MOD_HTTP_INTERFACE, &http::httpManager },
             { SOURCE2MOD_JSON_INTERFACE, &json::jsonManager },
             { SOURCE2MOD_MAPS_INTERFACE, &maps::mapsManager },
+            { SOURCE2MOD_VOICE_INTERFACE, static_cast<ISource2ModVoice*>(&voice::voiceManager) },
             { SOURCE2MOD_MODULES_INTERFACE, &modules::modulesManager },
             { SOURCE2MOD_MENUS_INTERFACE, &menus::menuManager },
             { SOURCE2MOD_SQL_INTERFACE, &mysql::mysqlManager },
@@ -766,4 +769,9 @@ size_t PluginApi::Format(char* buffer, size_t maxlength, const char* format, ...
 size_t PluginApi::FormatArgs(char* buffer, size_t maxlength, const char* format, va_list ap)
 {
     return g_SMAPI->FormatArgs(buffer, maxlength, format, ap);
+}
+
+bool PluginApi::FollowsServerGuidelines()
+{
+    return coreconfig::coreConfig.FollowCS2ServerGuidelines;
 }

@@ -43,9 +43,12 @@
 #include "core/hooks/dynamichooks.h"
 #include "core/data/gameconfig.h"
 #include "core/game/module.h"
+#include "core/plugins/pluginapi.h"
 #include "core/runtime/shared.h"
 #include "utils/log.h"
 
+#include <entity2/entityclass.h>
+#include <entity2/entitysystem.h>
 #include <khook.hpp>
 
 #include <algorithm>
@@ -420,6 +423,38 @@ namespace functions
             return nullptr;
         const uintptr_t vtable = (baseName && *baseName ? module->GetVirtualTableByBase(className, baseName) : module->GetVirtualTableByName(className)).GetAddr();
         return vtable ? CreateWith(*this, owner, nullptr, reinterpret_cast<void**>(vtable), index, types) : nullptr;
+    }
+
+    void* FunctionsManager::FindDatamapFunction(const char* className, const char* functionName)
+    {
+        CGameEntitySystem* entitySystem = pluginApi.GetEntitySystem();
+        if (!entitySystem || !className || !functionName)
+            return nullptr;
+
+        const auto index = entitySystem->m_entClassesByCPPClassname.Find(className);
+        if (!entitySystem->m_entClassesByCPPClassname.IsValidIndex(index))
+            return nullptr;
+
+        CEntityClass* entityClass = entitySystem->m_entClassesByCPPClassname[index];
+        if (!entityClass->m_NameToThinkFunc)
+            return nullptr;
+
+        // On Linux a member function pointer is the code address and an adjustment;
+        // odd means a virtual, which has no address of its own.
+        const BASEPTR function = entityClass->m_NameToThinkFunc(functionName);
+        uintptr_t code = 0;
+        std::memcpy(&code, &function, sizeof(code));
+#if !defined(_WIN32)
+        if (code & 1)
+            return nullptr;
+#endif
+        return reinterpret_cast<void*>(code);
+    }
+
+    ISource2ModFunction* FunctionsManager::FromDatamap(PluginId owner, const char* className, const char* functionName, const FunctionTypes& types)
+    {
+        void* address = FindDatamapFunction(className, functionName);
+        return address ? CreateWith(*this, owner, address, nullptr, -1, types) : nullptr;
     }
 
     ISource2ModFunction* FunctionsManager::FromVirtual(PluginId owner, int index, const FunctionTypes& types)

@@ -120,6 +120,8 @@ public:
     size_t Format(char *buffer, size_t maxlength, const char *format, ...) override;
     size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap) override;
 
+    bool FollowsServerGuidelines() override;
+
 private:
     PluginId m_owner;
 };

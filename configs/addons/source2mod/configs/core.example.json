@@ -6,6 +6,7 @@
   "ConfigHotReloadEnabled": true,
   "UnlockConCommands": true,
   "UnlockConVars": true,
+  "FollowCS2ServerGuidelines": true,
   "CrashHandlerEnabled": true,
   "CrashDiscordWebhook": "",
   "HttpFallback": true,
