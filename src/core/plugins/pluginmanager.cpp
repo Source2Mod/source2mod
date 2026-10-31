@@ -380,14 +380,7 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, ISource2ModPl
     if (stored->script)
         stored->script->SetId(stored->id);
     stored->coreApi = std::make_unique<PluginApi>(stored->id);
-    ISource2ModAPI* handedApi = stored->coreApi.get();
-    if (stored->apiVersion == 8)
-    {
-        // The layout it was built against: see the header.
-        stored->coreApi008 = std::make_unique<compat::PluginApi008>(stored->coreApi.get());
-        handedApi = reinterpret_cast<ISource2ModAPI*>(stored->coreApi008.get());
-    }
-    const bool loaded = plugin->Load(handedApi, err, sizeof(err), late);
+    const bool loaded = plugin->Load(stored->coreApi.get(), err, sizeof(err), late);
     PluginApi::SetLoadingPlugin(nullptr);
 
     if (!loaded)

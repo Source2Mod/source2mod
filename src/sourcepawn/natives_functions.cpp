@@ -273,13 +273,6 @@ namespace sourcepawn
             return vtable ? NewFunction(ctx, nullptr, vtable, params[3], params[4]) : 0;
         }
 
-        // FromAddress(Source2ModAddress address, Source2ModType returnType)
-        cell_t N_FnFromAddress(IPluginContext* ctx, const cell_t* params)
-        {
-            void* addr = AddressOf(ctx, params[1]);
-            return addr ? NewFunction(ctx, addr, nullptr, -1, params[2]) : 0;
-        }
-
         // FromPointer(address, returnType)
         cell_t N_FnFromPointer(IPluginContext* ctx, const cell_t* params)
         {
@@ -880,7 +873,6 @@ namespace sourcepawn
             { "Source2ModFunction.FromDatamap", N_FnFromDatamap },
             { "Source2ModFunction.FromVirtual", N_FnFromVirtual },
             { "Source2ModFunction.FromVirtualTable", N_FnFromVirtualTable },
-            { "Source2ModFunction.FromAddress", N_FnFromAddress },
             { "Source2ModFunction.FromPointer", N_FnFromPointer },
             { "Source2ModFunction.Address.get", N_FnAddress },
             { "Source2ModFunction.AddParam", N_FnAddParam },

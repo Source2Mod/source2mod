@@ -74,7 +74,6 @@ public:
     void* Source2ModFactory(const char *iface, int *ret, PluginId *id) override;
     void* MetaFactory(const char *iface, int *ret, PluginId *id) override;
 
-    ISource2ModAddresses* Addresses() override;
     ISource2ModCommands* Commands() override;
     ISource2ModConVars* ConVars() override;
     ISource2ModCustomHud* CustomHud() override;
@@ -148,7 +147,7 @@ private:
 
 extern PluginApi pluginApi;
 
-/// Points the SDK's source2mod globals (g_pSource2ModAPI, g_pSource2ModAddresses, ...)
+/// Points the SDK's source2mod globals (g_pSource2ModAPI, g_pSource2ModClients, ...)
 /// at the core's own interfaces. Call once the game config exists: the
 /// game-config interface is the only one that is not a static object.
 void FillSource2ModGlobals();

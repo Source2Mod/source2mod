@@ -79,7 +79,6 @@ namespace sourcepawn
 
     // The tables GetCoreNatives() is made of: one per file, named after the
     // core/ system it is the SourcePawn side of.
-    const sp_nativeinfo_t* GetAddressNatives();       // natives_addresses.cpp
     const sp_nativeinfo_t* GetAdtNatives();           // natives_adt.cpp
     const sp_nativeinfo_t* GetApiNatives();           // natives_api.cpp
     const sp_nativeinfo_t* GetClientNatives();        // natives_clients.cpp
@@ -195,7 +194,6 @@ namespace sourcepawn
     cell_t LendCommandContext(const ::Source2ModCommandContext* context, PluginId owner);
 
     /// The function behind a Source2ModAddress (addresses.inc); nullptr when not resolved, and a script error for a bad value.
-    void* AddressOf(SourcePawn::IPluginContext* ctx, cell_t address);
 
     /// A TraceResult handle (trace.inc) holding a copy of `trace`, owned by the caller (natives_world.cpp).
     cell_t NewTraceResult(SourcePawn::IPluginContext* ctx, const CGameTrace* trace);

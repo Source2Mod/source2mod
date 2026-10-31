@@ -35,7 +35,6 @@
  */
 #pragma once
 
-#include "core/plugins/pluginapi008.h"
 #include "core/plugins/pluginapi.h"
 #include <engine2/inetworkserverservice.h>
 #include <engine2/isource2server.h>
@@ -78,7 +77,6 @@ struct Source2ModPlugin
     ISource2ModPlugin* api;
     // What its Load() got: the API that knows it is this plugin's.
     std::unique_ptr<PluginApi> coreApi;
-    std::unique_ptr<compat::PluginApi008> coreApi008;
     // What the plugin was built against (SOURCE2MOD_PLAPI_VERSION then): the
     // engine callbacks came with 2, so a listener from an older plugin is
     // not asked for them.

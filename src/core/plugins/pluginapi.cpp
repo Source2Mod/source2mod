@@ -81,7 +81,6 @@
 #include "sourcepawn/natives.h"
 #include "utils/log.h"
 
-#include <source2mod/ISource2ModAddresses.h>
 #include <source2mod/ISource2ModCommands.h>
 #include <source2mod/ISource2ModConVars.h>
 #include <source2mod/ISource2ModCustomHud.h>
@@ -318,7 +317,6 @@ namespace
     const CurrentInterface* CurrentInterfaces(size_t& count)
     {
         static const CurrentInterface s_current[] = {
-            { SOURCE2MOD_ADDRESSES_INTERFACE, &addresses::source2modAddresses },
             { SOURCE2MOD_COMMANDS_INTERFACE, &commands::commandsManager },
             { SOURCE2MOD_CONFIGS_INTERFACE, &configs::configsManager },
             { SOURCE2MOD_CONVARS_INTERFACE, &convars::convarsManager },
@@ -526,12 +524,6 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
 void* PluginApi::MetaFactory(const char* iface, int* ret, PluginId* id)
 {
     return g_SMAPI->MetaFactory(iface, ret, id);
-}
-
-ISource2ModAddresses* PluginApi::Addresses()
-{
-    ISource2ModAddresses* shared = &addresses::source2modAddresses;
-    return m_owner ? static_cast<ISource2ModAddresses*>(pluginifaces::ForPlugin(SOURCE2MOD_ADDRESSES_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModCommands* PluginApi::Commands()

@@ -495,7 +495,7 @@ namespace gamehooks
         MovementContext MakeMovement(MoveServices* s, CMoveData* mv) { return MovementContext{ s, mv, false }; }
     }
 
-    // ---- the table: prototypes as ISource2ModAddresses.h has them -------------
+    // ---- the table: prototypes as the game has them -------------
 
     using TakeDamageHook = MemberGameHook<TakeDamageContext, std::int64_t, CBaseEntity, CTakeDamageInfo*, CTakeDamageResult*>;
     using CanAcquireHook = MemberGameHook<CanAcquireContext, AcquireResult, CCSPlayer_ItemServices, CEconItemView*, AcquireMethod, void*>;

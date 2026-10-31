@@ -41,7 +41,6 @@
 #include <entity2/variant.h>
 #include <platform.h>
 #include <playerslot.h>
-#include <source2mod/ISource2ModAddresses.h>
 
 /// Resolves a gamedata signature by its entry name: the pattern and the module
 /// (the entry's "library") both come from the game config.
@@ -90,149 +89,42 @@ class IGameEventListener2;
 class IGameEventManager2;
 class IEntityFindFilter;
 
+/// What the core calls itself, typed. Everything else in the gamedata is reached by
+/// name through ISource2ModFunctions.
+using CBaseEntity_CreateEntityByName_t = CBaseEntity* (FASTCALL*)(const char*, int);
+using CEntityInstance_AcceptInput_t = bool (FASTCALL*)(CEntityInstance*, const char*, CEntityInstance*, CEntityInstance*, const variant_t&);
+using CEntitySystem_AddEntityIOEvent_t = void (FASTCALL*)(CEntitySystem*, CEntityInstance*, const char*, CEntityInstance*, CEntityInstance*, const variant_t&, float, void*, void*);
+using CGameEntitySystem_FindEntityByClassName_t = CBaseEntity* (FASTCALL*)(CEntitySystem*, CEntityInstance*, const char*);
+using CGameEntitySystem_FindEntityByName_t = CBaseEntity* (FASTCALL*)(CEntitySystem*, CEntityInstance*, const char*, CEntityInstance*, CEntityInstance*, CEntityInstance*, IEntityFindFilter*);
+
 namespace addresses
 {
+    /// Scans for the signatures the core cannot work without; a miss stops the core
+    /// from starting instead of failing at some later call.
     bool Initialize();
 
     /// Scans the module named by a gamedata entry for its signature; null on a miss.
     DynLibUtils::CMemory FindSignature(const char* pszName);
 
-    class Addresses : public ISource2ModAddresses {
+    class Addresses
+    {
     public:
         DynLibUtils::CModule& GetOrLoadModule(void* ptr);
-    public:
-        CBaseEntity_CreateEntityByName_t CBaseEntity_CreateEntityByName() override;
-        CBaseEntity_DispatchSpawn_t CBaseEntity_DispatchSpawn() override;
-        CBaseEntity_TakeDamageOld_t CBaseEntity_TakeDamageOld() override;
-        CBaseModelEntity_SetModel_t CBaseModelEntity_SetModel() override;
-        CBasePlayerController_SetPawn_t CBasePlayerController_SetPawn() override;
-        CBasePlayerPawn_SnapViewAngles_t CBasePlayerPawn_SnapViewAngles() override;
-        CCSGameRules_TerminateRound_t CCSGameRules_TerminateRound() override;
-        CPlayer_WeaponServices_Destroy_t CPlayer_WeaponServices_Destroy() override;
-        LegacyGameEventListener_t LegacyGameEventListener() override;
-        CCSPlayerController_SwitchTeam_t CCSPlayerController_SwitchTeam() override;
-        CEntityInstance_AcceptInput_t CEntityInstance_AcceptInput() override;
-        CEntityIOOutput_FireOutputInternal_t CEntityIOOutput_FireOutputInternal() override;
-        CEntitySystem_AddEntityIOEvent_t CEntitySystem_AddEntityIOEvent() override;
-        CGameEntitySystem_FindEntityByClassName_t CGameEntitySystem_FindEntityByClassName() override;
-        CGameEntitySystem_FindEntityByName_t CGameEntitySystem_FindEntityByName() override;
-        CTakeDamageInfo_CTakeDamageInfo_t CTakeDamageInfo_CTakeDamageInfo() override;
 
-        // Ported from SwiftlyS2.
-        CEntityIdentity_AcceptInput_t CEntityIdentity_AcceptInput() override;
-        CCSPlayer_ItemServices_CanAcquire_t CCSPlayer_ItemServices_CanAcquire() override;
-        CCSPlayerPawnBase_CanMove_t CCSPlayerPawnBase_CanMove() override;
-        CCSPlayerController_ProcessUserCmd_t CCSPlayerController_ProcessUserCmd() override;
-        CBasePlayerController_OnSimulateUserCommands_t CBasePlayerController_OnSimulateUserCommands() override;
-        CCSPlayer_MovementServices_AirAccelerate_t CCSPlayer_MovementServices_AirAccelerate() override;
-        CCSPlayer_MovementServices_AirMove_t CCSPlayer_MovementServices_AirMove() override;
-        CCSPlayer_MovementServices_CanUnduck_t CCSPlayer_MovementServices_CanUnduck() override;
-        CCSPlayer_MovementServices_CategorizePosition_t CCSPlayer_MovementServices_CategorizePosition() override;
-        CCSPlayer_MovementServices_CheckFalling_t CCSPlayer_MovementServices_CheckFalling() override;
-        CCSPlayer_MovementServices_CheckParameters_t CCSPlayer_MovementServices_CheckParameters() override;
-        CCSPlayer_MovementServices_CheckVelocity_t CCSPlayer_MovementServices_CheckVelocity() override;
-        CCSPlayer_MovementServices_CheckWater_t CCSPlayer_MovementServices_CheckWater() override;
-        CCSPlayer_MovementServices_Duck_t CCSPlayer_MovementServices_Duck() override;
-        CCSPlayer_MovementServices_Friction_t CCSPlayer_MovementServices_Friction() override;
-        CCSPlayer_MovementServices_FullWalkMove_t CCSPlayer_MovementServices_FullWalkMove() override;
-        CCSPlayer_MovementServices_GroundAccelerate_t CCSPlayer_MovementServices_GroundAccelerate() override;
-        CCSPlayer_MovementServices_LadderMove_t CCSPlayer_MovementServices_LadderMove() override;
-        CCSPlayer_MovementServices_MoveInit_t CCSPlayer_MovementServices_MoveInit() override;
-        CCSPlayer_MovementServices_PlayerMove_t CCSPlayer_MovementServices_PlayerMove() override;
-        CCSPlayer_MovementServices_ProcessMovement_t CCSPlayer_MovementServices_ProcessMovement() override;
-        CCSPlayer_MovementServices_SetupMove_t CCSPlayer_MovementServices_SetupMove() override;
-        CCSPlayer_MovementServices_TryPlayerMove_t CCSPlayer_MovementServices_TryPlayerMove() override;
-        CCSPlayer_MovementServices_WalkMove_t CCSPlayer_MovementServices_WalkMove() override;
-        CCSPlayer_MovementServices_WaterMove_t CCSPlayer_MovementServices_WaterMove() override;
-        CCSPlayerLegacyJump_OnJump_t CCSPlayerLegacyJump_OnJump() override;
-        CCSPlayerModernJump_OnJump_t CCSPlayerModernJump_OnJump() override;
-        CCSPlayerLegacyJump_CheckJumpButton_t CCSPlayerLegacyJump_CheckJumpButton() override;
-        CCSPlayerModernJump_CheckJumpButton_t CCSPlayerModernJump_CheckJumpButton() override;
-        CAttributeList_SetOrAddAttributeValueByName_t CAttributeList_SetOrAddAttributeValueByName() override;
-        CDecoyProjectile_EmitGrenade_t CDecoyProjectile_EmitGrenade() override;
-        CFlashbangProjectile_EmitGrenade_t CFlashbangProjectile_EmitGrenade() override;
-        CHEGrenadeProjectile_EmitGrenade_t CHEGrenadeProjectile_EmitGrenade() override;
-        CMolotovProjectile_EmitGrenade_t CMolotovProjectile_EmitGrenade() override;
-        CSmokeGrenadeProjectile_EmitGrenade_t CSmokeGrenadeProjectile_EmitGrenade() override;
-        CCSPlayerPawn_PostThink_t CCSPlayerPawn_PostThink() override;
-        UTIL_Remove_t UTIL_Remove() override;
-        DispatchParticleEffect_t DispatchParticleEffect() override;
-        GetWeaponCSDataFromKey_t GetWeaponCSDataFromKey() override;
-        CSource2Server_GetNavMeshData_t CSource2Server_GetNavMeshData() override;
-        CLoggingSystem_LogDirect_t CLoggingSystem_LogDirect() override;
-        Cmd_ExecuteCommand_t Cmd_ExecuteCommand() override;
-        CCSPlayer_ItemServices_GiveNamedItem_t CCSPlayer_ItemServices_GiveNamedItem() override;
-    public:
-        // Raw addresses. A function pointer is not portably convertible to
-        // void* and back, so what a signature scan produces is kept as the
-        // address it is; the getters below put the type on at the point of use,
-        // and KHook's Configure() takes the void* straight from GetPtr().
+        CBaseEntity_CreateEntityByName_t CBaseEntity_CreateEntityByName();
+        CEntityInstance_AcceptInput_t CEntityInstance_AcceptInput();
+        CEntitySystem_AddEntityIOEvent_t CEntitySystem_AddEntityIOEvent();
+        CGameEntitySystem_FindEntityByClassName_t CGameEntitySystem_FindEntityByClassName();
+        CGameEntitySystem_FindEntityByName_t CGameEntitySystem_FindEntityByName();
+
+        // Raw addresses: a function pointer is not portably convertible to void*
+        // and back, so a scan's result is kept as the address it is.
         DynLibUtils::CMemory CreateEntityByName;
-        DynLibUtils::CMemory DispatchSpawn;
-        DynLibUtils::CMemory TakeDamageOld;
-        DynLibUtils::CMemory SetModel;
-        DynLibUtils::CMemory SetPawn;
-        DynLibUtils::CMemory SnapViewAngles;
-        DynLibUtils::CMemory TerminateRound;
-        DynLibUtils::CMemory Destroy;
-        // Suffixed unlike its neighbours: the interface getter for this one has
-        // no class prefix (ISource2ModAddresses::LegacyGameEventListener()), so a
-        // bare member of the same name would redeclare it.
-        DynLibUtils::CMemory LegacyGameEventListenerAddr;
-        DynLibUtils::CMemory SwitchTeam;
         DynLibUtils::CMemory AcceptInput;
         DynLibUtils::CMemory FireOutputInternal;
         DynLibUtils::CMemory AddEntityIOEvent;
         DynLibUtils::CMemory FindEntityByClassName;
         DynLibUtils::CMemory FindEntityByName;
-        DynLibUtils::CMemory CTakeDamageInfo;
-
-        DynLibUtils::CMemory IdentityAcceptInput;
-        DynLibUtils::CMemory CanAcquire;
-        DynLibUtils::CMemory CanMove;
-        DynLibUtils::CMemory ProcessUserCmd;
-        DynLibUtils::CMemory OnSimulateUserCommands;
-        DynLibUtils::CMemory AirAccelerate;
-        DynLibUtils::CMemory AirMove;
-        DynLibUtils::CMemory CanUnduck;
-        DynLibUtils::CMemory CategorizePosition;
-        DynLibUtils::CMemory CheckFalling;
-        DynLibUtils::CMemory CheckParameters;
-        DynLibUtils::CMemory CheckVelocity;
-        DynLibUtils::CMemory CheckWater;
-        DynLibUtils::CMemory Duck;
-        DynLibUtils::CMemory Friction;
-        DynLibUtils::CMemory FullWalkMove;
-        DynLibUtils::CMemory GroundAccelerate;
-        DynLibUtils::CMemory LadderMove;
-        DynLibUtils::CMemory MoveInit;
-        DynLibUtils::CMemory PlayerMove;
-        DynLibUtils::CMemory ProcessMovement;
-        DynLibUtils::CMemory SetupMove;
-        DynLibUtils::CMemory TryPlayerMove;
-        DynLibUtils::CMemory WalkMove;
-        DynLibUtils::CMemory WaterMove;
-        DynLibUtils::CMemory OnJumpLegacy;
-        DynLibUtils::CMemory OnJumpModern;
-        DynLibUtils::CMemory CheckJumpButtonLegacy;
-        DynLibUtils::CMemory CheckJumpButtonModern;
-        DynLibUtils::CMemory SetOrAddAttributeValueByName;
-        DynLibUtils::CMemory EmitDecoy;
-        DynLibUtils::CMemory EmitFlashbang;
-        DynLibUtils::CMemory EmitHEGrenade;
-        DynLibUtils::CMemory EmitMolotov;
-        DynLibUtils::CMemory EmitSmoke;
-        DynLibUtils::CMemory PostThink;
-        // Suffixed like LegacyGameEventListenerAddr: these getters carry no
-        // class prefix, so a bare member would redeclare them.
-        DynLibUtils::CMemory UTIL_RemoveAddr;
-        DynLibUtils::CMemory DispatchParticleEffectAddr;
-        DynLibUtils::CMemory GetWeaponCSDataFromKeyAddr;
-        DynLibUtils::CMemory GetNavMeshData;
-        DynLibUtils::CMemory LogDirect;
-        DynLibUtils::CMemory Cmd_ExecuteCommandAddr;
-        DynLibUtils::CMemory GiveNamedItem;
-    private:
     };
 
     extern Addresses source2modAddresses;
