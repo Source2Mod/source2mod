@@ -144,6 +144,22 @@
     },
     "function": {"this": "entity", "return": "void", "params": ["vector"]}
   },
+  "CCSCustomHudLayoutState::SetDialogVariableString": {
+    "signatures": {
+      "library": "server",
+      "windows": "4C 89 4C 24 ? 53 55 56 57 41 54 41 55",
+      "linux": "55 48 89 E5 41 57 41 56 41 55 41 89 D5 41 54 41 89 F4 53 48 89 FB 48 83 EC 78 48 89 8D"
+    },
+    "function": {"this": "object", "return": "void", "params": ["int32", "int32", "pointer"]}
+  },
+  "CCSCustomHudLayoutState::SetHasClass": {
+    "signatures": {
+      "library": "server",
+      "windows": "40 53 55 41 55 41 56 41 57 48 83 EC 30",
+      "linux": "55 48 89 E5 41 57 41 56 41 55 41 89 D5 41 54 41 89 F4 53 48 89 FB 48 83 EC 68"
+    },
+    "function": {"this": "object", "return": "void", "params": ["int32", "int32", "int32"]}
+  },
   "CCSGameRules::TerminateRound": {
     "signatures": {
       "library": "server",
