@@ -1,10 +1,10 @@
 # Gamedata validation
 
-CS2 build **26144732** · Linux manifest `5491505037461703699` · Windows manifest `5751660862748360256` · 2026-10-25T18:50:00+00:00
+CS2 build **26334290** · Linux manifest `6232960523750647649` · Windows manifest `4494425425081083634` · 2026-10-31T20:58:55+00:00
 
 | | Windows | Linux |
 |---|---|---|
-| Signatures | 🟢 72 | 🟢 72 |
+| Signatures | 🟢 74 | 🟢 74 |
 | Offsets | 🟢 46 ⚪ 3 | 🟢 46 ⚪ 3 |
 
 ## Everything resolves
@@ -32,6 +32,8 @@ CS2 build **26144732** · Linux manifest `5491505037461703699` · Windows manife
 - 🟢🟢 `CBasePlayerController::SetPawn`
 - 🟢🟢 `CBasePlayerPawn::CommitSuicide` — W 387/400 · L 387/401
 - 🟢🟢 `CBasePlayerPawn::SnapViewAngles`
+- 🟢🟢 `CCSCustomHudLayoutState::SetDialogVariableString`
+- 🟢🟢 `CCSCustomHudLayoutState::SetHasClass`
 - 🟢🟢 `CCSGameRules::GoToIntermission` — W 129/130 · L 130/131
 - 🟢🟢 `CCSGameRules::TerminateRound`
 - 🟢🟢 `CCSPlayerController::ChangeTeam` — W 105/277 · L 104/279
