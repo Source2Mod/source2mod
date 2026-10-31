@@ -47,6 +47,7 @@
 
 #include <engine2/serversideclient.h>
 #include <interfaces/interfaces.h>
+#include <networksystem/inetchannel.h>
 #include <sp_callable.h>
 
 #include <string>
@@ -257,6 +258,159 @@ namespace sourcepawn
             return ToBuffer(ctx, params[2], params[3], address);
         }
 
+        // ---- the net channel (INetChannelInfo / INetChannel); none for a bot ----
+
+        INetChannel* NetChannel(const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client ? client->GetNetChannel() : nullptr;
+        }
+
+        bool ValidFlow(cell_t flow)
+        {
+            return flow == FLOW_OUTGOING || flow == FLOW_INCOMING;
+        }
+
+        // GetAvgLoss(flow) and the like
+        template <float (INetChannelInfo::*Get)(int) const>
+        cell_t N_SscFlowFloat(IPluginContext*, const cell_t* params)
+        {
+            INetChannel* channel = NetChannel(params);
+            return sp_ftoc(channel && ValidFlow(params[2]) ? (channel->*Get)(params[2]) : 0.0f);
+        }
+
+        // GetTotalPackets(flow), GetSequenceNr(flow)
+        template <int (INetChannelInfo::*Get)(int) const>
+        cell_t N_SscFlowInt(IPluginContext*, const cell_t* params)
+        {
+            INetChannel* channel = NetChannel(params);
+            return channel && ValidFlow(params[2]) ? (channel->*Get)(params[2]) : 0;
+        }
+
+        // GetTotalData(flow, int bytes[2]): low 32 bits first.
+        cell_t N_SscGetTotalData(IPluginContext* ctx, const cell_t* params)
+        {
+            cell_t* bytes = nullptr;
+            if (ctx->LocalToPhysAddr(params[3], &bytes) != SP_ERROR_NONE)
+                return 0;
+            INetChannel* channel = NetChannel(params);
+            const uint64 total = channel && ValidFlow(params[2]) ? channel->GetTotalData(params[2]) : 0;
+            bytes[0] = static_cast<cell_t>(total & 0xFFFFFFFFu);
+            bytes[1] = static_cast<cell_t>(total >> 32);
+            return 0;
+        }
+
+        template <float (INetChannelInfo::*Get)() const>
+        cell_t N_SscChannelFloat(IPluginContext*, const cell_t* params)
+        {
+            INetChannel* channel = NetChannel(params);
+            return sp_ftoc(channel ? (channel->*Get)() : 0.0f);
+        }
+
+        cell_t N_SscDataRate(IPluginContext*, const cell_t* params)
+        {
+            INetChannel* channel = NetChannel(params);
+            return channel ? channel->GetDataRate() : 0;
+        }
+
+        cell_t N_SscIsTimingOut(IPluginContext*, const cell_t* params)
+        {
+            INetChannel* channel = NetChannel(params);
+            return channel && channel->IsTimingOut();
+        }
+
+        cell_t N_SscIsOverflowed(IPluginContext*, const cell_t* params)
+        {
+            INetChannel* channel = NetChannel(params);
+            return channel && channel->IsOverflowed();
+        }
+
+        cell_t N_SscHasPendingReliableData(IPluginContext*, const cell_t* params)
+        {
+            INetChannel* channel = NetChannel(params);
+            return channel && channel->HasPendingReliableData();
+        }
+
+        // SetTimeout(seconds)
+        cell_t N_SscSetTimeout(IPluginContext*, const cell_t* params)
+        {
+            if (INetChannel* channel = NetChannel(params))
+                channel->SetTimeout(sp_ctof(params[2]));
+            return 0;
+        }
+
+        // GetRemoteFramerate(&frameTime, &stdDev, &startTimeStdDev)
+        cell_t N_SscGetRemoteFramerate(IPluginContext* ctx, const cell_t* params)
+        {
+            cell_t* out[3] = {};
+            for (int i = 0; i < 3; i++)
+            {
+                if (ctx->LocalToPhysAddr(params[i + 2], &out[i]) != SP_ERROR_NONE)
+                    return 0;
+            }
+            float values[3] = {};
+            if (INetChannel* channel = NetChannel(params))
+                channel->GetRemoteFramerate(&values[0], &values[1], &values[2]);
+            for (int i = 0; i < 3; i++)
+                *out[i] = sp_ftoc(values[i]);
+            return 0;
+        }
+
+        cell_t N_SscRateGet(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client ? client->GetRate() : 0;
+        }
+
+        cell_t N_SscRateSet(IPluginContext*, const cell_t* params)
+        {
+            if (CServerSideClient* client = ServerClient(params))
+                client->SetRate(params[2]);
+            return 0;
+        }
+
+        // SetUpdateRate(rate)
+        cell_t N_SscSetUpdateRate(IPluginContext*, const cell_t* params)
+        {
+            if (CServerSideClient* client = ServerClient(params))
+                client->SetUpdateRate(sp_ctof(params[2]));
+            return 0;
+        }
+
+        // SetUserCVar(name, value)
+        cell_t N_SscSetUserCVar(IPluginContext* ctx, const cell_t* params)
+        {
+            if (CServerSideClient* client = ServerClient(params))
+                client->SetUserCVar(LocalString(ctx, params[2]), LocalString(ctx, params[3]));
+            return 0;
+        }
+
+        cell_t N_SscDeltaTick(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client ? client->m_nDeltaTick : -1;
+        }
+
+        cell_t N_SscLoadingProgress(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client ? client->m_nLoadingProgress : 0;
+        }
+
+        cell_t N_SscFailedCommands(IPluginContext*, const cell_t* params)
+        {
+            CServerSideClient* client = ServerClient(params);
+            return client ? client->m_nFailedCommands : 0;
+        }
+
+        // The next snapshot goes out whole: not UpdateAcknowledgedFramecount, which is known to crash on Linux.
+        cell_t N_SscForceFullUpdate(IPluginContext*, const cell_t* params)
+        {
+            if (CServerSideClient* client = ServerClient(params))
+                client->m_nDeltaTick = -1;
+            return 0;
+        }
+
         // QueryConVar(name, callback, value)
         cell_t N_SscQueryConVar(IPluginContext* ctx, const cell_t* params)
         {
@@ -355,6 +509,32 @@ namespace sourcepawn
             { "CServerSideClient.GetNetworkIDString", N_SscGetNetworkIDString },
             { "CServerSideClient.GetSteamID", N_SscGetSteamID },
             { "CServerSideClient.GetAddress", N_SscGetAddress },
+            { "CServerSideClient.GetAvgLoss", N_SscFlowFloat<&INetChannelInfo::GetAvgLoss> },
+            { "CServerSideClient.GetAvgChoke", N_SscFlowFloat<&INetChannelInfo::GetAvgChoke> },
+            { "CServerSideClient.GetPeakJitter", N_SscFlowFloat<&INetChannelInfo::GetPeakJitter> },
+            { "CServerSideClient.GetAvgData", N_SscFlowFloat<&INetChannelInfo::GetAvgData> },
+            { "CServerSideClient.GetAvgPackets", N_SscFlowFloat<&INetChannelInfo::GetAvgPackets> },
+            { "CServerSideClient.GetTotalData", N_SscGetTotalData },
+            { "CServerSideClient.GetTotalPackets", N_SscFlowInt<&INetChannelInfo::GetTotalPackets> },
+            { "CServerSideClient.GetSequenceNr", N_SscFlowInt<&INetChannelInfo::GetSequenceNr> },
+            { "CServerSideClient.GetEngineLatency", N_SscChannelFloat<&INetChannelInfo::GetEngineLatency> },
+            { "CServerSideClient.GetRemoteFramerate", N_SscGetRemoteFramerate },
+            { "CServerSideClient.DataRate.get", N_SscDataRate },
+            { "CServerSideClient.IsTimingOut.get", N_SscIsTimingOut },
+            { "CServerSideClient.TimeSinceLastReceived.get", N_SscChannelFloat<&INetChannelInfo::GetTimeSinceLastReceived> },
+            { "CServerSideClient.TimeoutSeconds.get", N_SscChannelFloat<&INetChannelInfo::GetTimeoutSeconds> },
+            { "CServerSideClient.TimeUntilTimeout.get", N_SscChannelFloat<&INetChannelInfo::GetTimeUntilTimeout> },
+            { "CServerSideClient.IsOverflowed.get", N_SscIsOverflowed },
+            { "CServerSideClient.HasPendingReliableData.get", N_SscHasPendingReliableData },
+            { "CServerSideClient.SetTimeout", N_SscSetTimeout },
+            { "CServerSideClient.Rate.get", N_SscRateGet },
+            { "CServerSideClient.Rate.set", N_SscRateSet },
+            { "CServerSideClient.SetUpdateRate", N_SscSetUpdateRate },
+            { "CServerSideClient.SetUserCVar", N_SscSetUserCVar },
+            { "CServerSideClient.DeltaTick.get", N_SscDeltaTick },
+            { "CServerSideClient.LoadingProgress.get", N_SscLoadingProgress },
+            { "CServerSideClient.FailedCommands.get", N_SscFailedCommands },
+            { "CServerSideClient.ForceFullUpdate", N_SscForceFullUpdate },
             { "CServerSideClient.QueryConVar", N_SscQueryConVar },
             { "CServerSideClient.ReplicateConVar", N_SscReplicateConVar },
             { "CServerSideClient.GetIpAddress", N_SscGetIpAddress },

@@ -312,7 +312,59 @@ namespace sourcepawn
             return c && c->ArgC() > 0 && !V_stricmp(c->Arg(0), LocalString(ctx, params[2]));
         }
 
+        // ---- what the engine knows of ConCommands (ICvar) --------------------------
+
+        // ListNames(prefix, hidden) -> ArrayList of strings; the script closes it.
+        cell_t N_ListNames(IPluginContext* ctx, const cell_t* params)
+        {
+            const std::string prefix = LocalString(ctx, params[1]);
+            const bool hidden = params[0] >= 2 && params[2];
+            std::vector<std::string> names;
+            if (g_pCVar)
+            {
+                for (ConCommandRef ref = g_pCVar->FindFirstConCommand(); ref.IsValidRef(); ref = g_pCVar->FindNextConCommand(ref))
+                {
+                    const ConCommandData* data = g_pCVar->GetConCommandData(ref);
+                    if (!data || !data->GetName() || (!hidden && data->IsFlagSet(FCVAR_HIDDEN | FCVAR_DEVELOPMENTONLY)))
+                        continue;
+                    if (std::strncmp(data->GetName(), prefix.c_str(), prefix.size()) == 0)
+                        names.emplace_back(data->GetName());
+                }
+            }
+            return FillStringList(ctx, 0, names, false, 64, CallerId(ctx));
+        }
+
+        // Exists(name, hidden)
+        cell_t N_Exists(IPluginContext* ctx, const cell_t* params)
+        {
+            const bool hidden = params[0] >= 2 && params[2];
+            return g_pCVar && g_pCVar->FindConCommand(LocalString(ctx, params[1]), hidden).IsValidRef();
+        }
+
+        // GetInfo(name, help, maxlen, int flags[2])
+        cell_t N_GetInfo(IPluginContext* ctx, const cell_t* params)
+        {
+            cell_t* flags = nullptr;
+            if (ctx->LocalToPhysAddr(params[4], &flags) != SP_ERROR_NONE)
+                return 0;
+            flags[0] = flags[1] = 0;
+            ToBuffer(ctx, params[2], params[3], "");
+            if (!g_pCVar)
+                return 0;
+            const ConCommandRef ref = g_pCVar->FindConCommand(LocalString(ctx, params[1]), true);
+            const ConCommandData* data = ref.IsValidRef() ? g_pCVar->GetConCommandData(ref) : nullptr;
+            if (!data)
+                return 0;
+            ToBuffer(ctx, params[2], params[3], data->GetHelpText());
+            flags[0] = static_cast<cell_t>(data->GetFlags() & 0xFFFFFFFFu);
+            flags[1] = static_cast<cell_t>(data->GetFlags() >> 32);
+            return 1;
+        }
+
         const sp_nativeinfo_t g_commandNatives[] = {
+            { "Source2ModCommands.ListNames", N_ListNames },
+            { "Source2ModCommands.Exists", N_Exists },
+            { "Source2ModCommands.GetInfo", N_GetInfo },
             { "Source2ModCommandLine.Source2ModCommandLine", N_LineCreate },
             { "Source2ModCommandLine.ArgC", N_LineArgC },
             { "Source2ModCommandLine.Arg", N_LineArg },

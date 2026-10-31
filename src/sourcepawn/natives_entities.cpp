@@ -308,9 +308,18 @@ namespace sourcepawn
             CEntityHandle entity;
             void* raw = nullptr;
             std::vector<std::pair<std::string, std::string>> chain;   // (class, field) from the root
+            mutable uint32_t lastUsed = 0;
         };
 
         std::unordered_map<std::string, cell_t> g_refsByKey;
+        uint32_t g_refUseClock = 0;
+        size_t g_refPurgeAt = 4096;
+
+        // Raw addresses have nothing to say when they are dead, and Offset in a
+        // loop makes a new one each step from the handle table every type
+        // shares. Past this many, the least recently used half goes: a script
+        // still holding one of those gets "Invalid Handle", not a stale address.
+        constexpr size_t kMaxRawRefs = 16384;
 
         void* FollowStep(void* base, const std::string& cls, const std::string& field)
         {
@@ -330,6 +339,7 @@ namespace sourcepawn
         void* ResolveRef(const SchemaRef& ref)
         {
             void* base = nullptr;
+            ref.lastUsed = ++g_refUseClock;
             switch (ref.root)
             {
             case Root::Entity:
@@ -356,13 +366,20 @@ namespace sourcepawn
                 key += "/" + cls + "::" + field;
 
             auto it = g_refsByKey.find(key);
-            if (it != g_refsByKey.end() && Handles().Read(it->second, Types().schemaObject))
-                return it->second;
+            if (it != g_refsByKey.end())
+            {
+                if (auto* found = static_cast<SchemaRef*>(Handles().Read(it->second, Types().schemaObject)))
+                {
+                    found->lastUsed = ++g_refUseClock;
+                    return it->second;
+                }
+            }
 
             // Entities come and go; drop the references whose entity is gone
             // before the table grows on.
-            if (g_refsByKey.size() > 4096)
+            if (g_refsByKey.size() > g_refPurgeAt)
             {
+                std::vector<std::pair<uint32_t, std::unordered_map<std::string, cell_t>::iterator>> rawRefs;
                 for (auto i = g_refsByKey.begin(); i != g_refsByKey.end();)
                 {
                     auto* r = static_cast<SchemaRef*>(Handles().Read(i->second, Types().schemaObject));
@@ -373,8 +390,26 @@ namespace sourcepawn
                         i = g_refsByKey.erase(i);
                     }
                     else
+                    {
+                        if (r->root == Root::Raw)
+                            rawRefs.emplace_back(r->lastUsed, i);
                         ++i;
+                    }
                 }
+
+                if (rawRefs.size() > kMaxRawRefs)
+                {
+                    const auto half = rawRefs.begin() + static_cast<std::ptrdiff_t>(rawRefs.size() / 2);
+                    std::nth_element(rawRefs.begin(), half, rawRefs.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
+                    for (auto i = rawRefs.begin(); i != half; ++i)
+                    {
+                        Handles().Free(i->second->second, 0, true);
+                        g_refsByKey.erase(i->second);
+                    }
+                }
+
+                // Not again for every new reference while the table stays this big.
+                g_refPurgeAt = std::max<size_t>(4096, g_refsByKey.size() * 2);
             }
 
             auto* ref = new SchemaRef();
@@ -382,6 +417,7 @@ namespace sourcepawn
             ref->entity = entity;
             ref->raw = raw;
             ref->chain = std::move(chain);
+            ref->lastUsed = ++g_refUseClock;
             const cell_t handle = Handles().Create(Types().schemaObject, ref, 0);
             if (handle)
                 g_refsByKey[key] = handle;

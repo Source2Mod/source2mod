@@ -45,6 +45,8 @@
 #include "source2mod/utils/playermask.h"
 
 #include <cstring>
+#include <string>
+#include <unordered_set>
 
 #ifdef GetMessage
 #undef GetMessage
@@ -94,9 +96,41 @@ Internal helpers / macros
     if (elemCount == 0 || idx >= elemCount || idx < 0)                                                        \
         return return_value;
 
+// Reflection treats a getter or setter of the wrong type as fatal: one wrong
+// call from a plugin would take the server down. Says so once per field.
+#define CHECK_FIELD_TYPE(cppType, return_value)                                                               \
+    if (!FieldHasType(field, google::protobuf::FieldDescriptor::cppType, nullptr))                             \
+        return return_value;
+
+#define CHECK_FIELD_TYPE_VOID(cppType)                                                                        \
+    if (!FieldHasType(field, google::protobuf::FieldDescriptor::cppType, nullptr))                             \
+        return;
+
+#define CHECK_FIELD_MESSAGE(messageType, return_value)                                                        \
+    if (!FieldHasType(field, google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE, messageType))                 \
+        return return_value;
+
+#define CHECK_FIELD_MESSAGE_VOID(messageType)                                                                 \
+    if (!FieldHasType(field, google::protobuf::FieldDescriptor::CPPTYPE_MESSAGE, messageType))                 \
+        return;
+
 namespace networkmessages
 {
     NetworkMessagesManager networkMessagesManager;
+
+    static bool FieldHasType(const google::protobuf::FieldDescriptor* field, google::protobuf::FieldDescriptor::CppType type, const char* messageType)
+    {
+        const bool enumAsInt = type == google::protobuf::FieldDescriptor::CPPTYPE_INT32 && field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_ENUM;
+        if ((field->cpp_type() == type || enumAsInt)
+            && (!messageType || field->message_type()->name() == messageType))
+            return true;
+
+        static std::unordered_set<const google::protobuf::FieldDescriptor*> s_reported;
+        if (s_reported.insert(field).second)
+            Warning("[Source2Mod] Protobuf field %s is a %s, the accessor used on it wants %s\n", std::string(field->full_name()).c_str(),
+                    field->cpp_type_name(), messageType ? messageType : google::protobuf::FieldDescriptor::CppTypeName(type));
+        return false;
+    }
 
     /* =========================
     Handles
@@ -170,6 +204,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0);
         CHECK_FIELD_NOT_REPEATED(0);
+        CHECK_FIELD_TYPE(CPPTYPE_INT32, 0);
 
         if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_ENUM)
             return msg->GetReflection()->GetEnum(*msg, field)->number();
@@ -183,6 +218,7 @@ namespace networkmessages
         GETCHECK_FIELD(0);
         CHECK_FIELD_REPEATED(0);
         CHECK_REPEATED_ELEMENT(index, 0);
+        CHECK_FIELD_TYPE(CPPTYPE_INT32, 0);
 
         if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_ENUM)
             return msg->GetReflection()->GetRepeatedEnum(*msg, field, index)->number();
@@ -195,6 +231,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_INT32);
 
         if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_ENUM)
         {
@@ -215,6 +252,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_INT32);
 
         if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_ENUM)
         {
@@ -234,6 +272,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_INT32);
 
         if (field->cpp_type() == google::protobuf::FieldDescriptor::CPPTYPE_ENUM)
         {
@@ -257,6 +296,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0);
         CHECK_FIELD_NOT_REPEATED(0);
+        CHECK_FIELD_TYPE(CPPTYPE_INT64, 0);
         return msg->GetReflection()->GetInt64(*msg, field);
     }
 
@@ -266,6 +306,7 @@ namespace networkmessages
         GETCHECK_FIELD(0);
         CHECK_FIELD_REPEATED(0);
         CHECK_REPEATED_ELEMENT(index, 0);
+        CHECK_FIELD_TYPE(CPPTYPE_INT64, 0);
         return msg->GetReflection()->GetRepeatedInt64(*msg, field, index);
     }
 
@@ -274,6 +315,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_INT64);
         msg->GetReflection()->SetInt64(msg, field, value);
     }
 
@@ -283,6 +325,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_INT64);
         msg->GetReflection()->SetRepeatedInt64(msg, field, index, value);
     }
 
@@ -291,6 +334,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_INT64);
         msg->GetReflection()->AddInt64(msg, field, value);
     }
 
@@ -303,6 +347,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0);
         CHECK_FIELD_NOT_REPEATED(0);
+        CHECK_FIELD_TYPE(CPPTYPE_UINT32, 0);
         return msg->GetReflection()->GetUInt32(*msg, field);
     }
 
@@ -312,6 +357,7 @@ namespace networkmessages
         GETCHECK_FIELD(0);
         CHECK_FIELD_REPEATED(0);
         CHECK_REPEATED_ELEMENT(index, 0);
+        CHECK_FIELD_TYPE(CPPTYPE_UINT32, 0);
         return msg->GetReflection()->GetRepeatedUInt32(*msg, field, index);
     }
 
@@ -320,6 +366,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_UINT32);
         msg->GetReflection()->SetUInt32(msg, field, value);
     }
 
@@ -329,6 +376,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_UINT32);
         msg->GetReflection()->SetRepeatedUInt32(msg, field, index, value);
     }
 
@@ -337,6 +385,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_UINT32);
         msg->GetReflection()->AddUInt32(msg, field, value);
     }
 
@@ -349,6 +398,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0);
         CHECK_FIELD_NOT_REPEATED(0);
+        CHECK_FIELD_TYPE(CPPTYPE_UINT64, 0);
         return msg->GetReflection()->GetUInt64(*msg, field);
     }
 
@@ -358,6 +408,7 @@ namespace networkmessages
         GETCHECK_FIELD(0);
         CHECK_FIELD_REPEATED(0);
         CHECK_REPEATED_ELEMENT(index, 0);
+        CHECK_FIELD_TYPE(CPPTYPE_UINT64, 0);
         return msg->GetReflection()->GetRepeatedUInt64(*msg, field, index);
     }
 
@@ -366,6 +417,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_UINT64);
         msg->GetReflection()->SetUInt64(msg, field, value);
     }
 
@@ -375,6 +427,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_UINT64);
         msg->GetReflection()->SetRepeatedUInt64(msg, field, index, value);
     }
 
@@ -383,6 +436,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_UINT64);
         msg->GetReflection()->AddUInt64(msg, field, value);
     }
 
@@ -395,6 +449,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(false);
         CHECK_FIELD_NOT_REPEATED(false);
+        CHECK_FIELD_TYPE(CPPTYPE_BOOL, false);
         return msg->GetReflection()->GetBool(*msg, field);
     }
 
@@ -404,6 +459,7 @@ namespace networkmessages
         GETCHECK_FIELD(false);
         CHECK_FIELD_REPEATED(false);
         CHECK_REPEATED_ELEMENT(index, false);
+        CHECK_FIELD_TYPE(CPPTYPE_BOOL, false);
         return msg->GetReflection()->GetRepeatedBool(*msg, field, index);
     }
 
@@ -412,6 +468,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_BOOL);
         msg->GetReflection()->SetBool(msg, field, value);
     }
 
@@ -421,6 +478,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_BOOL);
         msg->GetReflection()->SetRepeatedBool(msg, field, index, value);
     }
 
@@ -429,6 +487,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_BOOL);
         msg->GetReflection()->AddBool(msg, field, value);
     }
 
@@ -441,6 +500,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0.0f);
         CHECK_FIELD_NOT_REPEATED(0.0f);
+        CHECK_FIELD_TYPE(CPPTYPE_FLOAT, 0.0f);
         return msg->GetReflection()->GetFloat(*msg, field);
     }
 
@@ -450,6 +510,7 @@ namespace networkmessages
         GETCHECK_FIELD(0.0f);
         CHECK_FIELD_REPEATED(0.0f);
         CHECK_REPEATED_ELEMENT(index, 0.0f);
+        CHECK_FIELD_TYPE(CPPTYPE_FLOAT, 0.0f);
         return msg->GetReflection()->GetRepeatedFloat(*msg, field, index);
     }
 
@@ -458,6 +519,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_FLOAT);
         msg->GetReflection()->SetFloat(msg, field, value);
     }
 
@@ -467,6 +529,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_FLOAT);
         msg->GetReflection()->SetRepeatedFloat(msg, field, index, value);
     }
 
@@ -475,6 +538,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_FLOAT);
         msg->GetReflection()->AddFloat(msg, field, value);
     }
 
@@ -487,6 +551,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0.0);
         CHECK_FIELD_NOT_REPEATED(0.0);
+        CHECK_FIELD_TYPE(CPPTYPE_DOUBLE, 0.0);
         return msg->GetReflection()->GetDouble(*msg, field);
     }
 
@@ -496,6 +561,7 @@ namespace networkmessages
         GETCHECK_FIELD(0.0);
         CHECK_FIELD_REPEATED(0.0);
         CHECK_REPEATED_ELEMENT(index, 0.0);
+        CHECK_FIELD_TYPE(CPPTYPE_DOUBLE, 0.0);
         return msg->GetReflection()->GetRepeatedDouble(*msg, field, index);
     }
 
@@ -504,6 +570,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_DOUBLE);
         msg->GetReflection()->SetDouble(msg, field, value);
     }
 
@@ -513,6 +580,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_DOUBLE);
         msg->GetReflection()->SetRepeatedDouble(msg, field, index, value);
     }
 
@@ -521,6 +589,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_DOUBLE);
         msg->GetReflection()->AddDouble(msg, field, value);
     }
 
@@ -533,6 +602,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD({});
         CHECK_FIELD_NOT_REPEATED({});
+        CHECK_FIELD_TYPE(CPPTYPE_STRING, {});
         return msg->GetReflection()->GetString(*msg, field);
     }
 
@@ -542,6 +612,7 @@ namespace networkmessages
         GETCHECK_FIELD({});
         CHECK_FIELD_REPEATED({});
         CHECK_REPEATED_ELEMENT(index, {});
+        CHECK_FIELD_TYPE(CPPTYPE_STRING, {});
         return msg->GetReflection()->GetRepeatedString(*msg, field, index);
     }
 
@@ -550,6 +621,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_STRING);
         msg->GetReflection()->SetString(msg, field, value);
     }
 
@@ -559,6 +631,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_STRING);
         msg->GetReflection()->SetRepeatedString(msg, field, index, value);
     }
 
@@ -567,6 +640,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_STRING);
         msg->GetReflection()->AddString(msg, field, value);
     }
 
@@ -580,6 +654,7 @@ namespace networkmessages
         Vector2D vec{0.0f, 0.0f};
         GETCHECK_FIELD(vec);
         CHECK_FIELD_NOT_REPEATED(vec);
+        CHECK_FIELD_MESSAGE("CMsgVector2D", vec);
 
         const CMsgVector2D* msgVec2d = (const CMsgVector2D*)&msg->GetReflection()->GetMessage(*msg, field);
         vec.x = msgVec2d->x();
@@ -594,6 +669,7 @@ namespace networkmessages
         GETCHECK_FIELD(vec);
         CHECK_FIELD_REPEATED(vec);
         CHECK_REPEATED_ELEMENT(index, vec);
+        CHECK_FIELD_MESSAGE("CMsgVector2D", vec);
 
         const CMsgVector2D* msgVec2d = (const CMsgVector2D*)&msg->GetReflection()->GetRepeatedMessage(
             *msg, field, index);
@@ -607,6 +683,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgVector2D");
 
         CMsgVector2D* msgVec2d = (CMsgVector2D*)msg->GetReflection()->MutableMessage(msg, field);
         msgVec2d->set_x(value.x);
@@ -619,6 +696,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_MESSAGE_VOID("CMsgVector2D");
 
         CMsgVector2D* msgVec2d = (CMsgVector2D*)msg->GetReflection()->MutableRepeatedMessage(msg, field, index);
         msgVec2d->set_x(value.x);
@@ -630,6 +708,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgVector2D");
 
         CMsgVector2D* msgVec2d = (CMsgVector2D*)msg->GetReflection()->AddMessage(msg, field);
         msgVec2d->set_x(value.x);
@@ -646,6 +725,7 @@ namespace networkmessages
         Vector vec{0.0f, 0.0f, 0.0f};
         GETCHECK_FIELD(vec);
         CHECK_FIELD_NOT_REPEATED(vec);
+        CHECK_FIELD_MESSAGE("CMsgVector", vec);
 
         const CMsgVector* msgVec = (const CMsgVector*)&msg->GetReflection()->GetMessage(*msg, field);
         vec.x = msgVec->x();
@@ -661,6 +741,7 @@ namespace networkmessages
         GETCHECK_FIELD(vec);
         CHECK_FIELD_REPEATED(vec);
         CHECK_REPEATED_ELEMENT(index, vec);
+        CHECK_FIELD_MESSAGE("CMsgVector", vec);
 
         const CMsgVector* msgVec = (const CMsgVector*)&msg->GetReflection()->GetRepeatedMessage(*msg, field, index);
         vec.x = msgVec->x();
@@ -674,6 +755,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgVector");
 
         CMsgVector* msgVec = (CMsgVector*)msg->GetReflection()->MutableMessage(msg, field);
         msgVec->set_x(value.x);
@@ -687,6 +769,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_MESSAGE_VOID("CMsgVector");
 
         CMsgVector* msgVec = (CMsgVector*)msg->GetReflection()->MutableRepeatedMessage(msg, field, index);
         msgVec->set_x(value.x);
@@ -699,6 +782,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgVector");
 
         CMsgVector* msgVec = (CMsgVector*)msg->GetReflection()->AddMessage(msg, field);
         msgVec->set_x(value.x);
@@ -716,6 +800,7 @@ namespace networkmessages
         Color color{255, 255, 255, 255};
         GETCHECK_FIELD(color);
         CHECK_FIELD_NOT_REPEATED(color);
+        CHECK_FIELD_MESSAGE("CMsgRGBA", color);
 
         const CMsgRGBA* msgColor = (const CMsgRGBA*)&msg->GetReflection()->GetMessage(*msg, field);
         color.SetColor(msgColor->r(), msgColor->g(), msgColor->b(), msgColor->a());
@@ -729,6 +814,7 @@ namespace networkmessages
         GETCHECK_FIELD(color);
         CHECK_FIELD_REPEATED(color);
         CHECK_REPEATED_ELEMENT(index, color);
+        CHECK_FIELD_MESSAGE("CMsgRGBA", color);
 
         const CMsgRGBA* msgColor = (const CMsgRGBA*)&msg->GetReflection()->GetRepeatedMessage(*msg, field, index);
         color.SetColor(msgColor->r(), msgColor->g(), msgColor->b(), msgColor->a());
@@ -740,6 +826,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgRGBA");
 
         CMsgRGBA* msgColor = (CMsgRGBA*)msg->GetReflection()->MutableMessage(msg, field);
         msgColor->set_r(value.r());
@@ -754,6 +841,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_MESSAGE_VOID("CMsgRGBA");
 
         CMsgRGBA* msgColor = (CMsgRGBA*)msg->GetReflection()->MutableRepeatedMessage(msg, field, index);
         msgColor->set_r(value.r());
@@ -767,6 +855,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgRGBA");
 
         CMsgRGBA* msgColor = (CMsgRGBA*)msg->GetReflection()->AddMessage(msg, field);
         msgColor->set_r(value.r());
@@ -785,6 +874,7 @@ namespace networkmessages
         QAngle angle{0.0f, 0.0f, 0.0f};
         GETCHECK_FIELD(angle);
         CHECK_FIELD_NOT_REPEATED(angle);
+        CHECK_FIELD_MESSAGE("CMsgQAngle", angle);
 
         const CMsgQAngle* msgAngle = (const CMsgQAngle*)&msg->GetReflection()->GetMessage(*msg, field);
         angle.x = msgAngle->x();
@@ -800,6 +890,7 @@ namespace networkmessages
         GETCHECK_FIELD(angle);
         CHECK_FIELD_REPEATED(angle);
         CHECK_REPEATED_ELEMENT(index, angle);
+        CHECK_FIELD_MESSAGE("CMsgQAngle", angle);
 
         const CMsgQAngle* msgAngle = (const CMsgQAngle*)&msg->GetReflection()->GetRepeatedMessage(*msg, field, index);
         angle.x = msgAngle->x();
@@ -813,6 +904,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgQAngle");
 
         CMsgQAngle* msgAngle = (CMsgQAngle*)msg->GetReflection()->MutableMessage(msg, field);
         msgAngle->set_x(value.x);
@@ -826,6 +918,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_MESSAGE_VOID("CMsgQAngle");
 
         CMsgQAngle* msgAngle = (CMsgQAngle*)msg->GetReflection()->MutableRepeatedMessage(msg, field, index);
         msgAngle->set_x(value.x);
@@ -838,6 +931,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_MESSAGE_VOID("CMsgQAngle");
 
         CMsgQAngle* msgAngle = (CMsgQAngle*)msg->GetReflection()->AddMessage(msg, field);
         msgAngle->set_x(value.x);
@@ -854,6 +948,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0);
         CHECK_FIELD_NOT_REPEATED(0);
+        CHECK_FIELD_TYPE(CPPTYPE_STRING, 0);
 
         std::string s = msg->GetReflection()->GetString(*msg, field);
         if (out)
@@ -867,6 +962,7 @@ namespace networkmessages
         GETCHECK_FIELD(0);
         CHECK_FIELD_REPEATED(0);
         CHECK_REPEATED_ELEMENT(index, 0);
+        CHECK_FIELD_TYPE(CPPTYPE_STRING, 0);
 
         std::string s = msg->GetReflection()->GetRepeatedString(*msg, field, index);
         if (out)
@@ -879,6 +975,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_NOT_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_STRING);
         msg->GetReflection()->SetString(msg, field, std::string(value, (size_t)valueLength));
     }
 
@@ -889,6 +986,7 @@ namespace networkmessages
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
         CHECK_REPEATED_ELEMENT_VOID(index);
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_STRING);
         msg->GetReflection()->SetRepeatedString(msg, field, index, std::string(value, (size_t)valueLength));
     }
 
@@ -897,6 +995,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD_VOID();
         CHECK_FIELD_REPEATED_VOID();
+        CHECK_FIELD_TYPE_VOID(CPPTYPE_STRING);
         msg->GetReflection()->AddString(msg, field, std::string(value, (size_t)valueLength));
     }
 
@@ -909,6 +1008,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(nullptr);
         CHECK_FIELD_NOT_REPEATED(nullptr);
+        CHECK_FIELD_TYPE(CPPTYPE_MESSAGE, nullptr);
         return (void*)msg->GetReflection()->MutableMessage(msg, field);
     }
 
@@ -918,6 +1018,7 @@ namespace networkmessages
         GETCHECK_FIELD(nullptr);
         CHECK_FIELD_REPEATED(nullptr);
         CHECK_REPEATED_ELEMENT(index, nullptr);
+        CHECK_FIELD_TYPE(CPPTYPE_MESSAGE, nullptr);
         return (void*)msg->GetReflection()->MutableRepeatedMessage(msg, field, index);
     }
 
@@ -926,6 +1027,7 @@ namespace networkmessages
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(nullptr);
         CHECK_FIELD_REPEATED(nullptr);
+        CHECK_FIELD_TYPE(CPPTYPE_MESSAGE, nullptr);
         return (void*)msg->GetReflection()->AddMessage(msg, field);
     }
 
@@ -937,6 +1039,7 @@ namespace networkmessages
     {
         google::protobuf::Message* msg = (google::protobuf::Message*)pmsg;
         GETCHECK_FIELD(0);
+        CHECK_FIELD_REPEATED(0);
         return msg->GetReflection()->FieldSize(*msg, field);
     }
 

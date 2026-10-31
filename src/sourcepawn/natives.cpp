@@ -26,7 +26,11 @@
 #include <source2mod/sdk/schema/classes/CCSPlayerController.h>
 
 #include <base-runtime.h>
+#include <engine2/networkgameserverbase.h>
+#include <interfaces/interfaces.h>
+#include <networksystem/inetworksystem.h>
 #include <sp_callable.h>
+#include <tier0/icommandline.h>
 
 #include <algorithm>
 #include <chrono>
@@ -466,6 +470,98 @@ namespace sourcepawn
             std::string msg;
             if (FormatTo(ctx, params, 1, msg))
                 ConMsg("%s\n", msg.c_str());
+            return 0;
+        }
+
+        cell_t ToBuffer(IPluginContext* ctx, cell_t addr, cell_t maxlen, const char* value)
+        {
+            size_t written = 0;
+            ctx->StringToLocalUTF8(addr, maxlen, value ? value : "", &written);
+            return static_cast<cell_t>(written);
+        }
+
+        // GetLaunchParam(name, buffer, maxlen)
+        cell_t N_GetLaunchParam(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = Str(ctx, params[1]);
+            const bool has = CommandLine()->HasParm(name);
+            ToBuffer(ctx, params[2], params[3], has ? CommandLine()->ParmValue(name, "") : "");
+            return has;
+        }
+
+        cell_t N_HasLaunchParam(IPluginContext* ctx, const cell_t* params)
+        {
+            return CommandLine()->HasParm(Str(ctx, params[1]));
+        }
+
+        cell_t N_GetCommandLine(IPluginContext* ctx, const cell_t* params)
+        {
+            return ToBuffer(ctx, params[1], params[2], CommandLine()->GetCmdLine());
+        }
+
+        // GetServerAddress(buffer, maxlen)
+        cell_t N_GetServerAddress(IPluginContext* ctx, const cell_t* params)
+        {
+            char address[64] = "";
+            if (g_pNetworkSystem)
+            {
+                const netadr_t& publicAdr = g_pNetworkSystem->GetPublicAdr();
+                const netadr_t& adr = (publicAdr.ip[0] | publicAdr.ip[1] | publicAdr.ip[2] | publicAdr.ip[3]) ? publicAdr : g_pNetworkSystem->GetLocalAdr();
+                if (adr.ip[0] | adr.ip[1] | adr.ip[2] | adr.ip[3])
+                    snprintf(address, sizeof(address), "%hhu.%hhu.%hhu.%hhu:%hu", adr.ip[0], adr.ip[1], adr.ip[2], adr.ip[3], g_pNetworkSystem->GetUDPPort(1));
+            }
+            ToBuffer(ctx, params[1], params[2], address);
+            return address[0] != '\0';
+        }
+
+        cell_t N_GetBuildVersion(IPluginContext*, const cell_t*)
+        {
+            return g_pEngineServer ? g_pEngineServer->GetBuildVersion() : 0;
+        }
+
+        cell_t N_IsHibernating(IPluginContext*, const cell_t*)
+        {
+            CNetworkGameServerBase* server = g_pNetworkServerService ? g_pNetworkServerService->GetIGameServer() : nullptr;
+            return server && server->m_bHibernating;
+        }
+
+        cell_t N_IsShuttingDown(IPluginContext*, const cell_t*)
+        {
+            return g_pEngineServer && g_pEngineServer->WasShutDownRequested();
+        }
+
+        // GetServerPerf(&cpu, &in, &out)
+        cell_t N_GetServerPerf(IPluginContext* ctx, const cell_t* params)
+        {
+            cell_t* out[3] = {};
+            for (int i = 0; i < 3; i++)
+            {
+                if (ctx->LocalToPhysAddr(params[i + 1], &out[i]) != SP_ERROR_NONE)
+                    return 0;
+            }
+            float values[3] = {};
+            if (CNetworkGameServerBase* server = g_pNetworkServerService ? g_pNetworkServerService->GetIGameServer() : nullptr)
+            {
+                values[0] = server->m_flCPUUsage;
+                server->GetNetStats(values[1], values[2]);
+            }
+            for (int i = 0; i < 3; i++)
+                *out[i] = sp_ftoc(values[i]);
+            return 0;
+        }
+
+        // GetRecordingDemo(buffer, maxlen)
+        cell_t N_GetRecordingDemo(IPluginContext* ctx, const cell_t* params)
+        {
+            const bool recording = g_pEngineServer && g_pEngineServer->IsRecordingDemo();
+            ToBuffer(ctx, params[1], params[2], recording ? g_pEngineServer->GetTvRecordingDemoFilename() : "");
+            return recording;
+        }
+
+        cell_t N_SetTimescale(IPluginContext*, const cell_t* params)
+        {
+            if (g_pEngineServer)
+                g_pEngineServer->SetTimescale(sp_ctof(params[1]));
             return 0;
         }
 
@@ -1047,6 +1143,16 @@ namespace sourcepawn
             // console.inc / logging.inc
             { "Source2ModApi.ConPrintf", N_PrintToServer },
             { "Source2ModEngine.ServerCommand", N_ServerCommand },
+            { "Source2ModEngine.GetLaunchParam", N_GetLaunchParam },
+            { "Source2ModEngine.HasLaunchParam", N_HasLaunchParam },
+            { "Source2ModEngine.GetCommandLine", N_GetCommandLine },
+            { "Source2ModEngine.GetServerAddress", N_GetServerAddress },
+            { "Source2ModEngine.GetBuildVersion", N_GetBuildVersion },
+            { "Source2ModEngine.IsHibernating", N_IsHibernating },
+            { "Source2ModEngine.IsShuttingDown", N_IsShuttingDown },
+            { "Source2ModEngine.GetServerPerf", N_GetServerPerf },
+            { "Source2ModEngine.GetRecordingDemo", N_GetRecordingDemo },
+            { "Source2ModEngine.SetTimescale", N_SetTimescale },
             { "Source2ModApi.ConPrint", N_ConPrint },
             { "Source2ModApi.Log", N_LogMessage },
             { "Source2ModApi.LogError", N_LogError },

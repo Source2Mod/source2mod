@@ -230,6 +230,27 @@ namespace sourcepawn
             return 0;
         }
 
+        // ListNames(prefix, hidden) -> ArrayList of strings; the script closes it.
+        cell_t N_CVListNames(IPluginContext* ctx, const cell_t* params)
+        {
+            const std::string prefix = LocalString(ctx, params[1]);
+            const bool hidden = params[0] >= 2 && params[2];
+            std::vector<std::string> names;
+            if (g_pCVar)
+            {
+                for (ConVarRef ref = g_pCVar->FindFirstConVar(); ref.IsValidRef(); ref = g_pCVar->FindNextConVar(ref))
+                {
+                    const ConVarData* data = g_pCVar->GetConVarData(ref);
+                    if (!data || !data->GetName() || (!hidden && data->IsFlagSet(FCVAR_REFERENCE | FCVAR_HIDDEN | FCVAR_DEVELOPMENTONLY)))
+                        continue;
+                    if (std::strncmp(data->GetName(), prefix.c_str(), prefix.size()) == 0)
+                        names.emplace_back(data->GetName());
+                }
+            }
+            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
+            return FillStringList(ctx, 0, names, false, 64, plugin ? plugin->Id() : 0);
+        }
+
         // GetBounds(ConVarBounds type, float &value): ConVarBound_Upper = 0, ConVarBound_Lower.
         cell_t N_GetBounds(IPluginContext* ctx, const cell_t* params)
         {
@@ -730,6 +751,7 @@ namespace sourcepawn
             { "Source2ModConVars.SetQAngle", N_CVSetFloats<QAngle, 3, &ISource2ModConVars::SetQAngle> },
             { "Source2ModConVars.SetColor", N_CVSetColor },
             { "Source2ModConVars.DeleteConVar", N_CVDeleteConVar },
+            { "Source2ModConVars.ListNames", N_CVListNames },
             { nullptr, nullptr },
         };
     }
