@@ -64,6 +64,9 @@ ENUMS = [
     "AmmoPosition_t", "Explosions", "BrushSolidities_e", "filter_t", "EOverrideBlockLOS_t",
     "ValueRemapperInputType_t", "ValueRemapperOutputType_t", "ValueRemapperHapticsType_t",
     "ValueRemapperMomentumType_t", "ValueRemapperRatchetType_t",
+    "CSWeaponNameID", "AmmoFlags_t", "SpawnGroupFlags_t", "InputBitMask_t", "TOGGLE_STATE",
+    "ForcedCrouchState_t", "SurroundingBoundsType_t", "EntityPlatformTypes_t", "RumbleEffect_t",
+    "JointMotion_t",
 ]
 FLOAT_TYPES = {"float", "float32", "GameTime_t"}
 VECTOR_TYPES = {"Vector", "QAngle", "VectorWS"}
@@ -241,6 +244,8 @@ def property_for(owner, macro, ctype, field, classes, enums):
         return prop("float", f"Source2ModSchema.GetFloat(this, {acc})", f"Source2ModSchema.SetFloat(this, {acc}, value)")
     if t == "bool":
         return prop("bool", f"Source2ModSchema.GetBool(this, {acc})", f"Source2ModSchema.SetBool(this, {acc}, value)")
+    if t.startswith("CUtlVector<") or t.startswith("CNetworkUtlVectorBase<"):
+        return [f"\tpublic int {field}Count() {{ return Source2ModSchema.GetUtlVectorCount(this, {acc}); }}"]
     if t in VECTOR_TYPES:
         return [f"\tpublic void {field}(float vec[3]) {{ Source2ModSchema.GetVector(this, {acc}, vec); }}",
                 f"\tpublic void Set_{field}(const float vec[3]) {{ Source2ModSchema.SetVector(this, {acc}, vec); }}"]

@@ -57,6 +57,7 @@
 #include "core/game/entities.h"
 #include "utils/log.h"
 
+#include <tier0/memalloc.h>
 #include <source2mod/ISource2ModEntities.h>
 #include <recipientfilter.h>
 #include "source2mod/utils/playermask.h"
@@ -309,6 +310,7 @@ namespace sourcepawn
             void* raw = nullptr;
             std::vector<std::pair<std::string, std::string>> chain;   // (class, field) from the root
             mutable uint32_t lastUsed = 0;
+            size_t blockSize = 0;   // Source2ModMemoryBlock: *At stays inside it
         };
 
         std::unordered_map<std::string, cell_t> g_refsByKey;
@@ -1050,8 +1052,181 @@ namespace sourcepawn
                 ctx->ThrowNativeError("Negative offset %d", offset);
                 return nullptr;
             }
+            if (const auto* ref = static_cast<const SchemaRef*>(Handles().Read(instance, Types().schemaObject)); ref && ref->blockSize && static_cast<size_t>(offset) >= ref->blockSize)
+            {
+                ctx->ThrowNativeError("Offset %d is past the end of a block of %d bytes", offset, static_cast<int>(ref->blockSize));
+                return nullptr;
+            }
             auto* base = static_cast<uint8_t*>(Base(ctx, instance));
             return base ? base + offset : nullptr;
+        }
+
+        // ---- Source2ModMemoryBlock ----------------------------------------------------
+
+        // The engine's allocator, so that memory it takes over (Release) is freed
+        // the way it expects. kBlockSlack: the *At check looks at where a value
+        // starts, a Vector or int64 written at the last byte stays in the block.
+        constexpr size_t kBlockSlack = 16;
+        constexpr cell_t kMaxBlock = 64 * 1024 * 1024;
+
+        struct MemoryBlock : SchemaRef
+        {
+            bool aligned = false;
+        };
+
+        void FreeBlock(MemoryBlock* block)
+        {
+            // What was reached through it dies with it: "Invalid Handle", not a use after free.
+            auto* start = static_cast<uint8_t*>(block->raw);
+            for (auto i = g_refsByKey.begin(); i != g_refsByKey.end();)
+            {
+                auto* r = static_cast<SchemaRef*>(Handles().Read(i->second, Types().schemaObject));
+                auto* at = r && r->root == Root::Raw ? static_cast<uint8_t*>(r->raw) : nullptr;
+                if (at && at >= start && at < start + block->blockSize)
+                {
+                    Handles().Free(i->second, 0, true);
+                    i = g_refsByKey.erase(i);
+                }
+                else
+                    ++i;
+            }
+            if (block->aligned)
+                g_pMemAlloc->FreeAligned(block->raw);
+            else if (block->raw)
+                g_pMemAlloc->Free(block->raw);
+            delete block;
+        }
+
+        HandleType MemoryBlockType()
+        {
+            static const HandleType t = Handles().CreateType("Source2ModMemoryBlock", [](void* p) { FreeBlock(static_cast<MemoryBlock*>(p)); }, Types().schemaObject, true);
+            return t;
+        }
+
+        MemoryBlock* BlockOf(IPluginContext* ctx, cell_t handle)
+        {
+            return static_cast<MemoryBlock*>(ReadHandle(ctx, handle, MemoryBlockType()));
+        }
+
+        // Source2ModMemoryBlock(size, align)
+        cell_t N_BlockNew(IPluginContext* ctx, const cell_t* params)
+        {
+            const cell_t size = params[1];
+            const cell_t align = params[0] >= 2 ? params[2] : 0;
+            if (size <= 0 || size > kMaxBlock)
+                return ctx->ThrowNativeError("Bad block size %d", size);
+            if (align < 0 || (align & (align - 1)))
+                return ctx->ThrowNativeError("Bad alignment %d", align);
+            auto* block = new MemoryBlock();
+            block->root = Root::Raw;
+            block->blockSize = static_cast<size_t>(size);
+            block->aligned = align > 0;
+            const size_t total = block->blockSize + kBlockSlack;
+            block->raw = align > 0 ? g_pMemAlloc->AllocAligned(total, align) : g_pMemAlloc->Alloc(total);
+            if (!block->raw)
+            {
+                delete block;
+                return ctx->ThrowNativeError("Out of memory");
+            }
+            std::memset(block->raw, 0, total);
+            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
+            const cell_t handle = Handles().Create(MemoryBlockType(), block, plugin ? plugin->Id() : 0);
+            if (!handle)
+                FreeBlock(block);
+            return handle;
+        }
+
+        cell_t N_BlockSize(IPluginContext* ctx, const cell_t* params)
+        {
+            MemoryBlock* block = BlockOf(ctx, params[1]);
+            return block ? static_cast<cell_t>(block->blockSize) : 0;
+        }
+
+        bool BlockRange(IPluginContext* ctx, MemoryBlock* block, cell_t offset, cell_t bytes)
+        {
+            if (offset < 0 || bytes < 0 || static_cast<size_t>(offset) + static_cast<size_t>(bytes) > block->blockSize)
+            {
+                ctx->ThrowNativeError("%d bytes at offset %d do not fit a block of %d bytes", bytes, offset, static_cast<int>(block->blockSize));
+                return false;
+            }
+            return true;
+        }
+
+        // Fill(offset, value, bytes)
+        cell_t N_BlockFill(IPluginContext* ctx, const cell_t* params)
+        {
+            MemoryBlock* block = BlockOf(ctx, params[1]);
+            if (block && BlockRange(ctx, block, params[2], params[4]))
+                std::memset(static_cast<uint8_t*>(block->raw) + params[2], params[3], static_cast<size_t>(params[4]));
+            return 0;
+        }
+
+        // CopyFrom(offset, src, srcOffset, bytes)
+        cell_t N_BlockCopyFrom(IPluginContext* ctx, const cell_t* params)
+        {
+            MemoryBlock* block = BlockOf(ctx, params[1]);
+            if (!block || !BlockRange(ctx, block, params[2], params[5]))
+                return 0;
+            if (uint8_t* src = At(ctx, params[3], params[4]))
+                std::memmove(static_cast<uint8_t*>(block->raw) + params[2], src, static_cast<size_t>(params[5]));
+            return 0;
+        }
+
+        // CopyTo(offset, dst, dstOffset, bytes)
+        cell_t N_BlockCopyTo(IPluginContext* ctx, const cell_t* params)
+        {
+            MemoryBlock* block = BlockOf(ctx, params[1]);
+            if (!block || !BlockRange(ctx, block, params[2], params[5]))
+                return 0;
+            if (uint8_t* dst = At(ctx, params[3], params[4]))
+                std::memmove(dst, static_cast<uint8_t*>(block->raw) + params[2], static_cast<size_t>(params[5]));
+            return 0;
+        }
+
+        // Release(): the memory is the engine's from now on, the handle goes.
+        cell_t N_BlockRelease(IPluginContext* ctx, const cell_t* params)
+        {
+            MemoryBlock* block = BlockOf(ctx, params[1]);
+            if (!block)
+                return 0;
+            if (block->aligned)
+                return ctx->ThrowNativeError("An aligned block cannot be released: the engine frees with the plain allocator");
+            void* memory = block->raw;
+            block->raw = nullptr;
+            Handles().Free(params[1], 0, true);
+            return SchemaObjectForPointer(memory);
+        }
+
+        // SetObjectAt(instance, offset, pointer): a pointer into memory; null writes 0.
+        cell_t N_SetObjectAt(IPluginContext* ctx, const cell_t* params)
+        {
+            uint8_t* at = At(ctx, params[1], params[2]);
+            if (!at)
+                return 0;
+            *reinterpret_cast<void**>(at) = params[3] ? SchemaObjectPointer(ctx, params[3]) : nullptr;
+            return 0;
+        }
+
+        // GetStringAt(instance, offset, buffer, maxlen): chars stored right there, not a pointer to them.
+        cell_t N_GetStringAt(IPluginContext* ctx, const cell_t* params)
+        {
+            uint8_t* at = At(ctx, params[1], params[2]);
+            size_t written = 0;
+            if (at)
+                ctx->StringToLocalUTF8(params[3], params[4], reinterpret_cast<const char*>(at), &written);
+            return static_cast<cell_t>(written);
+        }
+
+        // SetStringAt(instance, offset, value, maxBytes): always terminated inside maxBytes.
+        cell_t N_SetStringAt(IPluginContext* ctx, const cell_t* params)
+        {
+            uint8_t* at = params[4] > 0 ? At(ctx, params[1], params[2]) : nullptr;
+            if (at)
+            {
+                std::strncpy(reinterpret_cast<char*>(at), LocalString(ctx, params[3]), static_cast<size_t>(params[4]));
+                at[params[4] - 1] = 0;
+            }
+            return 0;
         }
 
         int IntSize(IPluginContext* ctx, cell_t size)
@@ -2333,6 +2508,15 @@ namespace sourcepawn
             { "Source2ModSchema.GetObjectAt", N_GetObjectAt },
             { "Source2ModSchema.GetEmbeddedAt", N_GetEmbeddedAt },
             { "Source2ModSchema.GetStringPointerAt", N_GetStringPointerAt },
+            { "Source2ModSchema.SetObjectAt", N_SetObjectAt },
+            { "Source2ModSchema.GetStringAt", N_GetStringAt },
+            { "Source2ModSchema.SetStringAt", N_SetStringAt },
+            { "Source2ModMemoryBlock.Source2ModMemoryBlock", N_BlockNew },
+            { "Source2ModMemoryBlock.Size.get", N_BlockSize },
+            { "Source2ModMemoryBlock.Fill", N_BlockFill },
+            { "Source2ModMemoryBlock.CopyFrom", N_BlockCopyFrom },
+            { "Source2ModMemoryBlock.CopyTo", N_BlockCopyTo },
+            { "Source2ModMemoryBlock.Release", N_BlockRelease },
             { "Source2ModSchema.GetUtlVectorCount", N_GetUtlVectorCount },
             { "Source2ModSchema.GetUtlVectorElement", N_GetUtlVectorElement },
             { "CEntityInstance.IsValid", N_EntIsValid },

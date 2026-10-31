@@ -280,9 +280,23 @@ namespace sourcepawn
             return addr ? NewFunction(ctx, addr, nullptr, -1, params[2]) : 0;
         }
 
+        // FromPointer(address, returnType)
+        cell_t N_FnFromPointer(IPluginContext* ctx, const cell_t* params)
+        {
+            void* addr = SchemaObjectPointer(ctx, params[1]);
+            return addr ? NewFunction(ctx, addr, nullptr, -1, params[2]) : 0;
+        }
+
         Function* FnOf(IPluginContext* ctx, cell_t handle)
         {
             return static_cast<Function*>(ReadHandle(ctx, handle, FunctionType()));
+        }
+
+        // A virtual has none of its own: null.
+        cell_t N_FnAddress(IPluginContext* ctx, const cell_t* params)
+        {
+            Function* fn = FnOf(ctx, params[1]);
+            return fn ? SchemaObjectForPointer(fn->address) : 0;
         }
 
         cell_t N_FnAddParam(IPluginContext* ctx, const cell_t* params)
@@ -867,6 +881,8 @@ namespace sourcepawn
             { "Source2ModFunction.FromVirtual", N_FnFromVirtual },
             { "Source2ModFunction.FromVirtualTable", N_FnFromVirtualTable },
             { "Source2ModFunction.FromAddress", N_FnFromAddress },
+            { "Source2ModFunction.FromPointer", N_FnFromPointer },
+            { "Source2ModFunction.Address.get", N_FnAddress },
             { "Source2ModFunction.AddParam", N_FnAddParam },
             { "Source2ModFunction.ReturnType.get", N_FnGetReturnType },
             { "Source2ModFunction.ParamCount.get", N_FnGetParamCount },

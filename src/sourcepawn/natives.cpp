@@ -30,6 +30,7 @@
 #include <interfaces/interfaces.h>
 #include <networksystem/inetworksystem.h>
 #include <sp_callable.h>
+#include <localize/ilocalize.h>
 #include <tier0/icommandline.h>
 
 #include <algorithm>
@@ -556,6 +557,17 @@ namespace sourcepawn
             const bool recording = g_pEngineServer && g_pEngineServer->IsRecordingDemo();
             ToBuffer(ctx, params[1], params[2], recording ? g_pEngineServer->GetTvRecordingDemoFilename() : "");
             return recording;
+        }
+
+        // Localize(token, buffer, maxlen): the server's own loaded tokens.
+        cell_t N_Localize(IPluginContext* ctx, const cell_t* params)
+        {
+            // The token itself comes back when the server does not have it.
+            const char* token = Str(ctx, params[1]);
+            const char* text = g_pLocalize ? g_pLocalize->FindSafe(token) : nullptr;
+            const bool found = text && *text && strcmp(text, token) != 0;
+            ToBuffer(ctx, params[2], params[3], found ? text : "");
+            return found;
         }
 
         cell_t N_SetTimescale(IPluginContext*, const cell_t* params)
@@ -1153,6 +1165,7 @@ namespace sourcepawn
             { "Source2ModEngine.GetServerPerf", N_GetServerPerf },
             { "Source2ModEngine.GetRecordingDemo", N_GetRecordingDemo },
             { "Source2ModEngine.SetTimescale", N_SetTimescale },
+            { "Source2ModEngine.Localize", N_Localize },
             { "Source2ModApi.ConPrint", N_ConPrint },
             { "Source2ModApi.Log", N_LogMessage },
             { "Source2ModApi.LogError", N_LogError },
@@ -1241,7 +1254,7 @@ namespace sourcepawn
         static const std::vector<sp_nativeinfo_t> s_all = []
         {
             std::vector<sp_nativeinfo_t> all;
-            for (const sp_nativeinfo_t* table : { g_natives, GetAddressNatives(), GetAdtNatives(), GetApiNatives(), GetClientNatives(), GetConsoleNatives(), GetCustomMenuNatives(), GetStringTableNatives(), GetCommandNatives(), GetConfigNatives(), GetConVarNatives(), GetCookieNatives(), GetCustomHudNatives(), GetDynamicHookNatives(), GetEntityNatives(), GetEventNatives(), GetFeatureNatives(), GetFileNatives(), GetFunctionNatives(), GetGameConfigNatives(), GetGameHookNatives(), GetGameSystemNatives(), GetGeoIPNatives(), GetHttpNatives(), GetJsonNatives(), GetVoiceNatives(), GetMapNatives(), GetMathNatives(), GetMenuNatives(), GetNetworkMessageNatives(), GetPathNatives(), GetPermissionNatives(), GetPluginSysNatives(), GetRaytraceNatives(), GetSchedulerNatives(), GetScriptNatives(), GetSoundNatives(), GetSqlNatives(), GetTargetingNatives(), GetTranslationNatives(), GetTransmitNatives(), GetUtilNatives(), GetWebSocketNatives() })
+            for (const sp_nativeinfo_t* table : { g_natives, GetAddressNatives(), GetAdtNatives(), GetApiNatives(), GetClientNatives(), GetConsoleNatives(), GetPatchNatives(), GetCustomMenuNatives(), GetStringTableNatives(), GetCommandNatives(), GetConfigNatives(), GetConVarNatives(), GetCookieNatives(), GetCustomHudNatives(), GetDynamicHookNatives(), GetEntityNatives(), GetEventNatives(), GetFeatureNatives(), GetFileNatives(), GetFunctionNatives(), GetGameConfigNatives(), GetGameHookNatives(), GetGameSystemNatives(), GetGeoIPNatives(), GetHttpNatives(), GetJsonNatives(), GetVoiceNatives(), GetMapNatives(), GetMathNatives(), GetMenuNatives(), GetNetworkMessageNatives(), GetPathNatives(), GetPermissionNatives(), GetPluginSysNatives(), GetRaytraceNatives(), GetSchedulerNatives(), GetScriptNatives(), GetSoundNatives(), GetSqlNatives(), GetTargetingNatives(), GetTranslationNatives(), GetTransmitNatives(), GetUtilNatives(), GetWebSocketNatives() })
                 for (const sp_nativeinfo_t* n = table; n->name; ++n)
                     all.push_back(*n);
             all.push_back({ nullptr, nullptr });

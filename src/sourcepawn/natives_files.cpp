@@ -45,6 +45,8 @@
 
 #include "core/data/files.h"
 
+#include <filesystem/ifilesystem.h>
+#include <interfaces/interfaces.h>
 #include <sp_callable.h>
 
 #include <cstdio>
@@ -769,9 +771,16 @@ namespace sourcepawn
             return ToBuffer(ctx, params[2], params[3], Files().KvErrorString(static_cast<ESource2ModKvError>(params[1])));
         }
 
+        // ExistsInGame(path, pathId): through the engine's file system, VPKs and search paths included.
+        cell_t N_ExistsInGame(IPluginContext* ctx, const cell_t* params)
+        {
+            return g_pFullFileSystem && g_pFullFileSystem->FileExists(LocalString(ctx, params[1]), LocalString(ctx, params[2]));
+        }
+
         const sp_nativeinfo_t g_fileNatives[] = {
             { "Source2ModFiles.ResolvePath", N_ResolvePath },
             { "Source2ModFiles.FileExists", N_FileExists },
+            { "Source2ModFiles.ExistsInGame", N_ExistsInGame },
             { "Source2ModFiles.DirExists", N_DirExists },
             { "Source2ModFiles.FileSize", N_FileSize },
             { "Source2ModFiles.FileTime", N_FileTime },

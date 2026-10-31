@@ -65,8 +65,14 @@ namespace sourcepawn
             return AddressOf(ctx, params[1]) != nullptr;
         }
 
+        cell_t N_AddressesGet(IPluginContext* ctx, const cell_t* params)
+        {
+            return SchemaObjectForPointer(AddressOf(ctx, params[1]));
+        }
+
         const sp_nativeinfo_t g_addressNatives[] = {
             { "Source2ModAddresses.IsResolved", N_AddressesIsResolved },
+            { "Source2ModAddresses.Get", N_AddressesGet },
             { nullptr, nullptr },
         };
     }
