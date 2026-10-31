@@ -377,8 +377,8 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, ISource2ModPl
 
     char err[256]{};
     PluginApi::SetLoadingPlugin(stored.get());
-    if (script)
-        script->SetId(stored->id);
+    if (stored->script)
+        stored->script->SetId(stored->id);
     stored->coreApi = std::make_unique<PluginApi>(stored->id);
     const bool loaded = plugin->Load(stored->coreApi.get(), err, sizeof(err), late);
     PluginApi::SetLoadingPlugin(nullptr);

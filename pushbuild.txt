@@ -24,3 +24,4 @@ Plugin API 8, every plugin must be rebuilt: each plugin gets its own interface i
 Windows: the crash listeners build again (the previous release failed there with C2084).
 Windows: Source2ModModule builds again (windows.h renamed GetModuleHandle, the previous attempt failed with C3668).
 New: ISource2ModVoice (voice flags and listen overrides per plugin, combined by the core), ISource2ModFunctions::FromDatamap, core.json FollowCS2ServerGuidelines (default true, servers that set inventory or Valve DS fields need false).
+SourcePawn plugins have their plugin id again (plugin API 8 lost it): their hooks are removed when they unload or fail to load, which fixes a crash in a ConVar change hook, and Source2ModConfig.Register works.
