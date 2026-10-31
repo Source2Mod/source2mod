@@ -102,6 +102,7 @@ namespace sourcepawn
         {
             void* msg = nullptr;
             bool owned = false;
+            bool gameOwned = false;   // LendGameMessage: not sendable, a read creates nothing
             PluginId owner = 0;
             std::vector<cell_t> children;   // nested-message handles taken from this one
 
@@ -646,14 +647,19 @@ namespace sourcepawn
                 return 0;
             const cell_t h = NewNetMsg(nested, false, parent->owner, true);
             if (h)
+            {
+                static_cast<NetMsg*>(Handles().Read(h, NetMsgType()))->gameOwned = parent->gameOwned;
                 parent->children.push_back(h);
+            }
             return h;
         }
 
         cell_t N_GetNested(IPluginContext* ctx, const cell_t* params)
         {
             NetMsg* m = MsgOf(ctx, params[1]);
-            return m ? Nested(ctx, params[1], NM().GetNestedMessage(m->msg, LocalString(ctx, params[2]))) : 0;
+            if (!m || (m->gameOwned && !NM().HasField(m->msg, LocalString(ctx, params[2]))))
+                return 0;
+            return Nested(ctx, params[1], NM().GetNestedMessage(m->msg, LocalString(ctx, params[2])));
         }
 
         cell_t N_GetRepeatedNested(IPluginContext* ctx, const cell_t* params)
@@ -690,14 +696,29 @@ namespace sourcepawn
 
         cell_t N_SendMessage(IPluginContext* ctx, const cell_t* params)
         {
-            if (NetMsg* m = MsgOf(ctx, params[1]))
+            NetMsg* m = MsgOf(ctx, params[1]);
+            if (m && m->gameOwned)
+                return ctx->ThrowNativeError("This message belongs to the game and cannot be sent");
+            if (m)
                 NM().SendMessage(m->msg, params[2], CPlayerSlot(params[3]));
             return 0;
         }
 
+        // SendMessageDirect(msg, slot, reliable): on the client's own channel, no game event system on the way.
+        cell_t N_SendMessageDirect(IPluginContext* ctx, const cell_t* params)
+        {
+            NetMsg* m = MsgOf(ctx, params[1]);
+            if (m && m->gameOwned)
+                return ctx->ThrowNativeError("This message belongs to the game and cannot be sent");
+            return m && networkmessages::networkMessagesManager.SendMessageToClient(m->msg, CPlayerSlot(params[2]), params[0] < 3 || params[3]);
+        }
+
         cell_t N_SendMessageToPlayers(IPluginContext* ctx, const cell_t* params)
         {
-            if (NetMsg* m = MsgOf(ctx, params[1]))
+            NetMsg* m = MsgOf(ctx, params[1]);
+            if (m && m->gameOwned)
+                return ctx->ThrowNativeError("This message belongs to the game and cannot be sent");
+            if (m)
                 NM().SendMessageToPlayers(m->msg, params[2], ReadMask(ctx, params[3]));
             return 0;
         }
@@ -905,6 +926,7 @@ namespace sourcepawn
             { "Source2ModNetworkMessages.ClearRepeatedField", N_ClearRepeatedField },
             { "Source2ModNetworkMessages.Clear", N_Clear },
             { "Source2ModNetworkMessages.SendMessage", N_SendMessage },
+            { "Source2ModNetworkMessages.SendMessageDirect", N_SendMessageDirect },
             { "Source2ModNetworkMessages.SendMessageToPlayers", N_SendMessageToPlayers },
             { "Source2ModNetworkMessages.HookServerMessage", N_HookServerMessage },
             { "Source2ModNetworkMessages.UnhookServerMessage", N_UnhookNetMessage<HookKind::ServerMessage> },
@@ -928,6 +950,14 @@ namespace sourcepawn
     {
         NetMsg* m = MsgOf(ctx, handle);
         return m ? m->msg : nullptr;
+    }
+
+    cell_t LendGameMessage(void* msg, PluginId owner)
+    {
+        const cell_t h = NewNetMsg(msg, false, owner, true);
+        if (h)
+            static_cast<NetMsg*>(Handles().Read(h, NetMsgType()))->gameOwned = true;
+        return h;
     }
 
     const sp_nativeinfo_t* GetNetworkMessageNatives()

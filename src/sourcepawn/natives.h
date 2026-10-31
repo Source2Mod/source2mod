@@ -83,6 +83,9 @@ namespace sourcepawn
     const sp_nativeinfo_t* GetAdtNatives();           // natives_adt.cpp
     const sp_nativeinfo_t* GetApiNatives();           // natives_api.cpp
     const sp_nativeinfo_t* GetClientNatives();        // natives_clients.cpp
+    const sp_nativeinfo_t* GetConsoleNatives();       // natives_console.cpp
+    const sp_nativeinfo_t* GetCustomMenuNatives();    // natives_custommenu.cpp
+    const sp_nativeinfo_t* GetStringTableNatives();   // natives_stringtables.cpp
     const sp_nativeinfo_t* GetCommandNatives();       // natives_commands.cpp
     const sp_nativeinfo_t* GetConfigNatives();        // natives_configs.cpp
     const sp_nativeinfo_t* GetConVarNatives();        // natives_convars.cpp
@@ -163,6 +166,9 @@ namespace sourcepawn
     void ForgetScriptHooks(PluginId id);          // natives_scripts.cpp
     void ForgetNetworkMessageHooks(PluginId id);  // natives_networkmessages.cpp
     void ForgetSoundHooks(PluginId id);           // natives_sounds.cpp
+    void ForgetConsoleListeners(PluginId id);     // natives_console.cpp
+    void ForgetSpawnGroups(PluginId id);          // natives_stringtables.cpp
+    void ShutdownConsoleListeners();              // natives_console.cpp
 
     /// ISource2ModNatives001, for native plugins (pluginsys.cpp).
     ISource2ModNatives* NativesInterface();
@@ -173,6 +179,13 @@ namespace sourcepawn
     void* SchemaObjectPointer(SourcePawn::IPluginContext* ctx, cell_t handle);
     /// A SchemaObject for a raw pointer; 0 for nullptr.
     cell_t SchemaObjectForPointer(void* ptr);
+
+    /**
+     * A NetMessage handle over a live protobuf the game owns (natives_networkmessages.cpp):
+     * a script cannot close it or send it, and reading a nested message the
+     * field does not have answers null instead of creating it. The caller frees it.
+     */
+    cell_t LendGameMessage(void* msg, PluginId owner);
 
     /// A Source2ModCommandArgs handle for `args`; the caller frees it (Handles().Free) before args goes.
     cell_t LendCommandArgs(const ::Source2ModCommandArgs* args, PluginId owner);

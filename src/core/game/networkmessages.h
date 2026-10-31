@@ -144,6 +144,7 @@ namespace networkmessages
         void Clear(void* msg) override;
 
         void SendMessage(void* msg, int msgid, CPlayerSlot slot) override;
+        bool SendMessageToClient(void* msg, CPlayerSlot slot, bool reliable);
         void SendMessageToPlayers(void* msg, int msgid, uint64_t playermask) override;
 
 

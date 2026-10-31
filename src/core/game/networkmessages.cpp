@@ -34,9 +34,11 @@
  * Project: Source2Mod
  */
 #include "core/game/networkmessages.h"
+#include "core/game/clients.h"
 #include "core/hooks/virtualhooks.h"
 
 #include <engine2/igameeventsystem.h>
+#include <engine2/serversideclient.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/message.h>
 #include <networksystem/inetworkmessages.h>
@@ -1061,6 +1063,15 @@ namespace networkmessages
     /* =========================
     Sending
     ========================= */
+
+    bool NetworkMessagesManager::SendMessageToClient(void* pmsg, CPlayerSlot slot, bool reliable)
+    {
+        CServerSideClient* client = clients::clientsManager.GetServerSideClient(slot);
+        auto* message = FromHandle(pmsg);
+        if (!client || !message || !client->GetNetChannel())
+            return false;
+        return client->SendNetMessage(message, reliable ? BUF_RELIABLE : BUF_DEFAULT);
+    }
 
     void NetworkMessagesManager::SendMessage(void* pmsg, int msgid, CPlayerSlot slot)
     {

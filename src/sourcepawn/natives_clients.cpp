@@ -411,6 +411,38 @@ namespace sourcepawn
             return 0;
         }
 
+        // Ban(duration, kick): duration as the engine's banid has it, minutes, 0 for good.
+        cell_t N_SscBan(IPluginContext*, const cell_t* params)
+        {
+            if (g_pEngineServer && ServerClient(params))
+                g_pEngineServer->BanClient(CPlayerSlot(params[1]), sp_ctof(params[2]), params[0] < 3 || params[3]);
+            return 0;
+        }
+
+        // BanSteamId(steamId, duration, kick)
+        cell_t N_BanSteamId(IPluginContext* ctx, const cell_t* params)
+        {
+            const uint64_t id = clients::ClientsManager::ParseSteamId(LocalString(ctx, params[1]));
+            if (!id || !g_pEngineServer)
+                return 0;
+            g_pEngineServer->BanClient(CSteamID(static_cast<uint64>(id)), sp_ctof(params[2]), params[0] < 3 || params[3]);
+            return 1;
+        }
+
+        // CreateFakeClient(name)
+        cell_t N_CreateFakeClient(IPluginContext* ctx, const cell_t* params)
+        {
+            return g_pEngineServer ? g_pEngineServer->CreateFakeClient(LocalString(ctx, params[1])).Get() : -1;
+        }
+
+        // SetFakeClientConVar(slot, name, value)
+        cell_t N_SetFakeClientConVar(IPluginContext* ctx, const cell_t* params)
+        {
+            if (g_pEngineServer && Clients().IsFakeClient(CPlayerSlot(params[1])))
+                g_pEngineServer->SetFakeClientConVarValue(CPlayerSlot(params[1]), LocalString(ctx, params[2]), LocalString(ctx, params[3]));
+            return 0;
+        }
+
         // QueryConVar(name, callback, value)
         cell_t N_SscQueryConVar(IPluginContext* ctx, const cell_t* params)
         {
@@ -535,6 +567,10 @@ namespace sourcepawn
             { "CServerSideClient.LoadingProgress.get", N_SscLoadingProgress },
             { "CServerSideClient.FailedCommands.get", N_SscFailedCommands },
             { "CServerSideClient.ForceFullUpdate", N_SscForceFullUpdate },
+            { "CServerSideClient.Ban", N_SscBan },
+            { "Source2ModClients.BanSteamId", N_BanSteamId },
+            { "Source2ModClients.CreateFakeClient", N_CreateFakeClient },
+            { "Source2ModClients.SetFakeClientConVar", N_SetFakeClientConVar },
             { "CServerSideClient.QueryConVar", N_SscQueryConVar },
             { "CServerSideClient.ReplicateConVar", N_SscReplicateConVar },
             { "CServerSideClient.GetIpAddress", N_SscGetIpAddress },

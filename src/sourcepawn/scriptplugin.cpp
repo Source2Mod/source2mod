@@ -147,6 +147,7 @@ namespace sourcepawn
         if (!g_pEnv)
             return;
 
+        ShutdownConsoleListeners();
         crashinfo::Shutdown();
         g_pEnv->SetDebugger(nullptr);
         g_pEnv->Shutdown();
@@ -173,6 +174,8 @@ namespace sourcepawn
         ForgetScriptHooks(id);
         ForgetNetworkMessageHooks(id);
         ForgetSoundHooks(id);
+        ForgetConsoleListeners(id);
+        ForgetSpawnGroups(id);
         Handles().RemoveAllForPlugin(id);
     }
 

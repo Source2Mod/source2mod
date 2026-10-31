@@ -51,6 +51,8 @@
 
 #include "core/hooks/hooks.h"
 
+#include <google/protobuf/message.h>
+#include <source2mod/sdk/game/shared/usercmd.h>
 #include <source2mod/sdk/game/shared/movedata.h>
 #include <source2mod/sdk/game/shared/takedamageinfo.h>
 #include <source2mod/sdk/game/shared/takedamageresult.h>
@@ -139,6 +141,22 @@ namespace sourcepawn
             const cell_t h = Handles().Create(type, object, f->owner);
             if (h)
                 f->lent.push_back({ object, type, h });
+            return h;
+        }
+
+        // The command's protobuf, for the frame.
+        cell_t LendCommand(void* cmd)
+        {
+            if (!cmd || g_frames.empty())
+                return 0;
+            auto* message = static_cast<google::protobuf::Message*>(static_cast<CUserCmd*>(cmd));
+            Frame* f = g_frames.back();
+            for (const Frame::Lent& l : f->lent)
+                if (l.object == message && l.type == 0)
+                    return l.handle;
+            const cell_t h = LendGameMessage(message, f->owner);
+            if (h)
+                f->lent.push_back({ message, 0, h });
             return h;
         }
 
@@ -680,6 +698,93 @@ namespace sourcepawn
         S2M_CTX_MOVEMENT(SetupMoveContext)
         S2M_CTX_OBJECT(SetupMoveContext, cmd, c->cmd)
 
+        // The fields read every tick, without reflection or a handle per message.
+        template <typename C>
+        const CBaseUserCmdPB* CommandBase(IPluginContext* ctx, cell_t handle)
+        {
+            C* c = Ctx<C>(ctx, handle);
+            return c && c->cmd ? &static_cast<CUserCmd*>(c->cmd)->base() : nullptr;
+        }
+
+        template <typename C>
+        cell_t N_CmdGetCommand(IPluginContext* ctx, const cell_t* params)
+        {
+            C* c = Ctx<C>(ctx, params[1]);
+            return c ? LendCommand(c->cmd) : 0;
+        }
+
+        void WriteCells(cell_t* out, uint64 value)
+        {
+            out[0] = static_cast<cell_t>(value & 0xFFFFFFFFu);
+            out[1] = static_cast<cell_t>(value >> 32);
+        }
+
+        // GetButtons(int held[2], int changed[2], int scroll[2])
+        template <typename C>
+        cell_t N_CmdGetButtons(IPluginContext* ctx, const cell_t* params)
+        {
+            const CBaseUserCmdPB* base = CommandBase<C>(ctx, params[1]);
+            cell_t* out[3] = {};
+            for (int i = 0; i < 3; i++)
+            {
+                if (ctx->LocalToPhysAddr(params[i + 2], &out[i]) != SP_ERROR_NONE)
+                    return 0;
+                out[i][0] = out[i][1] = 0;
+            }
+            if (!base)
+                return 0;
+            const CInButtonStatePB& buttons = base->buttons_pb();
+            WriteCells(out[0], buttons.buttonstate1());
+            WriteCells(out[1], buttons.buttonstate2());
+            WriteCells(out[2], buttons.buttonstate3());
+            return 0;
+        }
+
+        // GetViewAngles(float angles[3])
+        template <typename C>
+        cell_t N_CmdGetViewAngles(IPluginContext* ctx, const cell_t* params)
+        {
+            const CBaseUserCmdPB* base = CommandBase<C>(ctx, params[1]);
+            cell_t* out = nullptr;
+            if (!base || ctx->LocalToPhysAddr(params[2], &out) != SP_ERROR_NONE)
+                return 0;
+            out[0] = sp_ftoc(base->viewangles().x());
+            out[1] = sp_ftoc(base->viewangles().y());
+            out[2] = sp_ftoc(base->viewangles().z());
+            return 0;
+        }
+
+        // GetMove(&forward, &left, &up)
+        template <typename C>
+        cell_t N_CmdGetMove(IPluginContext* ctx, const cell_t* params)
+        {
+            const CBaseUserCmdPB* base = CommandBase<C>(ctx, params[1]);
+            cell_t* out[3] = {};
+            for (int i = 0; i < 3; i++)
+            {
+                if (ctx->LocalToPhysAddr(params[i + 2], &out[i]) != SP_ERROR_NONE)
+                    return 0;
+            }
+            *out[0] = sp_ftoc(base ? base->forwardmove() : 0.0f);
+            *out[1] = sp_ftoc(base ? base->leftmove() : 0.0f);
+            *out[2] = sp_ftoc(base ? base->upmove() : 0.0f);
+            return 0;
+        }
+
+#define S2M_CMD_INT(name, expr)                                                 \
+        template <typename C>                                                   \
+        cell_t N_Cmd##name(IPluginContext* ctx, const cell_t* params)           \
+        {                                                                       \
+            const CBaseUserCmdPB* base = CommandBase<C>(ctx, params[1]);        \
+            return base ? static_cast<cell_t>(expr) : 0;                        \
+        }
+        S2M_CMD_INT(GetImpulse, base->impulse())
+        S2M_CMD_INT(GetWeaponSelect, base->weaponselect())
+        S2M_CMD_INT(GetClientTick, base->client_tick())
+        S2M_CMD_INT(GetCommandNumber, base->legacy_command_number())
+        S2M_CMD_INT(GetSubtickMoveCount, base->subtick_moves_size())
+#undef S2M_CMD_INT
+
         S2M_CTX_MOVEMENT(TryPlayerMoveContext)
 
         S2M_CTX_OBJECT(LegacyJumpContext, jump, c->jump)
@@ -1129,6 +1234,19 @@ namespace sourcepawn
             { "RunCommandContext.services.get", N_RunCommandContext_services },
             { "RunCommandContext.pawn.get", N_RunCommandContext_pawn },
             { "RunCommandContext.cmd.get", N_RunCommandContext_cmd },
+#define S2M_CMD_NATIVES(C)                                                      \
+            { #C ".GetCommand", N_CmdGetCommand<C> },                           \
+            { #C ".GetButtons", N_CmdGetButtons<C> },                           \
+            { #C ".GetViewAngles", N_CmdGetViewAngles<C> },                     \
+            { #C ".GetMove", N_CmdGetMove<C> },                                 \
+            { #C ".GetImpulse", N_CmdGetImpulse<C> },                           \
+            { #C ".GetWeaponSelect", N_CmdGetWeaponSelect<C> },                 \
+            { #C ".GetClientTick", N_CmdGetClientTick<C> },                     \
+            { #C ".GetCommandNumber", N_CmdGetCommandNumber<C> },               \
+            { #C ".GetSubtickMoveCount", N_CmdGetSubtickMoveCount<C> },
+            S2M_CMD_NATIVES(RunCommandContext)
+            S2M_CMD_NATIVES(SetupMoveContext)
+#undef S2M_CMD_NATIVES
             { "RunCommandContext.CallOriginal", N_CallOriginal<RunCommandContext> },
             { "AcceptInputContext.entity.get", N_AcceptInputContext_entity },
             { "AcceptInputContext.activator.get", N_AcceptInputContext_activator },

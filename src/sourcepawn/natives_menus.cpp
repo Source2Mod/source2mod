@@ -206,7 +206,7 @@ namespace sourcepawn
             {
                 if (m->dead)
                     return {};
-                char buffer[256] = {};
+                char buffer[1024] = {};
                 sp::CallArgs args;
                 args.PushCell(EntityCell(player));
                 args.PushCell(m->handle);

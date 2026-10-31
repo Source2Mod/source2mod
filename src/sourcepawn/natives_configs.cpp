@@ -88,6 +88,7 @@ namespace sourcepawn
             PluginId owner = 0;
             std::string name;
             IPluginFunction* callback = nullptr;
+            IPluginFunction* validator = nullptr;
             cell_t handle = 0;
             JsonValues values;
 
@@ -99,6 +100,28 @@ namespace sourcepawn
                 // rather than trusting the pointer, which may be reused by then.
                 if (config && configs::configsManager.Get(owner, name.c_str()) == config)
                     configs::configsManager.Unregister(config);
+            }
+
+            bool OnConfigValidate(ISource2ModConfig* changed, const ISource2ModJSONValue* root, char* error, size_t maxlen) override
+            {
+                if (!validator || !handle)
+                    return true;
+                JsonValues lent;
+                lent.owner = owner;
+                char reason[256] = "";
+                sp::CallArgs args;
+                args.PushCell(handle);
+                args.PushCell(lent.For(root));
+                args.PushString(reason, sizeof(reason), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY | SM_PARAM_COPYBACK);
+                args.PushCell(sizeof(reason));
+                cell_t ok = 1;
+                const bool ran = Invoke(validator, args, &ok);
+                lent.FreeAll();
+                if (ran && ok)
+                    return true;
+                if (error && maxlen)
+                    snprintf(error, maxlen, "%s", ran ? reason : "the script's validator raised an error");
+                return false;
             }
 
             void OnConfigChanged(ISource2ModConfig* changed, ConfigChange reason) override
@@ -127,7 +150,7 @@ namespace sourcepawn
         }
 
         /// What Source2ModConfig.Register and Source2ModConfigDefaults.Register share.
-        cell_t RegisterConfig(IPluginContext* ctx, const char* name, const char* defaults, cell_t callback, cell_t flags)
+        cell_t RegisterConfig(IPluginContext* ctx, const char* name, const char* defaults, cell_t callback, cell_t flags, cell_t validator = 0)
         {
             const PluginId owner = CallerId(ctx);
             ISource2ModPlugin* plugin = PluginOf(owner);
@@ -146,6 +169,7 @@ namespace sourcepawn
             c->owner = owner;
             c->name = name;
             c->callback = fn;
+            c->validator = IsUnset(validator) ? nullptr : ctx->GetFunctionById(static_cast<funcid_t>(validator));
             c->values.owner = owner;
             c->handle = Handles().Create(ConfigType(), c, owner);
             if (!c->handle)
@@ -169,7 +193,7 @@ namespace sourcepawn
         // Register(name, defaults, callback, flags)
         cell_t N_ConfigRegister(IPluginContext* ctx, const cell_t* params)
         {
-            return RegisterConfig(ctx, LocalString(ctx, params[1]), LocalString(ctx, params[2]), params[3], params[4]);
+            return RegisterConfig(ctx, LocalString(ctx, params[1]), LocalString(ctx, params[2]), params[3], params[4], params[0] >= 5 ? params[5] : 0);
         }
 
         // ---- Source2ModConfigDefaults: the SDK's builder behind a handle ----------------
@@ -258,7 +282,7 @@ namespace sourcepawn
             if (!d)
                 return 0;
             const std::string text = d->builder.Json();
-            return RegisterConfig(ctx, LocalString(ctx, params[2]), text.c_str(), params[3], params[4]);
+            return RegisterConfig(ctx, LocalString(ctx, params[2]), text.c_str(), params[3], params[4], params[0] >= 5 ? params[5] : 0);
         }
 
         cell_t N_ConfigRoot(IPluginContext* ctx, const cell_t* params)
