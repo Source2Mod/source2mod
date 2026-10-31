@@ -1,4 +1,4 @@
-﻿/**
+/**
 * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * Source2Mod
@@ -351,10 +351,10 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, ISource2ModPl
     // were reordered and ISource2ModCommands went to 003, so an older plugin
     // would be called through the wrong vtable slots and handed no commands
     // interface. Its GetApiVersion() is the first slot and safe to ask.
-    if (plugin->GetApiVersion() < SOURCE2MOD_PLAPI_VERSION)
+    if (plugin->GetApiVersion() < SOURCE2MOD_PLAPI_MIN)
     {
         FP_ERROR("Failed to load {}: plugin API version {} but this core needs {} -- update the plugin or rebuild it against the current SDK",
-                 fullPath, plugin->GetApiVersion(), SOURCE2MOD_PLAPI_VERSION);
+                 fullPath, plugin->GetApiVersion(), SOURCE2MOD_PLAPI_MIN);
         FAIL("Plugin built against an older SDK than this core");
     }
 
@@ -380,7 +380,14 @@ bool PluginManager::AddPlugin(const char* fullPath, LibHandle lib, ISource2ModPl
     if (stored->script)
         stored->script->SetId(stored->id);
     stored->coreApi = std::make_unique<PluginApi>(stored->id);
-    const bool loaded = plugin->Load(stored->coreApi.get(), err, sizeof(err), late);
+    ISource2ModAPI* handedApi = stored->coreApi.get();
+    if (stored->apiVersion == 8)
+    {
+        // The layout it was built against: see the header.
+        stored->coreApi008 = std::make_unique<compat::PluginApi008>(stored->coreApi.get());
+        handedApi = reinterpret_cast<ISource2ModAPI*>(stored->coreApi008.get());
+    }
+    const bool loaded = plugin->Load(handedApi, err, sizeof(err), late);
     PluginApi::SetLoadingPlugin(nullptr);
 
     if (!loaded)

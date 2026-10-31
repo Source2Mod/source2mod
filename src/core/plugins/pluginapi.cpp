@@ -1,4 +1,4 @@
-﻿/**
+/**
 * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * Source2Mod
@@ -774,4 +774,105 @@ size_t PluginApi::FormatArgs(char* buffer, size_t maxlength, const char* format,
 bool PluginApi::FollowsServerGuidelines()
 {
     return coreconfig::coreConfig.FollowCS2ServerGuidelines;
+}
+
+// The interfaces of plugin API 9 on: what the factory hands this plugin.
+ISource2ModClients* PluginApi::Clients()
+{
+    return static_cast<ISource2ModClients*>(Source2ModFactory(SOURCE2MOD_CLIENTS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModConfigs* PluginApi::Configs()
+{
+    return static_cast<ISource2ModConfigs*>(Source2ModFactory(SOURCE2MOD_CONFIGS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModCookies* PluginApi::Cookies()
+{
+    return static_cast<ISource2ModCookies*>(Source2ModFactory(SOURCE2MOD_COOKIES_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModCrash* PluginApi::Crash()
+{
+    return static_cast<ISource2ModCrash*>(Source2ModFactory(SOURCE2MOD_CRASH_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModFeatures* PluginApi::Features()
+{
+    return static_cast<ISource2ModFeatures*>(Source2ModFactory(SOURCE2MOD_FEATURES_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModFiles* PluginApi::Files()
+{
+    return static_cast<ISource2ModFiles*>(Source2ModFactory(SOURCE2MOD_FILES_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModFunctions* PluginApi::Functions()
+{
+    return static_cast<ISource2ModFunctions*>(Source2ModFactory(SOURCE2MOD_FUNCTIONS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModGeoIP* PluginApi::GeoIP()
+{
+    return static_cast<ISource2ModGeoIP*>(Source2ModFactory(SOURCE2MOD_GEOIP_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModJSON* PluginApi::JSON()
+{
+    return static_cast<ISource2ModJSON*>(Source2ModFactory(SOURCE2MOD_JSON_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModMaps* PluginApi::Maps()
+{
+    return static_cast<ISource2ModMaps*>(Source2ModFactory(SOURCE2MOD_MAPS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModModules* PluginApi::Modules()
+{
+    return static_cast<ISource2ModModules*>(Source2ModFactory(SOURCE2MOD_MODULES_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModNatives* PluginApi::Natives()
+{
+    return static_cast<ISource2ModNatives*>(Source2ModFactory(SOURCE2MOD_NATIVES_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModPermissions* PluginApi::Permissions()
+{
+    return static_cast<ISource2ModPermissions*>(Source2ModFactory(SOURCE2MOD_PERMISSIONS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModSchemaMethods* PluginApi::SchemaMethods()
+{
+    return static_cast<ISource2ModSchemaMethods*>(Source2ModFactory(SOURCE2MOD_SCHEMAMETHODS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModScripts* PluginApi::Scripts()
+{
+    return static_cast<ISource2ModScripts*>(Source2ModFactory(SOURCE2MOD_SCRIPTS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModTargeting* PluginApi::Targeting()
+{
+    return static_cast<ISource2ModTargeting*>(Source2ModFactory(SOURCE2MOD_TARGETING_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModTranslations* PluginApi::Translations()
+{
+    return static_cast<ISource2ModTranslations*>(Source2ModFactory(SOURCE2MOD_TRANSLATIONS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModUtils* PluginApi::Utils()
+{
+    return static_cast<ISource2ModUtils*>(Source2ModFactory(SOURCE2MOD_UTILS_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModVoice* PluginApi::Voice()
+{
+    return static_cast<ISource2ModVoice*>(Source2ModFactory(SOURCE2MOD_VOICE_INTERFACE, nullptr, nullptr));
+}
+
+ISource2ModWebSockets* PluginApi::WebSockets()
+{
+    return static_cast<ISource2ModWebSockets*>(Source2ModFactory(SOURCE2MOD_WEBSOCKETS_INTERFACE, nullptr, nullptr));
 }

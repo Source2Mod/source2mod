@@ -1,4 +1,4 @@
-﻿/**
+/**
 * vim: set ts=4 sw=4 tw=99 noet:
  * =============================================================================
  * Source2Mod
@@ -121,6 +121,26 @@ public:
     size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap) override;
 
     bool FollowsServerGuidelines() override;
+    ISource2ModClients* Clients() override;
+    ISource2ModConfigs* Configs() override;
+    ISource2ModCookies* Cookies() override;
+    ISource2ModCrash* Crash() override;
+    ISource2ModFeatures* Features() override;
+    ISource2ModFiles* Files() override;
+    ISource2ModFunctions* Functions() override;
+    ISource2ModGeoIP* GeoIP() override;
+    ISource2ModJSON* JSON() override;
+    ISource2ModMaps* Maps() override;
+    ISource2ModModules* Modules() override;
+    ISource2ModNatives* Natives() override;
+    ISource2ModPermissions* Permissions() override;
+    ISource2ModSchemaMethods* SchemaMethods() override;
+    ISource2ModScripts* Scripts() override;
+    ISource2ModTargeting* Targeting() override;
+    ISource2ModTranslations* Translations() override;
+    ISource2ModUtils* Utils() override;
+    ISource2ModVoice* Voice() override;
+    ISource2ModWebSockets* WebSockets() override;
 
 private:
     PluginId m_owner;
