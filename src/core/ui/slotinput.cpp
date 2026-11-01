@@ -50,6 +50,7 @@
 #include <source2mod/sdk/schema/classes/CCSGameRules.h>
 #include <source2mod/sdk/schema/classes/CCSPlayerController.h>
 #include <source2mod/sdk/schema/classes/CCSPlayerPawn.h>
+#include <source2mod/sdk/schema/classes/CCSPlayer_ItemServices.h>
 #include <source2mod/sdk/schema/classes/CCSPlayer_MovementServices.h>
 #include <source2mod/sdk/schema/classes/CCSWeaponBase.h>
 #include <source2mod/sdk/schema/classes/CCSWeaponBaseVData.h>
@@ -181,6 +182,7 @@ namespace slotinput {
         bool g_bAnyInjected = false;
         bool g_bCleanupOwned = false;
         Source2ModHookId g_RunCommandHook = 0;
+        Source2ModHookId g_CanAcquireHook = 0;
 
         int TickCount()
         {
@@ -674,6 +676,31 @@ namespace slotinput {
             OnWeaponSelect(controller, cmd);
             return { Action::Ignore };
         }
+
+        // A fake belongs to the player whose menu made it: nobody else picks it
+        // up. The item is compared by address with the fakes' own, so an item
+        // that is not a weapon's (a loadout's) is never read as one.
+        HookReturn<CanAcquireContext::Return> OnCanAcquire(CanAcquireContext& ctx, bool post)
+        {
+            if (!ctx.item || !ctx.services)
+                return { Action::Ignore };
+
+            CCSPlayerPawn* pawn = ctx.services->GetPlayerPawn();
+            for (const Session& s : g_Sessions)
+            {
+                if (!s.Active || s.Pawn.Get() == pawn)
+                    continue;
+
+                for (const Fake& fake : s.Fakes)
+                {
+                    CBasePlayerWeapon* weapon = fake.Weapon.Get();
+                    if (weapon && &weapon->m_AttributeManager().m_Item() == ctx.item)
+                        return { Action::Supersede, AcquireResult::NotAllowedByMode };
+                }
+            }
+
+            return { Action::Ignore };
+        }
     }
 
     namespace
@@ -684,6 +711,7 @@ namespace slotinput {
     void Init()
     {
         g_RunCommandHook = hooks::hooksManager.Hook(HookPoint::RunCommand, HookTarget::All(), OnRunCommand, false);
+        g_CanAcquireHook = hooks::hooksManager.Hook(HookPoint::CanAcquire, HookTarget::All(), OnCanAcquire, false);
 
         // The fakes are in the weapon list only while the snapshots are built
         // (CheckTransmit injects them). The snapshots go out in the async post
@@ -707,6 +735,9 @@ namespace slotinput {
         if (g_RunCommandHook)
             hooks::hooksManager.Unhook(g_RunCommandHook);
         g_RunCommandHook = 0;
+        if (g_CanAcquireHook)
+            hooks::hooksManager.Unhook(g_CanAcquireHook);
+        g_CanAcquireHook = 0;
         if (g_GameSystem)
             gamesystems::gameSystemsManager.Destroy(g_GameSystem);
         g_GameSystem = 0;

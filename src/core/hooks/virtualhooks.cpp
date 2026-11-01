@@ -832,12 +832,15 @@ namespace virtualhooks
         FP_VPROF("Source2Mod::CheckTransmit");
 
         // The menu-key fakes go into m_hMyWeapons for this pack only, and stay
-        // off every wire but their owner's.
+        // off every wire but their owner's. Blocked after the plugins' listeners:
+        // one hiding a pawn with all it holds also marks the pawn's fakes dormant
+        // for viewers whose client never had them, and only this undoes that.
         slotinput::Inject();
-        for (int i = 0; i < nInfoCount; i++)
-            slotinput::BlockForViewer(reinterpret_cast<CCheckTransmitInfo*>(ppInfoList[i]));
 
         transmit::transmitManager.OnCheckTransmit(ppInfoList, nInfoCount, pEntityIndicies, nEntities);
+
+        for (int i = 0; i < nInfoCount; i++)
+            slotinput::BlockForViewer(reinterpret_cast<CCheckTransmitInfo*>(ppInfoList[i]));
 
         const uint32* a = unionTransmitEdicts.Base();
         const uint32* b = unionTransmitEdicts2.Base();

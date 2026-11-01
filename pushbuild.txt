@@ -29,3 +29,4 @@ SourcePawn catches up with C++ and the engine: net channel stats and client stat
 Plugin API 9: ISource2ModAPI in order, with every subsystem on it (Clients, Configs, Files, Functions, Hooks, Voice, ...). Plugins built against 8 keep loading, the core hands them the old layout.
 Custom HUD classes and strings go through the game's own state setters (two new gamedata signatures, the old write stays as a fallback), for HUD menus that show their rows without any text.
 Plugin API 10: ISource2ModAddresses, ADDR_* and the SourcePawn addresses are gone, game functions are found by gamedata name through ISource2ModFunctions. Plugins built against an older API are refused, every plugin has to be rebuilt.
+Menu-key fake weapons can only be acquired by the player whose menu made them, and a plugin hiding a pawn with its weapons no longer marks that player's fakes dormant for other viewers.
