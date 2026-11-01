@@ -119,6 +119,8 @@ namespace menus {
         void CloseMenu(IMenu* menu) override;
         bool IsMenuOpen(CCSPlayerController* player, IMenu* menu) override;
         IMenu* GetOpenMenu(CCSPlayerController* player) override;
+        void SetKeyWeapons(CCSPlayerController* player, bool enabled) override;
+        bool GetKeyWeapons(CCSPlayerController* player) override;
     public:
         /// The plugin whose menu the player has open, 0 for none.
         PluginId OwnerOf(CCSPlayerController* player) const;

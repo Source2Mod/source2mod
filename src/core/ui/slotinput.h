@@ -74,4 +74,9 @@ namespace slotinput {
     bool OnMenuCommand(CPlayerSlot slot, int key);
 
     void ResetPlayer(CPlayerSlot slot);
+
+    // Whether this player's menus use the fakes at all; on again for whoever
+    // takes the slot next. Off, their menus take "N" commands only.
+    void SetKeyWeapons(CPlayerSlot slot, bool enabled);
+    bool GetKeyWeapons(CPlayerSlot slot);
 }

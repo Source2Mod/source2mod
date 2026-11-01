@@ -325,6 +325,8 @@ public:
     void CloseMenu(IMenu* menu) override { return menus::menuManager.CloseMenu(static_cast<decltype(menu)&&>(menu)); }
     bool IsMenuOpen(CCSPlayerController* player, IMenu* menu) override { return menus::menuManager.IsMenuOpen(static_cast<decltype(player)&&>(player), static_cast<decltype(menu)&&>(menu)); }
     IMenu* GetOpenMenu(CCSPlayerController* player) override { return menus::menuManager.GetOpenMenu(static_cast<decltype(player)&&>(player)); }
+    void SetKeyWeapons(CCSPlayerController* player, bool enabled) override { return menus::menuManager.SetKeyWeapons(static_cast<decltype(player)&&>(player), static_cast<decltype(enabled)&&>(enabled)); }
+    bool GetKeyWeapons(CCSPlayerController* player) override { return menus::menuManager.GetKeyWeapons(static_cast<decltype(player)&&>(player)); }
 
 private:
     PluginId m_owner;

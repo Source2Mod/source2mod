@@ -373,6 +373,19 @@ namespace sourcepawn
             return static_cast<cell_t>(menus::menuManager.OwnerOf(PlayerArg(ctx, params[1])));
         }
 
+        // Source2ModMenus.SetKeyWeapons(player, enabled)
+        cell_t N_SetKeyWeapons(IPluginContext* ctx, const cell_t* params)
+        {
+            menus::menuManager.SetKeyWeapons(PlayerArg(ctx, params[1]), params[2] != 0);
+            return 0;
+        }
+
+        // Source2ModMenus.GetKeyWeapons(player)
+        cell_t N_GetKeyWeapons(IPluginContext* ctx, const cell_t* params)
+        {
+            return menus::menuManager.GetKeyWeapons(PlayerArg(ctx, params[1])) ? 1 : 0;
+        }
+
         // Source2ModMenus.GetActiveMenuTitle(player, buffer, maxlen)
         cell_t N_GetActiveMenuTitle(IPluginContext* ctx, const cell_t* params)
         {
@@ -402,6 +415,8 @@ namespace sourcepawn
             { "Source2ModMenuInstance.Timeout.set", N_TimeoutSet },
             { "Source2ModMenus.GetActiveMenuOwner", N_GetActiveMenuOwner },
             { "Source2ModMenus.GetActiveMenuTitle", N_GetActiveMenuTitle },
+            { "Source2ModMenus.SetKeyWeapons", N_SetKeyWeapons },
+            { "Source2ModMenus.GetKeyWeapons", N_GetKeyWeapons },
             { nullptr, nullptr },
         };
     }

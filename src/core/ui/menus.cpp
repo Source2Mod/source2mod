@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "core/ui/menus.h"
+#include "core/ui/slotinput.h"
 #include "core/plugins/pluginmanager.h"
 
 #include "core/runtime/slowguard.h"
@@ -556,6 +557,17 @@ namespace menus
         if (!inst)
             return nullptr;
         return ownInstances_.count(inst) ? static_cast<CenterHtmlMenuInstance*>(inst)->Current() : inst->Menu();
+    }
+
+    void MenuManager::SetKeyWeapons(CCSPlayerController* player, bool enabled)
+    {
+        if (player)
+            slotinput::SetKeyWeapons(player->GetPlayerSlot(), enabled);
+    }
+
+    bool MenuManager::GetKeyWeapons(CCSPlayerController* player)
+    {
+        return player && slotinput::GetKeyWeapons(player->GetPlayerSlot());
     }
 
     uint32_t MenuManager::ActiveKeyMask(CCSPlayerController* player)

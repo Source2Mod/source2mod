@@ -105,8 +105,8 @@ namespace slotinput {
             // the very front catches the wheel and the key's fake at the end
             // still gets the key. Without them the wheel landed on 7, 8 or 9
             // (front of the knife slot) and turned the page. Selecting one
-            // does nothing. The grenade's definition is not 44: key 6 finds
-            // its fake by that.
+            // is a wheel step, see WheelTarget. The grenade's definition is
+            // not 44: key 6 finds its fake by that.
             { 10, "weapon_ak47",        7, "weapon_ak47" },
             { 11, "weapon_p250",        36, "weapon_p250" },
             { 12, "weapon_knife",       42, "weapon_knife" },
@@ -178,6 +178,8 @@ namespace slotinput {
 
         Session g_Sessions[ABSOLUTE_PLAYER_LIMIT];
         Learned g_Learned[ABSOLUTE_PLAYER_LIMIT];
+        // Players who asked for no fakes: their menus take "N" commands only.
+        bool g_KeyWeaponsOff[ABSOLUTE_PLAYER_LIMIT];
         std::vector<PendingKey> g_Pending;
         bool g_bAnyInjected = false;
         bool g_bCleanupOwned = false;
@@ -469,6 +471,10 @@ namespace slotinput {
             if (!player || player->IsBot() || !player->m_bPawnIsAlive())
                 return 0;
 
+            const int slot = player->GetPlayerSlot().Get();
+            if (slot < 0 || slot >= ABSOLUTE_PLAYER_LIMIT || g_KeyWeaponsOff[slot])
+                return 0;
+
             CCSPlayerPawn* pawn = player->GetPlayerPawn();
             if (!pawn || !pawn->m_pWeaponServices())
                 return 0;
@@ -553,9 +559,121 @@ namespace slotinput {
             }
         }
 
-        // The usercmd's weaponselect: a fake is a key and never a switch; a
-        // real weapon in a slot whose key the menu uses is not switched to
-        // either (the key arrives through the fake, or through "N").
+        // Where the client's wheel walks: gear slot, then position.
+        struct WheelPos
+        {
+            int GearSlot;
+            int Position;
+
+            bool operator<(const WheelPos& other) const
+            {
+                return GearSlot != other.GearSlot ? GearSlot < other.GearSlot : Position < other.Position;
+            }
+            bool operator==(const WheelPos& other) const
+            {
+                return GearSlot == other.GearSlot && Position == other.Position;
+            }
+        };
+
+        bool WheelPosOf(CBasePlayerWeapon* weapon, WheelPos& pos)
+        {
+            auto* vdata = weapon ? weapon->GetWeaponVData() : nullptr;
+            if (!vdata)
+                return false;
+
+            pos = { static_cast<int>(vdata->m_GearSlot()), vdata->m_GearSlotPosition() };
+            return true;
+        }
+
+        // What CCSHudWeaponSelection's next (sub_1811AB5D0) and previous
+        // (sub_1811AB860) step take from `from`: the closest position after or
+        // before it, wrapping around at the end of the list.
+        const WheelPos* WheelStep(const std::vector<WheelPos>& list, const WheelPos& from, bool next)
+        {
+            const WheelPos* closest = nullptr;
+            const WheelPos* wrapped = nullptr;
+            for (const WheelPos& pos : list)
+            {
+                if (next ? from < pos : pos < from)
+                {
+                    if (!closest || (next ? pos < *closest : *closest < pos))
+                        closest = &pos;
+                }
+                if (!wrapped || (next ? pos < *wrapped : *wrapped < pos))
+                    wrapped = &pos;
+            }
+            return closest ? closest : wrapped;
+        }
+
+        // The wheel landed on a decoy. The command names only where it landed,
+        // so its direction comes from walking the list the client walked, real
+        // weapons and decoys, and the same step over the real weapons alone is
+        // the one the game would have taken. Null: no other weapon to go to.
+        CBasePlayerWeapon* WheelTarget(const Session& s, CPlayer_WeaponServices* ws, CBasePlayerWeapon* decoy)
+        {
+            WheelPos landed;
+            if (!WheelPosOf(decoy, landed))
+                return nullptr;
+
+            CBasePlayerWeapon* active = ws->m_hActiveWeapon().Get();
+            WheelPos from;
+            if (!WheelPosOf(active, from))
+                from = { -1, -1 };
+
+            std::vector<WheelPos> real;
+            std::vector<WheelPos> seen;
+            auto& myWeapons = ws->m_hMyWeapons();
+            FOR_EACH_VEC(myWeapons, i)
+            {
+                WheelPos pos;
+                if (WheelPosOf(myWeapons[i].Get(), pos))
+                    real.push_back(pos);
+            }
+            if (real.empty())
+                return nullptr;
+
+            seen = real;
+            for (const Fake& fake : s.Fakes)
+            {
+                WheelPos pos;
+                if (fake.Key > kMaxKey && WheelPosOf(Alive(fake), pos))
+                    seen.push_back(pos);
+            }
+
+            // Neither step lands there: a slot key the open page does not use
+            // (slotN takes the lowest position, so it can land on a decoy).
+            // That key's own weapon, or nothing.
+            const WheelPos* afterStep = WheelStep(seen, from, true);
+            const WheelPos* beforeStep = WheelStep(seen, from, false);
+            const WheelPos* target = nullptr;
+            if (afterStep && *afterStep == landed)
+                target = WheelStep(real, from, true);
+            else if (beforeStep && *beforeStep == landed)
+                target = WheelStep(real, from, false);
+            else
+            {
+                for (const WheelPos& pos : real)
+                {
+                    if (pos.GearSlot == landed.GearSlot && (!target || pos < *target))
+                        target = &pos;
+                }
+            }
+            if (!target)
+                return nullptr;
+
+            FOR_EACH_VEC(myWeapons, i)
+            {
+                WheelPos pos;
+                if (WheelPosOf(myWeapons[i].Get(), pos) && pos == *target)
+                    return myWeapons[i].Get() == active ? nullptr : myWeapons[i].Get();
+            }
+            return nullptr;
+        }
+
+        // The usercmd's weaponselect: a fake is a key and never a switch, a
+        // decoy is a wheel step. A real weapon is an ordinary switch (the
+        // wheel, lastinv) -- a key the menu uses finds its fake instead --
+        // unless it is the switch half of a "slotN;N" bind.
         bool OnWeaponSelect(CCSPlayerController* player, CUserCmd* cmd)
         {
             const int slot = player->GetPlayerSlot().Get();
@@ -572,9 +690,29 @@ namespace slotinput {
                     CBasePlayerWeapon* weapon = Alive(fake);
                     if (weapon && weapon->GetEntityIndex().Get() == index)
                     {
+                        if (fake.Key > kMaxKey)
+                        {
+                            // The switch half of a "slotN;N" bind whose fake is
+                            // gone and who has no weapon in that slot: not a step.
+                            const Learned& bound = LearnedFor(slot, player);
+                            const int boundKey = fake.Key - kMaxKey;
+                            if (bound.MenuCommandTick[boundKey] && TickCount() - bound.MenuCommandTick[boundKey] <= kWindowTicks)
+                            {
+                                cmd->mutable_base()->clear_weaponselect();
+                                return true;
+                            }
+
+                            CCSPlayerPawn* owner = player->GetPlayerPawn();
+                            CBasePlayerWeapon* target = owner && owner->m_pWeaponServices() ? WheelTarget(s, owner->m_pWeaponServices(), weapon) : nullptr;
+                            if (target)
+                                cmd->mutable_base()->set_weaponselect(target->GetEntityIndex().Get());
+                            else
+                                cmd->mutable_base()->clear_weaponselect();
+                            return true;
+                        }
+
                         cmd->mutable_base()->clear_weaponselect();
-                        if (fake.Key <= kMaxKey)
-                            OnSlotKey(slot, player, fake.Key);
+                        OnSlotKey(slot, player, fake.Key);
                         return true;
                     }
                 }
@@ -611,8 +749,8 @@ namespace slotinput {
                 return !V_strcmp(classname, kKeyGrenades[key - 6]);
             };
 
-            // 1) The switch half of a "slotN;N" bind whose "N" was a menu action
-            //    a moment ago -- the menu may have changed page or closed since.
+            // The switch half of a "slotN;N" bind whose "N" was a menu action a
+            // moment ago -- the menu may have changed page or closed since.
             Learned& learned = LearnedFor(slot, player);
             const int tick = TickCount();
             for (int key = 1; key <= kMaxKey; key++)
@@ -624,36 +762,25 @@ namespace slotinput {
                 }
             }
 
-            // 2) A menu open and the key of that slot does something in it: no
-            //    switch. Not taken as a key press either -- the wheel and
-            //    lastinv land here too.
-            if (!s.Active || gearSlot < 0 || gearSlot > 4)
-                return false;
-
-            int key = gearSlot + 1;
-            for (int g = 0; g < 4; g++)
+            // The switch half of a "slotN;N" bind that got here before its "N".
+            // Not the wheel: on a position its decoy shares, the wheel takes the
+            // decoy (first on a tie).
+            const int boundKey = gearSlot + 1;
+            if (s.Active && boundKey >= 1 && boundKey <= 5 && (s.MenuKeys & (1u << boundKey)) && learned.Source[boundKey] == KeySource::CommandBound)
             {
-                if (!V_strcmp(classname, kKeyGrenades[g]) && learned.Source[6 + g] == KeySource::CommandBound)
-                    key = 6 + g;
+                WheelPos selectedPos;
+                const bool sharesDecoy = WheelPosOf(selected, selectedPos) && std::any_of(s.Fakes.begin(), s.Fakes.end(), [&](const Fake& fake) {
+                    WheelPos pos;
+                    return fake.Key > kMaxKey && WheelPosOf(Alive(fake), pos) && pos == selectedPos;
+                });
+                if (sharesDecoy)
+                {
+                    cmd->mutable_base()->clear_weaponselect();
+                    return true;
+                }
             }
 
-            if (!(s.MenuKeys & (1u << key)))
-                return false;
-
-            cmd->mutable_base()->clear_weaponselect();
-
-            // 3) A key learned as bound that came without its command first:
-            //    the binds may have changed. Taken as the key after the window,
-            //    unless the command still turns up.
-            if (learned.Source[key] == KeySource::CommandBound)
-            {
-                const bool queued = std::any_of(g_Pending.begin(), g_Pending.end(),
-                    [&](const PendingKey& p) { return p.Slot == slot && p.Key == key; });
-                if (!queued)
-                    g_Pending.push_back({ slot, key, tick + kWindowTicks });
-            }
-
-            return true;
+            return false;
         }
 
         HookReturn<void> OnRunCommand(RunCommandContext& ctx, bool post)
@@ -766,7 +893,21 @@ namespace slotinput {
             return;
 
         g_Learned[s] = Learned{};
+        g_KeyWeaponsOff[s] = false;
         std::erase_if(g_Pending, [s](const PendingKey& p) { return p.Slot == s; });
+    }
+
+    void SetKeyWeapons(CPlayerSlot slot, bool enabled)
+    {
+        const int s = slot.Get();
+        if (s >= 0 && s < ABSOLUTE_PLAYER_LIMIT)
+            g_KeyWeaponsOff[s] = !enabled;
+    }
+
+    bool GetKeyWeapons(CPlayerSlot slot)
+    {
+        const int s = slot.Get();
+        return s >= 0 && s < ABSOLUTE_PLAYER_LIMIT && !g_KeyWeaponsOff[s];
     }
 
     bool OnMenuCommand(CPlayerSlot playerSlot, int key)

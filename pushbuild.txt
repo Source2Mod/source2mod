@@ -31,3 +31,4 @@ Custom HUD classes and strings go through the game's own state setters (two new 
 Plugin API 10: ISource2ModAddresses, ADDR_* and the SourcePawn addresses are gone, game functions are found by gamedata name through ISource2ModFunctions. Plugins built against an older API are refused, every plugin has to be rebuilt.
 Menu-key fake weapons can only be acquired by the player whose menu made them, and a plugin hiding a pawn with its weapons no longer marks that player's fakes dormant for other viewers.
 SourcePawn: CenterHtmlMenu.SetCooldownHandlers, a script's own cooldown handlers for AddMenuOptionWithCooldown.
+The mouse wheel switches real weapons while a menu takes keys, instead of doing nothing in it. ISource2ModMenus.SetKeyWeapons (SourcePawn too) turns a player's menu-key fake weapons off.
