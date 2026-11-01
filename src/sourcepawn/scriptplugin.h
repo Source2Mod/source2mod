@@ -131,6 +131,11 @@ namespace sourcepawn
         /// The Plugin handle scripts see for this one (GetMyHandle, AskPluginLoad2).
         cell_t Handle() const { return m_handle; }
 
+        /// CenterHtmlMenu.SetCooldownHandlers: this script's, as a native plugin's
+        /// IBaseMenu::SetCooldownHandlers are its own. Null = no cooldown.
+        SourcePawn::IPluginFunction* CooldownCanSelect = nullptr;
+        SourcePawn::IPluginFunction* CooldownOnSelect = nullptr;
+
         /// Runs a public by name with no arguments, if the plugin has it.
         void CallForward(const char* name);
         void CallForwardClient(const char* name, int client);

@@ -43,7 +43,8 @@ callbacks (`ISource2ModHooks`, SDKHooks-style entity points), entity and
 entity-output listeners, game functions described in gamedata, the schema
 helpers served by the core, C++ calling scripts' natives and forwards,
 SourcePawn 2.0, crash reports that name the SourcePawn plugin and function,
-and hot reload of scripts on Linux and Windows.
+hot reload of scripts on Linux and Windows, and custom menu instances and menu
+cooldown handlers in SourcePawn.
 
 Still open:
 
@@ -51,10 +52,3 @@ Still open:
   frame when the player has no real weapon in that slot (the fake key weapon
   is then alone in its gear slot). Keys 3 and 6-9 do not flick. No fix found
   without a client addon.
-- **SourcePawn gaps** -- custom menu instances (a C++ `IMenuInstance`
-  subclass) and per-plugin menu cooldown handlers (`SetCooldownHandlers`) are
-  C++ only; scripts get the default cooldown handlers.
-- **SourcePawn 2.0 compiler bug, upstream** -- `view_as<float>(call())` as an
-  operand of float arithmetic computes the wrong value
-  ([alliedmodders/sourcepawn#1197](https://github.com/alliedmodders/sourcepawn/issues/1197));
-  go through a variable until it is fixed, then bump `vendor/sourcepawn`.

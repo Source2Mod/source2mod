@@ -274,9 +274,33 @@ namespace sourcepawn
             return option;
         }
 
+        // SetCooldownHandlers(canSelect, onSelect): for this script's options, an unset
+        // one stays as it is, as in IBaseMenu::SetCooldownHandlers.
+        cell_t N_MenuSetCooldownHandlers(IPluginContext* ctx, const cell_t* params)
+        {
+            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
+            if (!plugin)
+                return 0;
+            if (!IsUnset(params[1]))
+            {
+                IPluginFunction* fn = Function(ctx, params[1]);
+                if (!fn)
+                    return 0;
+                plugin->CooldownCanSelect = fn;
+            }
+            if (!IsUnset(params[2]))
+            {
+                IPluginFunction* fn = Function(ctx, params[2]);
+                if (!fn)
+                    return 0;
+                plugin->CooldownOnSelect = fn;
+            }
+            return 0;
+        }
+
         // AddMenuOptionWithCooldown(text, handler, data, disabled, close, evaluator): IBaseMenu's
-        // version with the default cooldown handlers (no cooldown). evaluator came later:
-        // scripts built before it pass none.
+        // version with this script's cooldown handlers (none set: no cooldown). evaluator came
+        // later: scripts built before it pass none.
         cell_t N_MenuAddMenuOptionWithCooldown(IPluginContext* ctx, const cell_t* params)
         {
             ScriptMenu* m = MenuOf(ctx, params[1]);
@@ -290,10 +314,29 @@ namespace sourcepawn
             const cell_t option = static_cast<cell_t>(m->menu.Options().size());
             const cell_t data = params[4];
             const bool close = params[6] != 0;
-            m->menu.AddMenuOption(LocalString(ctx, params[2]), [m, fn, option, data, close](CCSPlayerController* player, ChatMenuOption& opt)
+            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
+            m->menu.AddMenuOption(LocalString(ctx, params[2]), [m, fn, option, data, close, plugin](CCSPlayerController* player, ChatMenuOption& opt)
             {
+                // Dead goes with the script: past this check the plugin is still there.
+                if (m->dead)
+                    return;
+                if (plugin && plugin->CooldownCanSelect)
+                {
+                    sp::CallArgs args;
+                    args.PushCell(EntityCell(player));
+                    cell_t canSelect = 0;
+                    Invoke(plugin->CooldownCanSelect, args, &canSelect);
+                    if (!canSelect || m->dead)
+                        return;
+                }
                 const std::string text = opt.Text;
                 SelectOption(m, fn, option, data, player);
+                if (!m->dead && plugin && plugin->CooldownOnSelect)
+                {
+                    sp::CallArgs args;
+                    args.PushCell(EntityCell(player));
+                    Invoke(plugin->CooldownOnSelect, args);
+                }
                 if (close)
                 {
                     menus::menuManager.CloseActiveMenu(player);
@@ -662,6 +705,7 @@ namespace sourcepawn
             { "CenterHtmlMenu.SetTitle", N_MenuSetTitle },
             { "CenterHtmlMenu.GetTitle", N_MenuGetTitle },
             { "CenterHtmlMenu.AddMenuOption", N_MenuAddMenuOption },
+            { "CenterHtmlMenu.SetCooldownHandlers", N_MenuSetCooldownHandlers },
             { "CenterHtmlMenu.AddMenuOptionWithCooldown", N_MenuAddMenuOptionWithCooldown },
             { "CenterHtmlMenu.ClearOptions", N_MenuClearOptions },
             { "CenterHtmlMenu.OptionCount", N_MenuOptionCount },
