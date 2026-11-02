@@ -48,13 +48,14 @@
 // the freezing and the generating; its header says how.
 namespace compat
 {
-    /// The current revision of an interface, by its version string ("ISource2ModCommands005").
-    using CurrentInterfaceFn = void* (*)(const char* iface);
+    /// The current revision of an interface, by its version string ("ISource2ModCommands005"):
+    /// that plugin's own instance, or the shared one for owner 0.
+    using CurrentInterfaceFn = void* (*)(const char* iface, int owner);
 
     struct FrozenInterface
     {
         const char* iface;                          // "ISource2ModCommands004"
-        void* (*get)(CurrentInterfaceFn current);   // the adapter, null while the current one is missing
+        void* (*get)(CurrentInterfaceFn current, int owner);   // the plugin's adapter, null while the current one is missing
     };
 
     /// Every frozen revision the core serves (src/compat/gen/registry.gen.cpp).

@@ -386,12 +386,19 @@ def build_adapter(cls, rev, fname):
         params = ", ".join("%s a%d" % (t, i) for i, (t, _) in enumerate(m.params))
         q = (" " + m.quals) if m.quals else ""
         cur = current.get(m.key())
+        # A leading PluginId the current revision dropped: the owner is now in
+        # the plugin's own instance, which is what this adapter forwards to.
+        skip = 0
+        if cur is None and m.params and norm_type(m.params[0][0]) == "PluginId":
+            cur = next((c for c in current.values() if c.name == m.name
+                        and [norm_type(a) for a, _ in c.params] == [norm_type(a) for a, _ in m.params[1:]]), None)
+            skip = 1 if cur is not None else 0
         if cur is None or norm_type(cur.ret) != norm_type(m.ret):
             body.append("    %s %s(%s)%s override;   // hand-written, src/compat/%s.cpp" % (m.ret, m.name, params, q, frozen))
             manual.append(m.name)
             continue
         # std::forward without <utility>: a by-value parameter moves on, a reference stays one
-        args = ", ".join("static_cast<decltype(a%d)&&>(a%d)" % (i, i) for i in range(len(m.params)))
+        args = ", ".join("static_cast<decltype(a%d)&&>(a%d)" % (i, i) for i in range(skip, len(m.params)))
         body.append("    %s %s(%s)%s override { return m_pCurrent->%s(%s); }" % (m.ret, m.name, params, q, m.name, args))
 
     src = [
@@ -399,6 +406,8 @@ def build_adapter(cls, rev, fname):
         "// %s for plugins built against it: the old vtable, forwarding to the current %s." % (frozen, cls),
         '#include "compat/%s"' % fname,
         '#include "compat/compat.h"',
+        "",
+        "#include <unordered_map>",
         "",
         "namespace compat",
         "{",
@@ -410,12 +419,21 @@ def build_adapter(cls, rev, fname):
     ] + body + [
         "};",
         "",
-        "void* Get%s(CurrentInterfaceFn current)" % frozen,
+        "void* Get%s(CurrentInterfaceFn current, int owner)" % frozen,
         "{",
-        "    static %s s_adapter;" % adapter,
-        "    if (!s_adapter.m_pCurrent)",
-        "        s_adapter.m_pCurrent = static_cast<::%s*>(current(%s));" % (cls, define),
-        "    return s_adapter.m_pCurrent ? static_cast<%s*>(&s_adapter) : nullptr;" % frozen,
+        "    // One per plugin, over that plugin's own instance of the current interface:",
+        "    // what the plugin registers stays its own, and goes away when it unloads.",
+        "    static std::unordered_map<int, %s*> s_adapters;" % adapter,
+        "    auto it = s_adapters.find(owner);",
+        "    if (it != s_adapters.end())",
+        "        return static_cast<%s*>(it->second);" % frozen,
+        "    auto* pCurrent = static_cast<::%s*>(current(%s, owner));" % (cls, define),
+        "    if (!pCurrent)",
+        "        return nullptr;",
+        "    auto* pAdapter = new %s();" % adapter,
+        "    pAdapter->m_pCurrent = pCurrent;",
+        "    s_adapters.emplace(owner, pAdapter);",
+        "    return static_cast<%s*>(pAdapter);" % frozen,
         "}",
         "}",
         "",
@@ -439,7 +457,7 @@ def generated_files():
         "namespace compat",
         "{",
     ]
-    reg += ["void* Get%s(CurrentInterfaceFn current);" % e for e in entries]
+    reg += ["void* Get%s(CurrentInterfaceFn current, int owner);" % e for e in entries]
     reg += [
         "",
         "const FrozenInterface* FrozenInterfaces(size_t& count)",

@@ -361,27 +361,31 @@ namespace
 
     // The current revision by its exact version string; what a frozen
     // revision's adapter forwards to.
-    void* CurrentInterfaceByName(const char* iface)
+    void* CurrentInterfaceByName(const char* iface, int owner)
     {
         size_t count = 0;
         const CurrentInterface* current = CurrentInterfaces(count);
         for (size_t i = 0; i < count; i++)
         {
             if (!strcmp(iface, current[i].iface))
-                return current[i].ptr;
+            {
+                if (!current[i].ptr)
+                    return nullptr;
+                return owner ? pluginifaces::ForPlugin(iface, owner, current[i].ptr) : current[i].ptr;
+            }
         }
         return nullptr;
     }
 
     // An older revision still served through its adapter (src/compat/).
-    void* FrozenInterfaceByName(const char* iface)
+    void* FrozenInterfaceByName(const char* iface, PluginId owner = 0)
     {
         size_t count = 0;
         const compat::FrozenInterface* frozen = compat::FrozenInterfaces(count);
         for (size_t i = 0; i < count; i++)
         {
             if (!strcmp(iface, frozen[i].iface))
-                return frozen[i].get(&CurrentInterfaceByName);
+                return frozen[i].get(&CurrentInterfaceByName, owner);
         }
         return nullptr;
     }
@@ -471,7 +475,7 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
         // An older revision the core still serves: its frozen vtable, forwarding
         // to the current one (src/compat/). Silently: it simply works.
         if (!ptr)
-            ptr = FrozenInterfaceByName(iface);
+            ptr = FrozenInterfaceByName(iface, m_owner);
 
         // Not the current revision: the same interface at another one? The
         // name carries the revision ("ISource2ModMenus002"); the C++ name

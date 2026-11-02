@@ -36,3 +36,4 @@ ISource2ModEntities.SpawnEntityByClassname (SourcePawn too): creates and spawns 
 ISource2ModEntities.CreateEntityKeyValues: spawn keyvalues from the game's allocator with classname, origin and angles. SourcePawn's SpawnEntityByClassname takes origin and angles.
 s2m hookdebug slotinput logs who removes a menu-key fake, with the stack.
 The server log says how many plugins loaded at startup.
+Plugins built against older interface revisions load again: ISource2ModMenus008 and ISource2ModEntities004 are served through compat adapters, each plugin through its own instance. Commands004, ConVars003 and Events002 are back too.

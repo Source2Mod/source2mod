@@ -4,10 +4,22 @@
 
 namespace compat
 {
+void* GetISource2ModCommands004(CurrentInterfaceFn current, int owner);
+void* GetISource2ModConVars003(CurrentInterfaceFn current, int owner);
+void* GetISource2ModEntities004(CurrentInterfaceFn current, int owner);
+void* GetISource2ModEvents002(CurrentInterfaceFn current, int owner);
+void* GetISource2ModMenus008(CurrentInterfaceFn current, int owner);
 
 const FrozenInterface* FrozenInterfaces(size_t& count)
 {
-    count = 0;
-    return nullptr;
+    static const FrozenInterface s_frozen[] = {
+        { "ISource2ModCommands004", &GetISource2ModCommands004 },
+        { "ISource2ModConVars003", &GetISource2ModConVars003 },
+        { "ISource2ModEntities004", &GetISource2ModEntities004 },
+        { "ISource2ModEvents002", &GetISource2ModEvents002 },
+        { "ISource2ModMenus008", &GetISource2ModMenus008 },
+    };
+    count = sizeof(s_frozen) / sizeof(s_frozen[0]);
+    return s_frozen;
 }
 }
