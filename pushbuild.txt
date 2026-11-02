@@ -35,3 +35,4 @@ The mouse wheel switches real weapons while a menu takes keys, instead of doing 
 ISource2ModEntities.SpawnEntityByClassname (SourcePawn too): creates and spawns an entity in one step with its resources precached, also a weapon nothing has precached. cs_script and custom HUD layouts spawn through it. s2sdk up to date with upstream.
 ISource2ModEntities.CreateEntityKeyValues: spawn keyvalues from the game's allocator with classname, origin and angles. SourcePawn's SpawnEntityByClassname takes origin and angles.
 s2m hookdebug slotinput logs who removes a menu-key fake, with the stack.
+The server log says how many plugins loaded at startup.

@@ -671,6 +671,8 @@ bool PluginManager::LoadAll()
     // Each one has said why on its own line; this is the line that gets noticed.
     if (failed)
         FP_WARN("{} plugin(s) did not load, {} running. See the errors above.", failed, m_plugins.size());
+    else
+        FP_INFO("{} plugin(s) loaded.", m_plugins.size());
 
     m_bStartupLoadDone = true;
     SetAllLoaded();
