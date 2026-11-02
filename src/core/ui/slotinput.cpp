@@ -36,6 +36,7 @@
 #include "core/ui/slotinput.h"
 
 #include "core/data/gameconfig.h"
+#include "core/game/addresses.h"
 #include "core/game/gamesystems.h"
 #include "core/hooks/hooks.h"
 #include "core/ui/menus.h"
@@ -60,7 +61,14 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
+#include <khook.hpp>
 #include <vector>
+
+#if defined(__linux__)
+#include <dlfcn.h>
+#include <pthread.h>
+#endif
 
 namespace slotinput {
     namespace
@@ -833,12 +841,113 @@ namespace slotinput {
     namespace
     {
         Source2ModGameSystemId g_GameSystem = 0;
+
+        // "s2m hookdebug slotinput": who removes a fake, with the stack. Taken
+        // from the stack memory, a KHook trampoline stops an unwinder: every
+        // value that is an address right behind a call in a loaded library,
+        // so stale frames can be among them. The offsets are for IDA.
+#if defined(__linux__)
+        bool FollowsCall(uintptr_t address, uintptr_t base)
+        {
+            if (address < base + 7)
+                return false;
+
+            const auto* code = reinterpret_cast<const uint8_t*>(address);
+            if (code[-5] == 0xE8)
+                return true;
+            if (code[-2] == 0xFF && ((code[-1] >> 3) & 7) == 2)
+                return true;
+            if (code[-3] == 0xFF && ((code[-2] >> 3) & 7) == 2)
+                return true;
+            return (code[-6] == 0xFF && ((code[-5] >> 3) & 7) == 2) || (code[-7] == 0xFF && ((code[-6] >> 3) & 7) == 2);
+        }
+
+        void LogStack()
+        {
+            pthread_attr_t attr;
+            if (pthread_getattr_np(pthread_self(), &attr) != 0)
+                return;
+
+            void* stackLow = nullptr;
+            size_t stackSize = 0;
+            pthread_attr_getstack(&attr, &stackLow, &stackSize);
+            pthread_attr_destroy(&attr);
+
+            const auto* sp = static_cast<const uintptr_t*>(__builtin_frame_address(0));
+            const auto* end = reinterpret_cast<const uintptr_t*>(static_cast<const char*>(stackLow) + stackSize);
+
+            int shown = 0;
+            for (const uintptr_t* p = sp; p < end && p < sp + 8192 && shown < 64; p++)
+            {
+                Dl_info info{};
+                if (*p < 0x10000 || !dladdr(reinterpret_cast<void*>(*p), &info) || !info.dli_fbase || !info.dli_fname)
+                    continue;
+
+                const auto base = reinterpret_cast<uintptr_t>(info.dli_fbase);
+                if (!FollowsCall(*p, base))
+                    continue;
+
+                const char* file = strrchr(info.dli_fname, '/');
+                FP_INFO("hookdebug slotinput   {}+0x{:x} {}", file ? file + 1 : info.dli_fname, *p - base, info.dli_sname ? info.dli_sname : "");
+                shown++;
+            }
+        }
+#else
+        void LogStack() {}
+#endif
+
+        void LogIfFake(const char* how, const void* entity)
+        {
+            if (!entity || !hooks::DebugOn("slotinput"))
+                return;
+
+            for (int slot = 0; slot < ABSOLUTE_PLAYER_LIMIT; slot++)
+            {
+                const Session& s = g_Sessions[slot];
+                for (const Fake& fake : s.Fakes)
+                {
+                    if (fake.Weapon.Get() != entity)
+                        continue;
+
+                    FP_INFO("hookdebug slotinput {} fake for key {} of slot {}: owner {} cleanup-owned {} injected {} handover {}", how, fake.Key, slot,
+                            fake.Weapon.Get()->m_hOwnerEntity().Get() != nullptr, fake.CleanupOwned, s.Injected, s.Handover);
+                    LogStack();
+                    return;
+                }
+            }
+        }
+
+        KHook::Function<void, CBaseEntity*>* g_hRemove = nullptr;
+        KHook::Function<void, void*, CBasePlayerWeapon*>* g_hDestroy = nullptr;
+
+        KHook::Return<void> Hook_Remove(CBaseEntity* entity)
+        {
+            LogIfFake("UTIL_Remove", entity);
+            return { KHook::Action::Ignore };
+        }
+
+        KHook::Return<void> Hook_Destroy(void*, CBasePlayerWeapon* weapon)
+        {
+            LogIfFake("WeaponServices::Destroy", weapon);
+            return { KHook::Action::Ignore };
+        }
     }
 
     void Init()
     {
         g_RunCommandHook = hooks::hooksManager.Hook(HookPoint::RunCommand, HookTarget::All(), OnRunCommand, false);
         g_CanAcquireHook = hooks::hooksManager.Hook(HookPoint::CanAcquire, HookTarget::All(), OnCanAcquire, false);
+
+        if (void* remove = addresses::FindSignature("UTIL::Remove").GetPtr())
+        {
+            g_hRemove = new KHook::Function<void, CBaseEntity*>(&Hook_Remove, nullptr);
+            g_hRemove->Configure(remove);
+        }
+        if (void* destroy = addresses::FindSignature("CCSPlayer_WeaponServices::Destroy").GetPtr())
+        {
+            g_hDestroy = new KHook::Function<void, void*, CBasePlayerWeapon*>(&Hook_Destroy, nullptr);
+            g_hDestroy->Configure(destroy);
+        }
 
         // The fakes are in the weapon list only while the snapshots are built
         // (CheckTransmit injects them). The snapshots go out in the async post
@@ -859,6 +968,11 @@ namespace slotinput {
 
     void Shutdown()
     {
+        delete g_hRemove;
+        g_hRemove = nullptr;
+        delete g_hDestroy;
+        g_hDestroy = nullptr;
+
         if (g_RunCommandHook)
             hooks::hooksManager.Unhook(g_RunCommandHook);
         g_RunCommandHook = 0;

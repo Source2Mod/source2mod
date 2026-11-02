@@ -94,6 +94,7 @@ namespace hooks
     bool Matches(const StoredTarget& target, const StoredFilter& filter, const Subject& subject);
 
     // "s2m hookdebug": part of the point names whose calls are logged, "all", or off.
+    // "slotinput" logs who removes a menu-key fake, with the stack (slotinput.cpp).
     void SetHookDebug(const char* name);
     const char* GetHookDebug();
     bool DebugOn(const char* pointName);
