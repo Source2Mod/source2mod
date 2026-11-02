@@ -32,3 +32,4 @@ Plugin API 10: ISource2ModAddresses, ADDR_* and the SourcePawn addresses are gon
 Menu-key fake weapons can only be acquired by the player whose menu made them, and a plugin hiding a pawn with its weapons no longer marks that player's fakes dormant for other viewers.
 SourcePawn: CenterHtmlMenu.SetCooldownHandlers, a script's own cooldown handlers for AddMenuOptionWithCooldown.
 The mouse wheel switches real weapons while a menu takes keys, instead of doing nothing in it. ISource2ModMenus.SetKeyWeapons (SourcePawn too) turns a player's menu-key fake weapons off.
+ISource2ModEntities.SpawnEntityByClassname (SourcePawn too): creates and spawns an entity in one step with its resources precached, also a weapon nothing has precached. cs_script and custom HUD layouts spawn through it. s2sdk up to date with upstream.

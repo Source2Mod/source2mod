@@ -336,13 +336,6 @@ namespace scripts
             }
         }
 
-        CBaseEntity* pEntity = entities::entitiesManager.CreateEntityByName(SCRIPT_CLASSNAME);
-        if (!pEntity)
-        {
-            FP_ERROR("Script '{}': could not create {}", name, SCRIPT_CLASSNAME);
-            return {};
-        }
-
         auto* pKeyValues = new CEntityKeyValues();
         pKeyValues->SetString("targetname", name.c_str());
 
@@ -352,7 +345,12 @@ namespace scripts
         if (script.kind == ScriptKind::Asset)
             pKeyValues->SetString("cs_script", script.path.c_str());
 
-        pEntity->DispatchSpawn(pKeyValues);
+        CBaseEntity* pEntity = entities::entitiesManager.SpawnEntityByClassname(SCRIPT_CLASSNAME, pKeyValues);
+        if (!pEntity)
+        {
+            FP_ERROR("Script '{}': could not create {}", name, SCRIPT_CLASSNAME);
+            return {};
+        }
 
         if (script.kind != ScriptKind::Asset)
         {

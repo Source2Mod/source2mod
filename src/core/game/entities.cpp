@@ -95,6 +95,15 @@ namespace entities
         return addresses::source2modAddresses.CBaseEntity_CreateEntityByName()(pszClassName, -1);
     }
 
+    CBaseEntity* EntitiesManager::SpawnEntityByClassname(const char* pszClassName, CEntityKeyValues* pKeyValues)
+    {
+        CGameEntitySystem* pEntitySystem = GameEntitySystem();
+        if (!pEntitySystem || !pszClassName || !*pszClassName)
+            return nullptr;
+
+        return reinterpret_cast<CBaseEntity*>(pEntitySystem->SpawnEntityByClassname(pszClassName, pKeyValues));
+    }
+
     void EntitiesManager::AcceptInput(CEntityInstance* pTarget, const char* pszInput, CEntityInstance* pActivator, CEntityInstance* pCaller, const char* pszValue)
     {
         addresses::source2modAddresses.CEntityInstance_AcceptInput()(pTarget, pszInput, pActivator, pCaller, variant_t(pszValue));

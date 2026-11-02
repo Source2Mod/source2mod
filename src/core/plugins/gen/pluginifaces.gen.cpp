@@ -222,6 +222,7 @@ public:
     void RemoveEntityListener(IEntityListener* pListener) override { return entities::entitiesManager.RemoveEntityListener(static_cast<decltype(pListener)&&>(pListener)); }
     void AddEntityOutputListener(IEntityOutputListener* pListener, const char* pszDesignerName, const char* pszOutput, CEntityInstance* pEntity) override { return entities::entitiesManager.AddEntityOutputListener(m_owner, static_cast<decltype(pListener)&&>(pListener), static_cast<decltype(pszDesignerName)&&>(pszDesignerName), static_cast<decltype(pszOutput)&&>(pszOutput), static_cast<decltype(pEntity)&&>(pEntity)); }
     void RemoveEntityOutputListener(IEntityOutputListener* pListener) override { return entities::entitiesManager.RemoveEntityOutputListener(static_cast<decltype(pListener)&&>(pListener)); }
+    CBaseEntity* SpawnEntityByClassname(const char* pszClassName, CEntityKeyValues* pKeyValues) override { return entities::entitiesManager.SpawnEntityByClassname(static_cast<decltype(pszClassName)&&>(pszClassName), static_cast<decltype(pKeyValues)&&>(pKeyValues)); }
 
 private:
     PluginId m_owner;

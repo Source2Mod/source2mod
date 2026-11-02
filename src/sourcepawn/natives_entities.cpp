@@ -2277,6 +2277,23 @@ namespace sourcepawn
             return EntityCell(entities::entitiesManager.CreateEntityByName(LocalString(ctx, params[1])));
         }
 
+        // SpawnEntityByClassname(className, StringMap keyValues = null)
+        cell_t N_EntsSpawnEntityByClassname(IPluginContext* ctx, const cell_t* params)
+        {
+            CEntityKeyValues* keyValues = nullptr;
+            if (params[0] >= 2 && params[2] != 0)
+            {
+                std::vector<std::pair<std::string, std::string>> entries;
+                if (!StringMapStrings(ctx, params[2], entries))
+                    return 0;
+                // The spawn takes the keyvalues over; it releases them.
+                keyValues = new CEntityKeyValues();
+                for (const auto& [key, value] : entries)
+                    keyValues->SetString(key.c_str(), value.c_str());
+            }
+            return EntityCell(entities::entitiesManager.SpawnEntityByClassname(LocalString(ctx, params[1]), keyValues));
+        }
+
         // AcceptInput(target, input, activator, caller, value)
         cell_t N_EntsAcceptInput(IPluginContext* ctx, const cell_t* params)
         {
@@ -2650,6 +2667,7 @@ namespace sourcepawn
             { "Source2ModEntities.FindEntityByClassname", N_EntsFindEntityByClassname },
             { "Source2ModEntities.FindEntityByName", N_EntsFindEntityByName },
             { "Source2ModEntities.CreateEntityByName", N_EntsCreateEntityByName },
+            { "Source2ModEntities.SpawnEntityByClassname", N_EntsSpawnEntityByClassname },
             { "Source2ModEntities.AcceptInput", N_EntsAcceptInput },
             { "Source2ModEntities.AddEntityIOEvent", N_EntsAddEntityIOEvent },
             { nullptr, nullptr },

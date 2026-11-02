@@ -60,6 +60,7 @@ namespace entities {
         std::vector<CBaseEntity*> FindAllEntitiesByDesignerName(const char* pszDesignerName) override;
 
         CBaseEntity* CreateEntityByName(const char* pszClassName) override;
+        CBaseEntity* SpawnEntityByClassname(const char* pszClassName, CEntityKeyValues* pKeyValues) override;
 
         void AcceptInput(CEntityInstance* pTarget, const char* pszInput, CEntityInstance* pActivator, CEntityInstance* pCaller, const char* pszValue = "") override;
         void AddEntityIOEvent(CEntityInstance* pTarget, const char* pszInput, CEntityInstance* pActivator = nullptr, CEntityInstance* pCaller = nullptr, const char* pszValue = "", float flDelay = 0.0f) override;
