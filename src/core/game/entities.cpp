@@ -104,6 +104,12 @@ namespace entities
         return reinterpret_cast<CBaseEntity*>(pEntitySystem->SpawnEntityByClassname(pszClassName, pKeyValues));
     }
 
+    CEntityKeyValues* EntitiesManager::CreateEntityKeyValues(const char* pszClassName, const Vector* pOrigin, const QAngle* pAngles)
+    {
+        CGameEntitySystem* pEntitySystem = GameEntitySystem();
+        return pEntitySystem ? pEntitySystem->CreateEntityKeyValues(pszClassName, pOrigin, pAngles) : nullptr;
+    }
+
     void EntitiesManager::AcceptInput(CEntityInstance* pTarget, const char* pszInput, CEntityInstance* pActivator, CEntityInstance* pCaller, const char* pszValue)
     {
         addresses::source2modAddresses.CEntityInstance_AcceptInput()(pTarget, pszInput, pActivator, pCaller, variant_t(pszValue));

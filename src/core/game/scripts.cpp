@@ -336,7 +336,13 @@ namespace scripts
             }
         }
 
-        auto* pKeyValues = new CEntityKeyValues();
+        auto* pKeyValues = entities::entitiesManager.CreateEntityKeyValues(SCRIPT_CLASSNAME, nullptr, nullptr);
+        if (!pKeyValues)
+        {
+            FP_ERROR("Script '{}': could not create {}", name, SCRIPT_CLASSNAME);
+            return {};
+        }
+
         pKeyValues->SetString("targetname", name.c_str());
 
         // Without the keyvalue the game prints 'Failed to load cs_script ""'

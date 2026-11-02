@@ -2277,21 +2277,27 @@ namespace sourcepawn
             return EntityCell(entities::entitiesManager.CreateEntityByName(LocalString(ctx, params[1])));
         }
 
-        // SpawnEntityByClassname(className, StringMap keyValues = null)
+        // SpawnEntityByClassname(className, StringMap keyValues = null, origin = NULL_VECTOR, angles = NULL_VECTOR)
         cell_t N_EntsSpawnEntityByClassname(IPluginContext* ctx, const cell_t* params)
         {
-            CEntityKeyValues* keyValues = nullptr;
-            if (params[0] >= 2 && params[2] != 0)
-            {
-                std::vector<std::pair<std::string, std::string>> entries;
-                if (!StringMapStrings(ctx, params[2], entries))
-                    return 0;
-                // The spawn takes the keyvalues over; it releases them.
-                keyValues = new CEntityKeyValues();
-                for (const auto& [key, value] : entries)
-                    keyValues->SetString(key.c_str(), value.c_str());
-            }
-            return EntityCell(entities::entitiesManager.SpawnEntityByClassname(LocalString(ctx, params[1]), keyValues));
+            std::vector<std::pair<std::string, std::string>> entries;
+            if (params[0] >= 2 && params[2] != 0 && !StringMapStrings(ctx, params[2], entries))
+                return 0;
+
+            Vector origin, ang;
+            const bool hasOrigin = params[0] >= 3 && ReadVector(ctx, params[3], origin);
+            const bool hasAngles = params[0] >= 4 && ReadVector(ctx, params[4], ang);
+            const QAngle angles(ang.x, ang.y, ang.z);
+
+            const char* className = LocalString(ctx, params[1]);
+            CEntityKeyValues* keyValues = entities::entitiesManager.CreateEntityKeyValues(className, hasOrigin ? &origin : nullptr, hasAngles ? &angles : nullptr);
+            if (!keyValues)
+                return EntityCell(nullptr);
+
+            // The spawn takes the keyvalues over; it releases them.
+            for (const auto& [key, value] : entries)
+                keyValues->SetString(key.c_str(), value.c_str());
+            return EntityCell(entities::entitiesManager.SpawnEntityByClassname(className, keyValues));
         }
 
         // AcceptInput(target, input, activator, caller, value)
