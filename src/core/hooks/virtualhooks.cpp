@@ -416,6 +416,11 @@ namespace virtualhooks
         if (pluginApi.GetGlobalVars())
             g_bHasTicked = true;
 
+        // The snapshots can be built inside the frame: the fakes would still be
+        // in m_hMyWeapons for menu keys, timers and post handlers, and a weapon
+        // given there found its slot taken by one (slotinput.cpp).
+        slotinput::Eject();
+
         appsystem::GameFrame(simulating);
 
         {

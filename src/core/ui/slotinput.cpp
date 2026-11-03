@@ -264,6 +264,17 @@ namespace slotinput {
             return weapon;
         }
 
+        // Set while slotinput removes a fake itself: "s2m hookdebug slotinput"
+        // is for everybody else.
+        bool g_bOwnRemove = false;
+
+        void RemoveOwn(CBaseEntity* entity)
+        {
+            g_bOwnRemove = true;
+            entity->Remove();
+            g_bOwnRemove = false;
+        }
+
         CPlayer_WeaponServices* WeaponServicesOf(Session& s)
         {
             CCSPlayerPawn* pawn = s.Pawn.Get();
@@ -312,7 +323,7 @@ namespace slotinput {
             if (!weapon->GetVData())
             {
                 FP_ERROR("SlotInput: no vdata for {} ({})", def.Classname, def.Subclass);
-                weapon->Remove();
+                RemoveOwn(weapon);
                 return nullptr;
             }
 
@@ -413,7 +424,7 @@ namespace slotinput {
             for (const Fake& fake : s.Fakes)
             {
                 if (CBasePlayerWeapon* weapon = fake.Weapon.Get())
-                    weapon->Remove();
+                    RemoveOwn(weapon);
             }
 
             s = Session{};
@@ -454,7 +465,7 @@ namespace slotinput {
 
                 if (!wanted && it != s.Fakes.end())
                 {
-                    it->Weapon.Get()->Remove();
+                    RemoveOwn(it->Weapon.Get());
                     s.Fakes.erase(it);
                 }
                 else if (wanted && it == s.Fakes.end() && !(s.FailedKeys & (1u << def.Key)))
@@ -845,7 +856,8 @@ namespace slotinput {
         // "s2m hookdebug slotinput": who removes a fake, with the stack. Taken
         // from the stack memory, a KHook trampoline stops an unwinder: every
         // value that is an address right behind a call in a loaded library,
-        // so stale frames can be among them. The offsets are for IDA.
+        // so stale frames can be among them. The offsets are for IDA. It stops
+        // at the game frame: below that is only the engine's main loop.
 #if defined(__linux__)
         bool FollowsCall(uintptr_t address, uintptr_t base)
         {
@@ -877,7 +889,7 @@ namespace slotinput {
             const auto* end = reinterpret_cast<const uintptr_t*>(static_cast<const char*>(stackLow) + stackSize);
 
             int shown = 0;
-            for (const uintptr_t* p = sp; p < end && p < sp + 8192 && shown < 64; p++)
+            for (const uintptr_t* p = sp; p < end && p < sp + 8192 && shown < 24; p++)
             {
                 Dl_info info{};
                 if (*p < 0x10000 || !dladdr(reinterpret_cast<void*>(*p), &info) || !info.dli_fbase || !info.dli_fname)
@@ -890,6 +902,9 @@ namespace slotinput {
                 const char* file = strrchr(info.dli_fname, '/');
                 FP_INFO("hookdebug slotinput   {}+0x{:x} {}", file ? file + 1 : info.dli_fname, *p - base, info.dli_sname ? info.dli_sname : "");
                 shown++;
+
+                if (info.dli_sname && strstr(info.dli_sname, "Hook_GameFrame"))
+                    break;
             }
         }
 #else
@@ -898,7 +913,7 @@ namespace slotinput {
 
         void LogIfFake(const char* how, const void* entity)
         {
-            if (!entity || !hooks::DebugOn("slotinput"))
+            if (!entity || g_bOwnRemove || !hooks::DebugOn("slotinput"))
                 return;
 
             for (int slot = 0; slot < ABSOLUTE_PLAYER_LIMIT; slot++)
@@ -1288,7 +1303,7 @@ namespace slotinput {
                 for (const Fake& fake : s.Fakes)
                 {
                     if (CBasePlayerWeapon* weapon = Alive(fake))
-                        weapon->Remove();
+                        RemoveOwn(weapon);
                 }
                 s.Fakes.clear();
                 continue;
