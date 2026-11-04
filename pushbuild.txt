@@ -38,3 +38,4 @@ s2m hookdebug slotinput logs who removes a menu-key fake, with the stack.
 The server log says how many plugins loaded at startup.
 Plugins built against older interface revisions load again: ISource2ModMenus008 and ISource2ModEntities004 are served through compat adapters, each plugin through its own instance. Commands004, ConVars003 and Events002 are back too.
 Slotinput: the menu-key fakes leave the weapon list before the game frame's post handlers, so weapons given from menus (mode guns, shop grenades) and pickups no longer find their slot taken. hookdebug slotinput skips the core's own removals and keeps the stack short.
+s2m hookdebug slotinput logs every menu key press: what the weaponselect picked (which fake or which real weapon) and what slotinput did with it.

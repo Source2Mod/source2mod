@@ -819,7 +819,37 @@ namespace slotinput {
             if (!controller || !controller->m_bPawnIsAlive() || controller->IsBot())
                 return { Action::Ignore };
 
-            OnWeaponSelect(controller, cmd);
+            const int index = base.weaponselect();
+            const bool taken = OnWeaponSelect(controller, cmd);
+
+            // "s2m hookdebug slotinput": what a press during a menu selected and
+            // what became of it -- a key whose fake the client did not pick shows
+            // here as a real weapon or an entity that is no fake.
+            const int slot = controller->GetPlayerSlot().Get();
+            if (hooks::DebugOn("slotinput") && slot >= 0 && slot < ABSOLUTE_PLAYER_LIMIT && g_Sessions[slot].Active)
+            {
+                const Session& s = g_Sessions[slot];
+                std::string what = "no fake";
+                std::string fakes;
+                for (const Fake& fake : s.Fakes)
+                {
+                    CBasePlayerWeapon* weapon = Alive(fake);
+                    const int fakeIndex = weapon ? weapon->GetEntityIndex().Get() : -1;
+                    if (fakeIndex == index)
+                        what = fmt::format("fake for key {}", fake.Key);
+                    fakes += fmt::format(" {}:{}{}", fake.Key, fakeIndex, fake.Sent >= kSendsBeforeDormant ? "d" : "");
+                }
+                if (what == "no fake")
+                {
+                    auto* entity = GameEntitySystem() ? static_cast<CBaseEntity*>(GameEntitySystem()->GetEntityInstance(CEntityIndex(index))) : nullptr;
+                    auto* weapon = entity && !V_strncmp(entity->GetClassname(), "weapon_", 7) ? static_cast<CBasePlayerWeapon*>(entity) : nullptr;
+                    what = entity ? fmt::format("{} def {}", entity->GetClassname(),
+                                                weapon ? weapon->m_AttributeManager().m_Item().m_iItemDefinitionIndex() : -1)
+                                  : "nothing";
+                }
+                FP_INFO("hookdebug slotinput press of slot {}: weaponselect {} = {} -> {} (now {}), menu keys 0x{:x}, fakes{}",
+                        slot, index, what, taken ? "taken" : "passed", cmd->base().weaponselect(), s.MenuKeys, fakes);
+            }
             return { Action::Ignore };
         }
 
