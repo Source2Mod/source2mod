@@ -858,6 +858,11 @@ namespace slotinput {
         // that is not a weapon's (a loadout's) is never read as one.
         HookReturn<CanAcquireContext::Return> OnCanAcquire(CanAcquireContext& ctx, bool post)
         {
+            // Every weapon a player gets asks here first (GiveNamedItem, a pickup, a purchase): whenever
+            // it runs, the fakes leave the list before the game counts the player's slots, or the
+            // weapon finds its slot taken by one and lands on the floor.
+            Eject();
+
             if (!ctx.item || !ctx.services)
                 return { Action::Ignore };
 
@@ -956,6 +961,29 @@ namespace slotinput {
 
                     FP_INFO("hookdebug slotinput {} fake for key {} of slot {}: owner {} cleanup-owned {} injected {} handover {}", how, fake.Key, slot,
                             fake.Weapon.Get()->m_hOwnerEntity().Get() != nullptr, fake.CleanupOwned, s.Injected, s.Handover);
+                    LogStack();
+                    return;
+                }
+            }
+
+            // A real weapon of a player with a menu open: who takes a weapon
+            // that was just given (a shop grenade gone right after buying it).
+            for (int slot = 0; slot < ABSOLUTE_PLAYER_LIMIT; slot++)
+            {
+                const Session& s = g_Sessions[slot];
+                CCSPlayerPawn* pawn = s.Active ? s.Pawn.Get() : nullptr;
+                if (!pawn || !pawn->m_pWeaponServices())
+                    continue;
+
+                const auto& myWeapons = pawn->m_pWeaponServices()->m_hMyWeapons();
+                FOR_EACH_VEC(myWeapons, i)
+                {
+                    CBasePlayerWeapon* weapon = myWeapons[i].Get();
+                    if (weapon != entity)
+                        continue;
+
+                    FP_INFO("hookdebug slotinput {} real weapon {} def {} of slot {}: injected {} handover {}", how, weapon->GetClassname(),
+                            weapon->m_AttributeManager().m_Item().m_iItemDefinitionIndex(), slot, s.Injected, s.Handover);
                     LogStack();
                     return;
                 }
