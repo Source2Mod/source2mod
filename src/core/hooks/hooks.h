@@ -35,6 +35,7 @@
 
 #pragma once
 #include "core/appsystem/appsystem.h"
+#include "core/ui/slotinput.h"
 
 #include <source2mod/ISource2ModHooks.h>
 
@@ -167,6 +168,16 @@ namespace hooks
         template <typename APPLY>
         Action Dispatch(CONTEXT& ctx, bool post, const Subject& subject, const char* pointName, APPLY&& apply) const
         {
+            // The menus' fakes are not for plugins: nothing about one reaches a
+            // handler (its creation, spawn, parenting, removal, or a call on it),
+            // and while a pack has them in m_hMyWeapons they are out for the call.
+            // A function hook on a fake (its own think) has it as the object only;
+            // IsFake compares pointers, so an object that is no entity never matches.
+            if (slotinput::InOwnEntityWork() || (subject.entity && slotinput::IsFake(subject.entity)) ||
+                (subject.object && slotinput::IsFake(static_cast<const CEntityInstance*>(subject.object))))
+                return Action::Ignore;
+            slotinput::HiddenFromPlugins hidden;
+
             // A copy: a handler may unhook from inside itself.
             const auto list = post ? m_post : m_pre;
             Action result = Action::Ignore;

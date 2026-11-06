@@ -38,6 +38,7 @@
 #include <playerslot.h>
 
 class CCheckTransmitInfo;
+class CEntityInstance;
 
 // Menu keys 1-9 without binds. The number keys run slot1..slot9 on the
 // client, which never reaches the server as such -- only as the weapon the
@@ -60,6 +61,10 @@ namespace slotinput {
     // CheckTransmit, before the pack: the fakes go into m_hMyWeapons; and per
     // viewer, the other players' fakes are kept off the wire.
     void Inject();
+    // The same list again after HiddenFromPlugins took the fakes out, with no
+    // NetworkStateChanged: the pack reads the memory as it is.
+    void Reinject();
+    void InjectFakes(bool mark);
     void BlockForViewer(CCheckTransmitInfo* info);
 
     // round_prestart / round_poststart, fired by the round restart around its
@@ -79,4 +84,37 @@ namespace slotinput {
     // takes the slot next. Off, their menus take "N" commands only.
     void SetKeyWeapons(CPlayerSlot slot, bool enabled);
     bool GetKeyWeapons(CPlayerSlot slot);
+
+    // Plugins never meet a fake. Whatever hands control to a plugin (a hook
+    // point, a game event, an entity listener) asks these first.
+
+    // Whether this entity is one of the menus' fakes.
+    bool IsFake(const CEntityInstance* entity);
+    // Slotinput is creating or removing a fake right now: every hook and
+    // listener that fires meanwhile is about that fake.
+    bool InOwnEntityWork();
+
+    // For a plugin call made while the fakes are in m_hMyWeapons (a snapshot
+    // being packed): out for the call, back in after it (no
+    // NetworkStateChanged, no extra traffic), so the pack still has them. Nothing to do -- one bool read -- the rest of the time.
+    bool AnyInjected();
+    class HiddenFromPlugins
+    {
+    public:
+        HiddenFromPlugins() : m_reinject(AnyInjected())
+        {
+            if (m_reinject)
+                Eject();
+        }
+        ~HiddenFromPlugins()
+        {
+            if (m_reinject)
+                Reinject();
+        }
+        HiddenFromPlugins(const HiddenFromPlugins&) = delete;
+        HiddenFromPlugins& operator=(const HiddenFromPlugins&) = delete;
+
+    private:
+        bool m_reinject;
+    };
 }

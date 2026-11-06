@@ -115,7 +115,7 @@ namespace dynamichooks
         Source2ModHookId Add(ISource2ModFunction* function, PluginId owner, HookHandler<FunctionContext> handler, bool post,
                              const HookTarget& target, const HookFilter& filter);
         bool Remove(Source2ModHookId id);
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
         void RemoveInstance(const void* instance);
 
         /// The function is about to be freed: its hooks go now.

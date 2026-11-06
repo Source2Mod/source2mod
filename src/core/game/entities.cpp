@@ -42,6 +42,7 @@
 #include "core/data/gameconfig.h"
 #include "core/plugins/pluginapi.h"
 #include "core/runtime/shared.h"
+#include "core/ui/slotinput.h"
 
 #include <source2mod/sdk/schema/classes/CBaseEntity.h>
 #include <source2mod/sdk/schema/classes/CBasePlayerController.h>
@@ -205,6 +206,11 @@ namespace entities
     {
         if (m_EntityListeners.empty())
             return;
+
+        // The menus' fakes are not for plugins (slotinput.h)
+        if (slotinput::InOwnEntityWork() || slotinput::IsFake(pEntity))
+            return;
+        slotinput::HiddenFromPlugins hidden;
 
         ++m_nDispatchDepth;
         // By index and up to the count at the start: one added meanwhile waits

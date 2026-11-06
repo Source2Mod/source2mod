@@ -268,8 +268,18 @@ namespace slotinput {
         // is for everybody else.
         bool g_bOwnRemove = false;
 
+        // Slotinput creating or removing a fake: the hooks and entity
+        // listeners that fire meanwhile skip the plugins (InOwnEntityWork).
+        int g_nOwnEntityWork = 0;
+        struct OwnEntityWork
+        {
+            OwnEntityWork() { ++g_nOwnEntityWork; }
+            ~OwnEntityWork() { --g_nOwnEntityWork; }
+        };
+
         void RemoveOwn(CBaseEntity* entity)
         {
+            OwnEntityWork work;
             g_bOwnRemove = true;
             entity->Remove();
             g_bOwnRemove = false;
@@ -306,6 +316,9 @@ namespace slotinput {
             UpdateSubclassVData_t updateSubclassVData = GetUpdateSubclassVData();
             if (!updateSubclassVData)
                 return nullptr;
+
+            // Created, spawned, parented: no plugin hears of it
+            OwnEntityWork work;
 
             // Always a knife, carrying the vdata of the weapon the key stands
             // for, and no owner while the menu is open: the client's HUD lets
@@ -363,11 +376,38 @@ namespace slotinput {
             return weapon;
         }
 
+        // Takes every fake of this menu out of the pawn's list -- however many
+        // times and wherever it sits -- and every dead handle with them: a fake
+        // deleted while it was in the list stays there as one (the game only
+        // takes out a weapon it owns), and those piled up until nothing fitted
+        // in the inventory (a shop molotov that landed on the floor). Run on
+        // every Eject for every open menu, injected or not.
         void RemoveFromList(CPlayer_WeaponServices* ws, Session& s)
         {
             auto& myWeapons = ws->m_hMyWeapons();
-            for (const Fake& fake : s.Fakes)
-                myWeapons.FindAndRemove(fake.Weapon);
+            bool deadRemoved = false;
+            for (int i = myWeapons.Count() - 1; i >= 0; --i)
+            {
+                const CHandle<CBasePlayerWeapon> handle = myWeapons[i];
+                if (!handle.Get())
+                {
+                    myWeapons.Remove(i);
+                    deadRemoved = true;
+                    continue;
+                }
+                for (const Fake& fake : s.Fakes)
+                {
+                    if (fake.Weapon == handle)
+                    {
+                        myWeapons.Remove(i);
+                        break;
+                    }
+                }
+            }
+
+            // The client had the dead entries too: it gets the clean list.
+            if (deadRemoved)
+                MarkListChanged(ws);
         }
 
         // Closing, in two steps: the fakes are sent again (out of dormancy)
@@ -414,8 +454,7 @@ namespace slotinput {
 
             if (CPlayer_WeaponServices* ws = WeaponServicesOf(s))
             {
-                if (s.Injected)
-                    RemoveFromList(ws, s);
+                RemoveFromList(ws, s);
 
                 // Once more with the real list, so the client drops the fakes too.
                 MarkListChanged(ws);
@@ -465,6 +504,8 @@ namespace slotinput {
 
                 if (!wanted && it != s.Fakes.end())
                 {
+                    if (CPlayer_WeaponServices* ws = WeaponServicesOf(s))
+                        ws->m_hMyWeapons().FindAndRemove(it->Weapon);
                     RemoveOwn(it->Weapon.Get());
                     s.Fakes.erase(it);
                 }
@@ -558,6 +599,9 @@ namespace slotinput {
                 else
                     ++it;
             }
+
+            // The menus' handlers are plugin code: no fakes in the list for them
+            HiddenFromPlugins hidden;
 
             // Menu handlers may open other menus or queue more; work on a copy.
             for (const PendingKey& p : due)
@@ -867,6 +911,7 @@ namespace slotinput {
                 return { Action::Ignore };
 
             CCSPlayerPawn* pawn = ctx.services->GetPlayerPawn();
+
             for (const Session& s : g_Sessions)
             {
                 if (!s.Active || s.Pawn.Get() == pawn)
@@ -1205,7 +1250,45 @@ namespace slotinput {
         DeliverPending();
     }
 
+    bool AnyInjected()
+    {
+        return g_bAnyInjected;
+    }
+
+    bool InOwnEntityWork()
+    {
+        return g_nOwnEntityWork > 0;
+    }
+
+    bool IsFake(const CEntityInstance* entity)
+    {
+        if (!entity)
+            return false;
+
+        for (const Session& s : g_Sessions)
+        {
+            if (!s.Active)
+                continue;
+            for (const Fake& fake : s.Fakes)
+            {
+                if (fake.Weapon.Get() == entity)
+                    return true;
+            }
+        }
+        return false;
+    }
+
     void Inject()
+    {
+        InjectFakes(true);
+    }
+
+    void Reinject()
+    {
+        InjectFakes(false);
+    }
+
+    void InjectFakes(bool mark)
     {
         if (g_bAnyInjected)
             Eject();
@@ -1253,7 +1336,9 @@ namespace slotinput {
             uint64_t signature = 1469598103934665603ull;
             for (int i = 0; i < myWeapons.Count(); i++)
                 signature = (signature ^ static_cast<uint32_t>(myWeapons[i].ToInt())) * 1099511628211ull;
-            if (signature != s.SentSignature)
+            // Reinject (a plugin call in the middle of a pack) puts back what
+            // was there: no mark, nothing extra on the wire.
+            if (mark && signature != s.SentSignature)
             {
                 MarkListChanged(pawn->m_pWeaponServices());
                 s.SentSignature = signature;
@@ -1265,12 +1350,11 @@ namespace slotinput {
 
     void Eject()
     {
-        if (!g_bAnyInjected)
-            return;
-
+        // Every open menu, injected or not: whatever put a fake in the list
+        // (or left a dead one there), it is out before game code runs.
         for (Session& s : g_Sessions)
         {
-            if (!s.Active || !s.Injected)
+            if (!s.Active)
                 continue;
 
             if (CPlayer_WeaponServices* ws = WeaponServicesOf(s))

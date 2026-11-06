@@ -34,6 +34,7 @@
  * Project: Source2Mod
  */
 #include "core/game/events.h"
+#include "core/ui/slotinput.h"
 #include "core/game/clients.h"
 
 #include "core/hooks/hookid.h"
@@ -154,6 +155,9 @@ namespace events {
         auto it = gameEvents.find(name);
         if (it == gameEvents.end())
             return true;
+
+        // The menus' fakes stay out of m_hMyWeapons for the plugins (slotinput.h)
+        slotinput::HiddenFromPlugins hidden;
 
         for (const auto &hook: it->second) {
             if (hook.post != post)
