@@ -94,11 +94,41 @@ namespace paths
             if (!plugin || plugin->id != owner || !plugin->api)
                 continue;
 
-            const char* pszName = plugin->api->GetName();
-            if (!pszName || !*pszName)
+            namespace fs = std::filesystem;
+
+            // The plugin's name: its file without .smx ("redirect_manager"),
+            // which is the "name" of its plugin-metadata.json -- not GetName(),
+            // the display name ("Redirect Manager"), which may change and has
+            // spaces.
+            const std::string name = fs::path(plugin->path).stem().string();
+            if (name.empty())
                 return nullptr;
 
-            auto [iter, _] = m_PluginConfigs.emplace(owner, GetPluginConfigDirectory(pszName));
+            std::string directory = GetPluginConfigDirectory(name);
+
+            // Before, the folder was named after GetName(): such a folder is
+            // moved over once, so a server keeps its configs.
+            const char* pszDisplayName = plugin->api->GetName();
+            if (pszDisplayName && *pszDisplayName && name != pszDisplayName)
+            {
+                const std::string legacy = GetPluginConfigDirectory(pszDisplayName);
+
+                std::error_code ec;
+                if (fs::is_directory(legacy, ec) && !fs::exists(directory, ec))
+                {
+                    fs::rename(legacy, directory, ec);
+                    if (ec)
+                        FP_WARN("Could not move the configs of {} from '{}' to '{}': {}", name, legacy, directory, ec.message());
+                    else
+                        FP_INFO("Moved the configs of {} from '{}' to '{}'", name, legacy, directory);
+                }
+                else if (fs::is_directory(legacy, ec))
+                {
+                    FP_WARN("Both '{}' and '{}' exist: {} reads '{}', the old folder is left alone", legacy, directory, name, directory);
+                }
+            }
+
+            auto [iter, _] = m_PluginConfigs.emplace(owner, std::move(directory));
             return iter->second.c_str();
         }
 

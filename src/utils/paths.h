@@ -64,7 +64,7 @@ namespace paths {
     /// Where the crash handler writes its minidumps and crash .txt files.
     inline std::string GetDumpsDirectory() { return GameDirectory() + "/addons/source2mod/dumps"; }
 
-    /// Where a plugin's own configs live: configs/<PluginName>.
+    /// Where a plugin's own configs live: configs/<name>, name = the plugin file without .smx.
     inline std::string GetPluginConfigDirectory(const std::string& name) { return GetConfigsDirectory() + "/" + name; }
     inline std::string EnginePath() { return GameDirectory() + "../bin/linuxsteamrt64/libengine2.so"; }
     inline std::string Tier0Path() { return GameDirectory() + "../bin/linuxsteamrt64/libtier0.so"; }
