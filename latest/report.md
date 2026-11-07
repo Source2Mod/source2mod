@@ -1,11 +1,11 @@
 # Gamedata validation
 
-CS2 build **26445667** · Linux manifest `8513165868182791792` · Windows manifest `3019944380727688040` · 2026-11-06T19:30:02+00:00
+CS2 build **26445667** · Linux manifest `8513165868182791792` · Windows manifest `3019944380727688040` · 2026-11-07T19:31:50+00:00
 
 | | Windows | Linux |
 |---|---|---|
 | Signatures | 🟢 74 | 🟢 74 |
-| Offsets | 🟢 46 ⚪ 3 | 🟢 46 ⚪ 3 |
+| Offsets | 🟢 47 ⚪ 3 | 🟢 47 ⚪ 3 |
 
 ## Everything resolves
 
@@ -123,6 +123,7 @@ CS2 build **26445667** · Linux manifest `8513165868182791792` · Windows manife
 - 🟢🟢 `ISource2GameClients::ClientCommand` — W 17/46 · L 17/46
 - 🟢🟢 `ISource2GameClients::ClientConnect` — W 12/46 · L 12/46
 - 🟢🟢 `ISource2GameClients::ClientDisconnect` — W 16/46 · L 16/46
+- 🟢🟢 `ISource2GameClients::ClientFullyConnect` — W 15/46 · L 15/46
 - 🟢🟢 `ISource2GameClients::ClientPutInServer` — W 13/46 · L 13/46
 - 🟢🟢 `ISource2GameClients::ClientSettingsChanged` — W 19/46 · L 19/46
 - 🟢🟢 `ISource2GameClients::ClientSvcUserMessage` — W 38/46 · L 38/46

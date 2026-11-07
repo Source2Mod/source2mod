@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-06T19:30:02+00:00",
+  "generated_at": "2026-11-07T19:31:50+00:00",
   "build": {
     "buildid": "26445667",
     "linux_manifest": "8513165868182791792",
@@ -1702,6 +1702,24 @@
       },
       "linux": {
         "value": 16,
+        "class": "CSource2GameClients",
+        "library": "server",
+        "vtable_size": 46,
+        "status": "ok"
+      }
+    },
+    {
+      "name": "ISource2GameClients::ClientFullyConnect",
+      "kind": "offset",
+      "windows": {
+        "value": 15,
+        "class": "CSource2GameClients",
+        "library": "server",
+        "vtable_size": 46,
+        "status": "ok"
+      },
+      "linux": {
+        "value": 15,
         "class": "CSource2GameClients",
         "library": "server",
         "vtable_size": 46,
