@@ -238,6 +238,14 @@ public:
     bool UnhookGameEvent(const char* pchName, const GameEventHandler& handler, bool post) override { return events::eventManager.UnhookGameEvent(m_owner, static_cast<decltype(pchName)&&>(pchName), static_cast<decltype(handler)&&>(handler), static_cast<decltype(post)&&>(post)); }
     bool UnhookGameEvent(Source2ModEventHookId id) override { return events::eventManager.UnhookGameEvent(static_cast<decltype(id)&&>(id)); }
     void FireEventToClient(CPlayerSlot slot, IGameEvent* event) override { return events::eventManager.FireEventToClient(static_cast<decltype(slot)&&>(slot), static_cast<decltype(event)&&>(event)); }
+    int GetEventCount() override { return events::eventManager.GetEventCount(); }
+    const char* GetEventName(int eventId) override { return events::eventManager.GetEventName(static_cast<decltype(eventId)&&>(eventId)); }
+    int GetEventID(const char* pchName) override { return events::eventManager.GetEventID(static_cast<decltype(pchName)&&>(pchName)); }
+    int GetEventListenerCount(const char* pchName, Source2ModEventListenerType type) override { return events::eventManager.GetEventListenerCount(static_cast<decltype(pchName)&&>(pchName), static_cast<decltype(type)&&>(type)); }
+    bool IsClientListening(CPlayerSlot slot, const char* pchName) override { return events::eventManager.IsClientListening(static_cast<decltype(slot)&&>(slot), static_cast<decltype(pchName)&&>(pchName)); }
+    const char* GetEventFile(const char* pchName) override { return events::eventManager.GetEventFile(static_cast<decltype(pchName)&&>(pchName)); }
+    bool IsEventLocal(const char* pchName) override { return events::eventManager.IsEventLocal(static_cast<decltype(pchName)&&>(pchName)); }
+    bool IsEventReliable(const char* pchName) override { return events::eventManager.IsEventReliable(static_cast<decltype(pchName)&&>(pchName)); }
 
 private:
     PluginId m_owner;

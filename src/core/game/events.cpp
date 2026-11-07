@@ -36,14 +36,37 @@
 #include "core/game/events.h"
 #include "core/ui/slotinput.h"
 #include "core/game/clients.h"
+#include "core/game/gamesystems.h"
 
 #include "core/hooks/hookid.h"
 #include "core/runtime/shared.h"
 #include "core/runtime/slowguard.h"
 #include "utils/log.h"
 #include "core/hooks/virtualhooks.h"
+#include "sdk/game/shared/gameeventmanager.h"
+#include "sdk/game/shared/source1legacygameeventgamesystem.h"
 
 namespace events {
+    // The engine's manager is a CGameEventManager (sdk/game/shared/gameeventmanager.h).
+    static CGameEventManager* GameEventManager()
+    {
+        return static_cast<CGameEventManager*>(shared::g_pGameEventManager);
+    }
+
+    // The game system that keeps one listener proxy per client. Its factory
+    // reallocates it, so it is looked up each time rather than kept.
+    static CSource1LegacyGameEventGameSystem* LegacyGameEventSystem()
+    {
+        return static_cast<CSource1LegacyGameEventGameSystem*>(
+            gamesystems::gameSystemsManager.FindByName("CSource1LegacyGameEventGameSystem"));
+    }
+
+    static CGameEventDescriptor* FindDescriptor(const char* name)
+    {
+        CGameEventManager* manager = GameEventManager();
+        return manager ? manager->GetEventDescriptor(name) : nullptr;
+    }
+
     static std::unordered_map<std::string, std::vector<EventEntry> > gameEvents;
     static EventListener eventListener;
 
@@ -109,6 +132,77 @@ namespace events {
     void EventManager::FireEventToClient(CPlayerSlot slot, IGameEvent* event)
     {
         clients::clientsManager.FireEventToClient(slot, event);
+    }
+
+    int EventManager::GetEventCount()
+    {
+        CGameEventManager* manager = GameEventManager();
+        return manager ? manager->GetEventCount() : 0;
+    }
+
+    const char* EventManager::GetEventName(int eventId)
+    {
+        CGameEventManager* manager = GameEventManager();
+        return manager ? manager->GetEventName(manager->GetEventDescriptor(eventId)) : nullptr;
+    }
+
+    int EventManager::GetEventID(const char* pchName)
+    {
+        CGameEventDescriptor* descriptor = FindDescriptor(pchName);
+        return descriptor ? descriptor->m_nEventId : -1;
+    }
+
+    int EventManager::GetEventListenerCount(const char* pchName, Source2ModEventListenerType type)
+    {
+        CGameEventDescriptor* descriptor = FindDescriptor(pchName);
+        if (!descriptor)
+            return -1;
+
+        if (type == Source2ModEventListenerType::Any)
+            return descriptor->m_Listeners.Count();
+
+        int count = 0;
+        for (const CGameEventCallback* callback : descriptor->m_Listeners)
+        {
+            if (callback && callback->m_nListenerType == static_cast<int>(type))
+                count++;
+        }
+        return count;
+    }
+
+    bool EventManager::IsClientListening(CPlayerSlot slot, const char* pchName)
+    {
+        CSource1LegacyGameEventGameSystem* legacySystem = LegacyGameEventSystem();
+        auto* proxy = legacySystem ? legacySystem->GetClientProxy(slot) : nullptr;
+        CGameEventDescriptor* descriptor = proxy ? FindDescriptor(pchName) : nullptr;
+        if (!descriptor)
+            return false;
+
+        // The client's listen bits make its proxy a ClientStub listener of each event they name
+        for (const CGameEventCallback* callback : descriptor->m_Listeners)
+        {
+            if (callback && callback->m_nListenerType == CGameEventManager::CLIENTSTUB && callback->m_pCallback == proxy)
+                return true;
+        }
+        return false;
+    }
+
+    const char* EventManager::GetEventFile(const char* pchName)
+    {
+        CGameEventDescriptor* descriptor = FindDescriptor(pchName);
+        return descriptor ? descriptor->m_pszFilename : nullptr;
+    }
+
+    bool EventManager::IsEventLocal(const char* pchName)
+    {
+        CGameEventDescriptor* descriptor = FindDescriptor(pchName);
+        return descriptor && descriptor->m_bLocal;
+    }
+
+    bool EventManager::IsEventReliable(const char* pchName)
+    {
+        CGameEventDescriptor* descriptor = FindDescriptor(pchName);
+        return descriptor && descriptor->m_bReliable;
     }
 
     void EventManager::Shutdown() { DestructEvents(); }

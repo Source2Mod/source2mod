@@ -44,6 +44,7 @@
 #include "handles.h"
 #include "scriptplugin.h"
 
+#include "core/game/events.h"
 #include "core/runtime/shared.h"
 
 #include <source2mod/sdk/schema/classes/CBasePlayerController.h>
@@ -309,6 +310,62 @@ namespace sourcepawn
             return ev ? NewScriptEvent(ev, CallerId(ctx)) : 0;
         }
 
+        // ---- Source2ModEvents: the event table (ISource2ModEvents004) --------------
+
+        ISource2ModEvents& Events()
+        {
+            return events::eventManager;
+        }
+
+        cell_t N_S2MGetEventCount(IPluginContext*, const cell_t*)
+        {
+            return Events().GetEventCount();
+        }
+
+        // GetEventName(int eventId, char[] buffer, int maxlen): false for an id the game does not have
+        cell_t N_S2MGetEventName(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = Events().GetEventName(params[1]);
+            WriteString(ctx, params[2], params[3], name);
+            return name != nullptr;
+        }
+
+        // GetEventID(const char[] name): -1 for an event the game does not have
+        cell_t N_S2MGetEventID(IPluginContext* ctx, const cell_t* params)
+        {
+            return Events().GetEventID(LocalString(ctx, params[1]));
+        }
+
+        // GetEventListenerCount(const char[] name, Source2ModEventListenerType type = Listener_Any)
+        cell_t N_S2MGetEventListenerCount(IPluginContext* ctx, const cell_t* params)
+        {
+            return Events().GetEventListenerCount(LocalString(ctx, params[1]), static_cast<Source2ModEventListenerType>(params[2]));
+        }
+
+        // IsClientListening(CPlayerSlot slot, const char[] name)
+        cell_t N_S2MIsClientListening(IPluginContext* ctx, const cell_t* params)
+        {
+            return Events().IsClientListening(CPlayerSlot(params[1]), LocalString(ctx, params[2]));
+        }
+
+        // GetEventFile(const char[] name, char[] buffer, int maxlen): false for an event the game does not have
+        cell_t N_S2MGetEventFile(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* file = Events().GetEventFile(LocalString(ctx, params[1]));
+            WriteString(ctx, params[2], params[3], file);
+            return file != nullptr;
+        }
+
+        cell_t N_S2MIsEventLocal(IPluginContext* ctx, const cell_t* params)
+        {
+            return Events().IsEventLocal(LocalString(ctx, params[1]));
+        }
+
+        cell_t N_S2MIsEventReliable(IPluginContext* ctx, const cell_t* params)
+        {
+            return Events().IsEventReliable(LocalString(ctx, params[1]));
+        }
+
         // ---- SourceMod events.inc --------------------------------------------------
 
         const sp_nativeinfo_t g_eventNatives[] = {
@@ -339,6 +396,14 @@ namespace sourcepawn
             { "IGameEventManager2.PrintEventToString", N_PrintEventToString },
             { "IGameEventManager2.SerializeEvent", N_SerializeEvent },
             { "IGameEventManager2.UnserializeEvent", N_UnserializeEvent },
+            { "Source2ModEvents.GetEventCount", N_S2MGetEventCount },
+            { "Source2ModEvents.GetEventName", N_S2MGetEventName },
+            { "Source2ModEvents.GetEventID", N_S2MGetEventID },
+            { "Source2ModEvents.GetEventListenerCount", N_S2MGetEventListenerCount },
+            { "Source2ModEvents.IsClientListening", N_S2MIsClientListening },
+            { "Source2ModEvents.GetEventFile", N_S2MGetEventFile },
+            { "Source2ModEvents.IsEventLocal", N_S2MIsEventLocal },
+            { "Source2ModEvents.IsEventReliable", N_S2MIsEventReliable },
             // events.inc
             { nullptr, nullptr },
         };

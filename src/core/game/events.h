@@ -73,6 +73,15 @@ namespace events {
         bool UnhookGameEvent(Source2ModEventHookId id) override { return Unhook(id); }
         void FireEventToClient(CPlayerSlot slot, IGameEvent* event) override;
 
+        int GetEventCount() override;
+        const char* GetEventName(int eventId) override;
+        int GetEventID(const char* pchName) override;
+        int GetEventListenerCount(const char* pchName, Source2ModEventListenerType type) override;
+        bool IsClientListening(CPlayerSlot slot, const char* pchName) override;
+        const char* GetEventFile(const char* pchName) override;
+        bool IsEventLocal(const char* pchName) override;
+        bool IsEventReliable(const char* pchName) override;
+
         // The same with the owner spelled out: what the calls above resolve
         // to, and what the core itself calls.
         Source2ModEventHookId HookGameEvent(PluginId owner, const char* pchName, GameEventHandler handler, bool post);
@@ -84,6 +93,10 @@ namespace events {
 
     extern EventManager eventManager;
 
+    // Adds Source2Mod's listener to every hooked event that lost it. Called
+    // after each LoadEventsFromFile: an event a file defines again starts
+    // with no listeners, and the game only creates an event (CreateEvent
+    // without bForce) that somebody listens to.
     void InitEvents();
     void DestructEvents();
 
