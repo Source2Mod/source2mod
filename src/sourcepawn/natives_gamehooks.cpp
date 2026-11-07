@@ -364,6 +364,7 @@ namespace sourcepawn
                 S2M_POINT(GameServerSteamAPIActivated, EmptyContext)
                 S2M_POINT(GameServerSteamAPIDeactivated, EmptyContext)
                 S2M_POINT(LoadEventsFromFile, LoadEventsFromFileContext)
+                S2M_POINT(ClientFullyConnect, ClientSlotContext)
 #undef S2M_POINT
             default:
                 return 0;

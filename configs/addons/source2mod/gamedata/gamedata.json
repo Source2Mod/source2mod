@@ -788,6 +788,12 @@
       "linux": 16
     }
   },
+  "ISource2GameClients::ClientFullyConnect": {
+    "offsets": {
+      "windows": 15,
+      "linux": 15
+    }
+  },
   "ISource2GameClients::ClientPutInServer": {
     "offsets": {
       "windows": 13,

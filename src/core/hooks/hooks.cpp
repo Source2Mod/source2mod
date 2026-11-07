@@ -329,6 +329,7 @@ namespace hooks
         add(HookPointId::GameServerSteamAPIActivated, new PointList<EmptyContext>());
         add(HookPointId::GameServerSteamAPIDeactivated, new PointList<EmptyContext>());
         add(HookPointId::LoadEventsFromFile, new PointList<LoadEventsFromFileContext>());
+        add(HookPointId::ClientFullyConnect, new PointList<ClientSlotContext>());
     }
 
     const char* HooksManager::PointName(HookPointId point)
@@ -346,6 +347,7 @@ namespace hooks
         case HookPointId::GameServerSteamAPIActivated: return "GameServerSteamAPIActivated";
         case HookPointId::GameServerSteamAPIDeactivated: return "GameServerSteamAPIDeactivated";
         case HookPointId::LoadEventsFromFile: return "LoadEventsFromFile";
+        case HookPointId::ClientFullyConnect: return "ClientFullyConnect";
         default: return virtualpoints::Is(point) ? virtualpoints::Name(point) : "?";
         }
     }
@@ -361,7 +363,7 @@ namespace hooks
         bool IsEngine(HookPointId p)
         {
             return static_cast<int>(p) >= static_cast<int>(HookPointId::GameFrame)
-                && static_cast<int>(p) <= static_cast<int>(HookPointId::LoadEventsFromFile);
+                && static_cast<int>(p) <= static_cast<int>(HookPointId::ClientFullyConnect);
         }
 
         // The owner of a handler from the point's context type.
@@ -423,7 +425,8 @@ namespace hooks
         case HookPointId::ClientPutInServer: return AddTo<ClientPutInServerContext>(list, owner, handler, post, target, filter);
         case HookPointId::ClientDisconnect: return AddTo<ClientDisconnectContext>(list, owner, handler, post, target, filter);
         case HookPointId::ClientVoice:
-        case HookPointId::ClientSettingsChanged: return AddTo<ClientSlotContext>(list, owner, handler, post, target, filter);
+        case HookPointId::ClientSettingsChanged:
+        case HookPointId::ClientFullyConnect: return AddTo<ClientSlotContext>(list, owner, handler, post, target, filter);
         case HookPointId::GameServerSteamAPIActivated:
         case HookPointId::GameServerSteamAPIDeactivated: return AddTo<EmptyContext>(list, owner, handler, post, target, filter);
         case HookPointId::LoadEventsFromFile: return AddTo<LoadEventsFromFileContext>(list, owner, handler, post, target, filter);

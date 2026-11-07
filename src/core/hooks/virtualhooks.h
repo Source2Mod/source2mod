@@ -86,6 +86,8 @@ namespace virtualhooks {
         KHook::Return<void> Hook_ClientVoicePre(ISource2GameClients* pThis, CPlayerSlot slot);
         KHook::Return<void> Hook_ClientSettingsChanged(ISource2GameClients* pThis, CPlayerSlot slot);
         KHook::Return<void> Hook_ClientSettingsChangedPre(ISource2GameClients* pThis, CPlayerSlot slot);
+        KHook::Return<void> Hook_ClientFullyConnect(ISource2GameClients* pThis, CPlayerSlot slot);
+        KHook::Return<void> Hook_ClientFullyConnectPre(ISource2GameClients* pThis, CPlayerSlot slot);
         KHook::Return<void> Hook_ClientDisconnect(ISource2GameClients* pThis, CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName, uint64 xuid, const char* pszNetworkID);
         KHook::Return<void> Hook_ClientDisconnectPost(ISource2GameClients* pThis, CPlayerSlot slot, ENetworkDisconnectionReason reason, const char* pszName, uint64 xuid, const char* pszNetworkID);
         KHook::Return<bool> Hook_ClientConnect(ISource2GameClients* pThis, CPlayerSlot slot, const char* pszName, uint64 xuid, const char* pszNetworkID, bool unk1, CBufferString* pRejectReason);
@@ -121,6 +123,7 @@ namespace virtualhooks {
         Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot, const char*, uint64, const char*, const char*, bool>* m_hOnClientConnected = nullptr;
         Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot>* m_hClientVoice = nullptr;
         Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot>* m_hClientSettingsChanged = nullptr;
+        Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot>* m_hClientFullyConnect = nullptr;
         // "meta unload <this plugin>" typed at the console: superseded, and
         // finished from the next GameFrame, see Hook_DispatchConCommand.
         bool m_bSelfUnloadPending = false;

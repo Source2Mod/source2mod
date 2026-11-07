@@ -169,6 +169,7 @@ namespace virtualhooks
         KHOOK_NEW(m_hClientPutInServer, &ISource2GameClients::ClientPutInServer, this, &Virtuals::Hook_ClientPutInServerPre, &Virtuals::Hook_ClientPutInServer),
         KHOOK_NEW(m_hClientVoice, &ISource2GameClients::ClientVoice, this, &Virtuals::Hook_ClientVoicePre, &Virtuals::Hook_ClientVoice),
         KHOOK_NEW(m_hClientSettingsChanged, &ISource2GameClients::ClientSettingsChanged, this, &Virtuals::Hook_ClientSettingsChangedPre, &Virtuals::Hook_ClientSettingsChanged),
+        KHOOK_NEW(m_hClientFullyConnect, &ISource2GameClients::ClientFullyConnect, this, &Virtuals::Hook_ClientFullyConnectPre, &Virtuals::Hook_ClientFullyConnect),
         KHOOK_NEW(m_hClientSvcUserMessage, &ISource2GameClients::ClientSvcUserMessage, this, &Virtuals::Hook_ClientSvcUserMessage, nullptr),
         KHOOK_NEW(m_hClientDisconnect, &ISource2GameClients::ClientDisconnect, this, &Virtuals::Hook_ClientDisconnect, &Virtuals::Hook_ClientDisconnectPost),
         KHOOK_NEW(m_hClientConnect, &ISource2GameClients::ClientConnect, this, &Virtuals::Hook_ClientConnect, &Virtuals::Hook_ClientConnectPost),
@@ -219,6 +220,7 @@ namespace virtualhooks
         ResolveIndex(m_hClientPutInServer, "ISource2GameClients::ClientPutInServer");
         ResolveIndex(m_hClientVoice, "ISource2GameClients::ClientVoice");
         ResolveIndex(m_hClientSettingsChanged, "ISource2GameClients::ClientSettingsChanged");
+        ResolveIndex(m_hClientFullyConnect, "ISource2GameClients::ClientFullyConnect");
         ResolveIndex(m_hClientSvcUserMessage, "ISource2GameClients::ClientSvcUserMessage");
         ResolveIndex(m_hClientDisconnect, "ISource2GameClients::ClientDisconnect");
         ResolveIndex(m_hClientConnect, "ISource2GameClients::ClientConnect");
@@ -254,6 +256,7 @@ namespace virtualhooks
         m_hClientPutInServer->Add(g_pSource2GameClients);
         m_hClientVoice->Add(g_pSource2GameClients);
         m_hClientSettingsChanged->Add(g_pSource2GameClients);
+        m_hClientFullyConnect->Add(g_pSource2GameClients);
         m_hClientSvcUserMessage->Add(g_pSource2GameClients);
         m_hClientDisconnect->Add(g_pSource2GameClients);
         m_hClientConnect->Add(g_pSource2GameClients);
@@ -313,6 +316,8 @@ namespace virtualhooks
             m_hClientVoice->Remove(g_pSource2GameClients);
         if (m_hClientSettingsChanged)
             m_hClientSettingsChanged->Remove(g_pSource2GameClients);
+        if (m_hClientFullyConnect)
+            m_hClientFullyConnect->Remove(g_pSource2GameClients);
         if (m_hClientSvcUserMessage)
             m_hClientSvcUserMessage->Remove(g_pSource2GameClients);
         if (m_hClientDisconnect)
@@ -356,6 +361,7 @@ namespace virtualhooks
         delete m_hClientPutInServer;
         delete m_hClientVoice;
         delete m_hClientSettingsChanged;
+        delete m_hClientFullyConnect;
         delete m_hClientSvcUserMessage;
         delete m_hClientDisconnect;
         delete m_hClientConnect;
@@ -378,6 +384,7 @@ namespace virtualhooks
         m_hClientPutInServer = nullptr;
         m_hClientVoice = nullptr;
         m_hClientSettingsChanged = nullptr;
+        m_hClientFullyConnect = nullptr;
         m_hClientSvcUserMessage = nullptr;
         m_hClientDisconnect = nullptr;
         m_hClientConnect = nullptr;
@@ -544,6 +551,22 @@ namespace virtualhooks
     {
         ClientSlotContext ctx{ slot };
         return { PreAction(hooks::hooksManager.Dispatch(HookPointId::ClientSettingsChanged, ctx, false)) };
+    }
+
+    KHook::Return<void> Virtuals::Hook_ClientFullyConnect(ISource2GameClients* pThis, CPlayerSlot slot)
+    {
+        FP_VPROF("Source2Mod::ClientFullyConnect");
+
+        ClientSlotContext ctx{ slot };
+        hooks::hooksManager.Dispatch(HookPointId::ClientFullyConnect, ctx, true);
+
+        return { KHook::Action::Ignore };
+    }
+
+    KHook::Return<void> Virtuals::Hook_ClientFullyConnectPre(ISource2GameClients* pThis, CPlayerSlot slot)
+    {
+        ClientSlotContext ctx{ slot };
+        return { PreAction(hooks::hooksManager.Dispatch(HookPointId::ClientFullyConnect, ctx, false)) };
     }
 
     KHook::Return<void> Virtuals::Hook_DispatchConCommand(ICvar* pThis, ConCommandRef cmd, const CCommandContext& ctx, const CCommand& args)
