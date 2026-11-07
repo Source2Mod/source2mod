@@ -907,10 +907,16 @@ namespace virtualhooks
     {
         FP_VPROF("Source2Mod::LoadEventsFromFile");
 
-        ExecuteOnce(
+        if (!shared::g_pGameEventManager)
             shared::g_pGameEventManager = pThis;
-            events::InitEvents();
-        )
+
+        // After every file, not once: a file defines its events again, and an
+        // event defined again starts with no listeners. core.gameevents,
+        // game.gameevents and mod.gameevents load one after the other, so the
+        // listener added after the first was gone from round_poststart and
+        // most others -- and the game does not even create an event nobody
+        // listens to (CreateEvent without bForce returns null).
+        events::InitEvents();
 
         LoadEventsFromFileContext ctx{ pThis, filename, bSearchAll };
         hooks::hooksManager.Dispatch(HookPointId::LoadEventsFromFile, ctx, true);
