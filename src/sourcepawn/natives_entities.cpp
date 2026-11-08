@@ -468,6 +468,7 @@ namespace sourcepawn
             uint8_t* base = nullptr;
             uint8_t* addr = nullptr;
             const Field* field = nullptr;
+            const SchemaRef* ref = nullptr;   // how base was reached, when not an entity cell
         };
 
         bool Lookup(IPluginContext* ctx, const cell_t* params, Access& a, Kind want, const char* what)
@@ -491,7 +492,7 @@ namespace sourcepawn
                 ctx->ThrowNativeError("Null schema object");
                 return false;
             }
-            void* base = Base(ctx, params[1]);
+            void* base = Base(ctx, params[1], &a.ref);
             if (!base)
                 return false;
             a.base = static_cast<uint8_t*>(base);
@@ -500,20 +501,59 @@ namespace sourcepawn
             return true;
         }
 
+        // The object `ref` reaches after its first `depth` steps.
+        void* ResolveRefTo(const SchemaRef& ref, size_t depth)
+        {
+            SchemaRef partial;
+            partial.root = ref.root;
+            partial.entity = ref.entity;
+            partial.raw = ref.raw;
+            partial.chain.assign(ref.chain.begin(), ref.chain.begin() + depth);
+            return ResolveRef(partial);
+        }
+
+        // Field `name` of `cls` at `base` changed; `base` was reached through the
+        // first `depth` steps of `ref` (no ref: an entity).
+        void NotifyField(void* base, const SchemaRef* ref, size_t depth, const char* cls, const char* name, int extra)
+        {
+            const SchemaKey key = schema::GetOffset(cls, hash_32_fnv1a_const(cls), name, hash_32_fnv1a_const(name));
+            if (!base || !key.valid || !key.networked)
+                return;
+
+            // A class with a chainer (services, game rules) passes it on itself.
+            const int16_t chain = schema::FindChainOffset(cls);
+            if (chain != 0)
+            {
+                ChainNetworkStateChanged(reinterpret_cast<uintptr_t>(base) + chain, key.offset + extra);
+                return;
+            }
+
+            // An object embedded in another one (m_Collision, m_Glow,
+            // m_vecViewOffset) is no entity: CEntityInstance::NetworkStateChanged
+            // on it went through its first qword as a vtable -- a NetworkVar
+            // wrapper's vtable at another slot, or plain data (0 for the view
+            // offset: SIGSEGV). Its owner marks the whole embedded field changed
+            // instead, as Utilities.SetStateChanged(pawn, "CBaseModelEntity",
+            // "m_vecViewOffset") does.
+            if (ref && depth > 0)
+            {
+                const auto& [ownerCls, ownerField] = ref->chain[depth - 1];
+                const Field& step = FindField(ownerCls.c_str(), ownerField.c_str());
+                if (step.found && step.kind == Kind::Embedded)
+                {
+                    NotifyField(ResolveRefTo(*ref, depth - 1), ref, depth - 1, step.declClass.c_str(), step.name.c_str(), 0);
+                    return;
+                }
+            }
+
+            EntityNetworkStateChanged(reinterpret_cast<uintptr_t>(base), key.offset + extra);
+        }
+
         // A networked field changed: tell the owner, through the class's
         // chainer when it has one -- what SCHEMA_FIELD's setter does.
         void Changed(const Access& a, int extra = 0)
         {
-            const char* cls = a.field->declClass.c_str();
-            const char* name = a.field->name.c_str();
-            const SchemaKey key = schema::GetOffset(cls, hash_32_fnv1a_const(cls), name, hash_32_fnv1a_const(name));
-            if (!key.valid || !key.networked)
-                return;
-            const int16_t chain = schema::FindChainOffset(cls);
-            if (chain != 0)
-                ChainNetworkStateChanged(reinterpret_cast<uintptr_t>(a.base) + chain, key.offset + extra);
-            else
-                EntityNetworkStateChanged(reinterpret_cast<uintptr_t>(a.base), key.offset + extra);
+            NotifyField(a.base, a.ref, a.ref ? a.ref->chain.size() : 0, a.field->declClass.c_str(), a.field->name.c_str(), extra);
         }
 
         // Element `params[index]` of a fixed array field (instance, class,
@@ -548,7 +588,7 @@ namespace sourcepawn
                 ctx->ThrowNativeError("Null schema object");
                 return false;
             }
-            void* base = Base(ctx, params[1]);
+            void* base = Base(ctx, params[1], &a.ref);
             if (!base)
                 return false;
             extra = index * f.elemSize;
@@ -1025,7 +1065,7 @@ namespace sourcepawn
             if (params[1] == 0)
                 return ctx->ThrowNativeError("Null schema object");
             Access a;
-            a.base = static_cast<uint8_t*>(Base(ctx, params[1]));
+            a.base = static_cast<uint8_t*>(Base(ctx, params[1], &a.ref));
             if (!a.base)
                 return 0;
             a.addr = a.base + f.offset;
