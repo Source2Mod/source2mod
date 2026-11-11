@@ -120,6 +120,16 @@ public:
     size_t FormatArgs(char *buffer, size_t maxlength, const char *format, va_list ap) override;
 
     bool FollowsServerGuidelines() override;
+
+    IResourceSystem* GetResourceSystem() override;
+    IResourceManifestRegistry* GetResourceManifestRegistry() override;
+    IResourceHandleUtils* GetResourceHandleUtils() override;
+    IFlattenedSerializers* GetFlattenedSerializers() override;
+    ISerializedEntities* GetSerializedEntities() override;
+    IGameTypes* GetGameTypes() override;
+    IScriptManager* GetScriptManager() override;
+    IAsyncFileSystem2* GetAsyncFileSystem() override;
+    IProcessUtils* GetProcessUtils() override;
     ISource2ModClients* Clients() override;
     ISource2ModConfigs* Configs() override;
     ISource2ModCookies* Cookies() override;

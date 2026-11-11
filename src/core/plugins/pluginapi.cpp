@@ -772,6 +772,17 @@ bool PluginApi::FollowsServerGuidelines()
     return coreconfig::coreConfig.FollowCS2ServerGuidelines;
 }
 
+// Plugin API 11: s2sdk's globals, connected in Load (null when the server has no such system).
+IResourceSystem* PluginApi::GetResourceSystem() { return g_pResourceSystem; }
+IResourceManifestRegistry* PluginApi::GetResourceManifestRegistry() { return g_pResourceManifestRegistry; }
+IResourceHandleUtils* PluginApi::GetResourceHandleUtils() { return g_pResourceHandleUtils; }
+IFlattenedSerializers* PluginApi::GetFlattenedSerializers() { return g_pFlattenedSerializers; }
+ISerializedEntities* PluginApi::GetSerializedEntities() { return g_pSerializedEntities; }
+IGameTypes* PluginApi::GetGameTypes() { return g_pGameTypes; }
+IScriptManager* PluginApi::GetScriptManager() { return g_pScriptManager; }
+IAsyncFileSystem2* PluginApi::GetAsyncFileSystem() { return g_pAsyncFileSystem; }
+IProcessUtils* PluginApi::GetProcessUtils() { return g_pProcessUtils; }
+
 // The interfaces of plugin API 9 on: what the factory hands this plugin.
 ISource2ModClients* PluginApi::Clients()
 {
