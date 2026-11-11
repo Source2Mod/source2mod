@@ -123,27 +123,16 @@ bool Source2ModCore::Load(PluginId id, ISmmAPI* ismm, char* error, size_t maxlen
     GET_V_IFACE_CURRENT(GetEngineFactory, g_pLocalize, ILocalize, LOCALIZE_INTERFACE_VERSION);
     GET_V_IFACE_CURRENT(GetFileSystemFactory, g_pFullFileSystem, IFileSystem, FILESYSTEM_INTERFACE_VERSION);
 
-    // The rest of s2sdk's globals plugins get through ISource2ModAPI: optional,
-    // a system the server does not load stays null instead of failing the load.
-    {
-        CreateInterfaceFn engine = ismm->GetEngineFactory(false);
-        CreateInterfaceFn server = ismm->GetServerFactory(false);
-        auto find = [&](const char* name) -> void* {
-            void* iface = engine ? engine(name, nullptr) : nullptr;
-            if (!iface && server)
-                iface = server(name, nullptr);
-            return iface;
-        };
-        g_pResourceSystem = static_cast<IResourceSystem*>(find(RESOURCESYSTEM_INTERFACE_VERSION));
-        g_pResourceManifestRegistry = static_cast<IResourceManifestRegistry*>(find(RESOURCEMANIFESTREGISTRY_INTERFACE_VERSION));
-        g_pResourceHandleUtils = static_cast<IResourceHandleUtils*>(find(RESOURCEHANDLEUTILS_INTERFACE_VERSION));
-        g_pFlattenedSerializers = static_cast<IFlattenedSerializers*>(find(FLATTENEDSERIALIZERS_INTERFACE_VERSION));
-        g_pSerializedEntities = static_cast<ISerializedEntities*>(find(SERIALIZEDENTITIES_INTERFACE_VERSION));
-        g_pGameTypes = static_cast<IGameTypes*>(find(GAMETYPES_INTERFACE_VERSION));
-        g_pScriptManager = static_cast<IScriptManager*>(find(SCRIPTMANAGER_INTERFACE_VERSION));
-        g_pAsyncFileSystem = static_cast<IAsyncFileSystem2*>(find(ASYNCFILESYSTEM_INTERFACE_VERSION));
-        g_pProcessUtils = static_cast<IProcessUtils*>(find(PROCESSUTILS_INTERFACE_VERSION));
-    }
+    // The rest of s2sdk's globals plugins get through ISource2ModAPI (plugin API 11).
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pResourceSystem, IResourceSystem, RESOURCESYSTEM_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pResourceManifestRegistry, IResourceManifestRegistry, RESOURCEMANIFESTREGISTRY_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pResourceHandleUtils, IResourceHandleUtils, RESOURCEHANDLEUTILS_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pFlattenedSerializers, IFlattenedSerializers, FLATTENEDSERIALIZERS_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pSerializedEntities, ISerializedEntities, SERIALIZEDENTITIES_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pGameTypes, IGameTypes, GAMETYPES_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pScriptManager, IScriptManager, SCRIPTMANAGER_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pAsyncFileSystem, IAsyncFileSystem2, ASYNCFILESYSTEM_INTERFACE_VERSION);
+    GET_V_IFACE_CURRENT(GetEngineFactory, g_pProcessUtils, IProcessUtils, PROCESSUTILS_INTERFACE_VERSION);
 
     // IGameEventSystem has no global in interfaces.h at all. The schema system
     // and game resource service do, but as the interface type -- Source2Mod
