@@ -57,7 +57,7 @@ namespace appsystem
         ConVarRegistration, Commands, SlotInput, Permissions, GeoIP, Cookies, Scripts, Unlock, InlineHooks,
         VirtualHooks, Events, GameHooks, DynamicHooks, Configs, SourcePawn, ConVars, HTTP, WebSockets, Net,
         MySQL, Maps, EntityListener, CustomHud, NetworkMessages, Transmit, Menus, Hooks, Entities, Clients,
-        Translations, Targeting, Functions, PluginKHook, Modules, Voice,
+        Translations, Targeting, Functions, PluginKHook, Modules, Voice, SpawnGroups,
         Count
     };
 

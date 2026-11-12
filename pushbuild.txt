@@ -50,3 +50,4 @@ CS2 14197 (2026-11-11): built against the new net message layout (s2sdk), CSourc
 SourcePawn updated to upstream master (SP 2.0 dev): nested enum struct initializers, static properties, const enum struct methods, compiler fixes.
 SourcePawn: Source2ModGameTypes (game type/mode names, map groups, random map, maxplayers) and Source2ModEntities.AcceptInputInt/Float/Bool/Vector/Color.
 CS2 14197: net message handles are NetMessageInfo_t (upstream s2sdk), INetworkMessageInternal is gone.
+Spawn groups: ISource2ModSpawnGroups001 (plugin API 12) and source2mod/spawngroups.inc -- load a map, prefab or skybox at an offset with a ready/gone callback; unloaded with the plugin.

@@ -175,7 +175,6 @@ namespace sourcepawn
         ForgetNetworkMessageHooks(id);
         ForgetSoundHooks(id);
         ForgetConsoleListeners(id);
-        ForgetSpawnGroups(id);
         Handles().RemoveAllForPlugin(id);
     }
 

@@ -105,6 +105,7 @@ namespace sourcepawn
     const sp_nativeinfo_t* GetJsonNatives();          // natives_json.cpp
     const sp_nativeinfo_t* GetVoiceNatives();         // natives_voice.cpp
     const sp_nativeinfo_t* GetMapNatives();           // natives_maps.cpp
+    const sp_nativeinfo_t* GetSpawnGroupNatives();    // natives_spawngroups.cpp
     const sp_nativeinfo_t* GetMathNatives();          // natives_math.cpp
     const sp_nativeinfo_t* GetMenuNatives();          // natives_menus.cpp
     const sp_nativeinfo_t* GetNetworkMessageNatives();// natives_networkmessages.cpp
@@ -167,7 +168,6 @@ namespace sourcepawn
     void ForgetNetworkMessageHooks(PluginId id);  // natives_networkmessages.cpp
     void ForgetSoundHooks(PluginId id);           // natives_sounds.cpp
     void ForgetConsoleListeners(PluginId id);     // natives_console.cpp
-    void ForgetSpawnGroups(PluginId id);          // natives_stringtables.cpp
     void ShutdownConsoleListeners();              // natives_console.cpp
 
     /// ISource2ModNatives001, for native plugins (pluginsys.cpp).

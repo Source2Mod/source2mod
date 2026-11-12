@@ -1,6 +1,6 @@
 /*
  * SourcePawn natives for source2mod/stringtables.inc and the world bits next to
- * them: network string tables, spawn groups, the mounted addons.
+ * them: network string tables and the mounted addons.
  *
  * A NetworkStringTable is its table id, looked up on every call: tables are made
  * anew for each map, an id never dangles.
@@ -118,56 +118,6 @@ namespace sourcepawn
             return 1;
         }
 
-        // ---- spawn groups -----------------------------------------------------------
-
-        // What each script loaded and has not unloaded: unloaded when it goes.
-        std::map<PluginId, std::vector<SpawnGroupHandle_t>> g_groups;
-
-        PluginId Caller(IPluginContext* ctx)
-        {
-            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
-            return plugin ? plugin->Id() : 0;
-        }
-
-        // Load(world, name, blockUntilLoaded)
-        cell_t N_SgLoad(IPluginContext* ctx, const cell_t* params)
-        {
-            if (!g_pEngineServer)
-                return 0;
-            SpawnGroupDesc_t desc;
-            desc.m_sWorldName = LocalString(ctx, params[1]);
-            desc.m_sDescriptiveName = LocalString(ctx, params[2]);
-            desc.m_bBlockUntilLoaded = params[3] != 0;
-            const SpawnGroupHandle_t handle = g_pEngineServer->LoadSpawnGroup(desc);
-            if (handle)
-                g_groups[Caller(ctx)].push_back(handle);
-            return static_cast<cell_t>(handle);
-        }
-
-        cell_t N_SgUnload(IPluginContext* ctx, const cell_t* params)
-        {
-            if (!g_pEngineServer || !params[1])
-                return 0;
-            std::erase(g_groups[Caller(ctx)], static_cast<SpawnGroupHandle_t>(params[1]));
-            g_pEngineServer->UnloadSpawnGroup(static_cast<SpawnGroupHandle_t>(params[1]), kSGUO_None);
-            return 0;
-        }
-
-        cell_t N_SgFindByName(IPluginContext* ctx, const cell_t* params)
-        {
-            return g_pEngineServer ? static_cast<cell_t>(g_pEngineServer->FindSpawnGroupByName(LocalString(ctx, params[1]))) : 0;
-        }
-
-        cell_t N_SgIsLoaded(IPluginContext*, const cell_t* params)
-        {
-            return g_pEngineServer && params[1] && g_pEngineServer->IsSpawnGroupLoaded(static_cast<SpawnGroupHandle_t>(params[1]));
-        }
-
-        cell_t N_SgIsLoading(IPluginContext*, const cell_t* params)
-        {
-            return g_pEngineServer && params[1] && g_pEngineServer->IsSpawnGroupLoading(static_cast<SpawnGroupHandle_t>(params[1]));
-        }
-
         // ---- addons -----------------------------------------------------------------
 
         cell_t N_GetMountedAddons(IPluginContext* ctx, const cell_t* params)
@@ -190,11 +140,6 @@ namespace sourcepawn
             { "NetworkStringTable.AddString", N_AddString },
             { "NetworkStringTable.GetUserData", N_GetUserData },
             { "NetworkStringTable.SetUserData", N_SetUserData },
-            { "Source2ModSpawnGroups.Load", N_SgLoad },
-            { "Source2ModSpawnGroups.Unload", N_SgUnload },
-            { "Source2ModSpawnGroups.FindByName", N_SgFindByName },
-            { "Source2ModSpawnGroups.IsLoaded", N_SgIsLoaded },
-            { "Source2ModSpawnGroups.IsLoading", N_SgIsLoading },
             { "Source2ModMaps.GetMountedAddons", N_GetMountedAddons },
             { "Source2ModMaps.IsAddonMounted", N_IsAddonMounted },
             { nullptr, nullptr },
@@ -204,18 +149,5 @@ namespace sourcepawn
     const sp_nativeinfo_t* GetStringTableNatives()
     {
         return g_natives;
-    }
-
-    void ForgetSpawnGroups(PluginId id)
-    {
-        auto it = g_groups.find(id);
-        if (it == g_groups.end())
-            return;
-        if (g_pEngineServer)
-        {
-            for (SpawnGroupHandle_t handle : it->second)
-                g_pEngineServer->UnloadSpawnGroup(handle, kSGUO_None);
-        }
-        g_groups.erase(it);
     }
 }

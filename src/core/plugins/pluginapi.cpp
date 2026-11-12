@@ -77,6 +77,7 @@
 #include "core/game/scripts.h"
 #include "core/game/sounds.h"
 #include "core/game/transmit.h"
+#include "core/game/spawngroups.h"
 #include "compat/compat.h"
 #include "sourcepawn/natives.h"
 #include "utils/log.h"
@@ -343,6 +344,7 @@ namespace
             { SOURCE2MOD_SOUNDS_INTERFACE, &sounds::soundsManager },
             { SOURCE2MOD_TRACE_INTERFACE, &raytrace::rayTrace },
             { SOURCE2MOD_TRANSMIT_INTERFACE, &transmit::transmitManager },
+            { SOURCE2MOD_SPAWNGROUPS_INTERFACE, static_cast<ISource2ModSpawnGroups*>(&spawngroups::spawnGroupsManager) },
             { SOURCE2MOD_TRANSLATIONS_INTERFACE, &translations::translationsManager },
             { SOURCE2MOD_FILES_INTERFACE, &files::filesManager },
             { SOURCE2MOD_UTILS_INTERFACE, &utils::utilsManager },
@@ -558,6 +560,12 @@ ISource2ModHooks* PluginApi::Hooks()
 {
     ISource2ModHooks* shared = &hooks::hooksManager;
     return m_owner ? static_cast<ISource2ModHooks*>(pluginifaces::ForPlugin(SOURCE2MOD_HOOKS_INTERFACE, m_owner, shared)) : shared;
+}
+
+ISource2ModSpawnGroups* PluginApi::SpawnGroups()
+{
+    ISource2ModSpawnGroups* shared = &spawngroups::spawnGroupsManager;
+    return m_owner ? static_cast<ISource2ModSpawnGroups*>(pluginifaces::ForPlugin(SOURCE2MOD_SPAWNGROUPS_INTERFACE, m_owner, shared)) : shared;
 }
 
 ISource2ModTransmit* PluginApi::Transmit()

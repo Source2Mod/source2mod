@@ -22,6 +22,7 @@
 #include "core/runtime/scheduler.h"
 #include "core/game/scripts.h"
 #include "core/game/sounds.h"
+#include "core/game/spawngroups.h"
 #include "core/data/mysql.h"
 #include "core/game/targeting.h"
 #include "core/game/translations.h"
@@ -550,6 +551,23 @@ private:
     PluginId m_owner;
 };
 
+class SpawnGroupsForPlugin final : public ISource2ModSpawnGroups
+{
+public:
+    explicit SpawnGroupsForPlugin(PluginId owner) : m_owner(owner) {}
+
+    Source2ModSpawnGroup Load(const SpawnGroupLoadInfo& info, SpawnGroupCallback callback) override { return spawngroups::spawnGroupsManager.Load(m_owner, static_cast<decltype(info)&&>(info), static_cast<decltype(callback)&&>(callback)); }
+    bool Unload(Source2ModSpawnGroup group) override { return spawngroups::spawnGroupsManager.Unload(static_cast<decltype(group)&&>(group)); }
+    Source2ModSpawnGroup FindByName(const char* name) override { return spawngroups::spawnGroupsManager.FindByName(static_cast<decltype(name)&&>(name)); }
+    bool IsLoaded(Source2ModSpawnGroup group) override { return spawngroups::spawnGroupsManager.IsLoaded(static_cast<decltype(group)&&>(group)); }
+    bool IsLoading(Source2ModSpawnGroup group) override { return spawngroups::spawnGroupsManager.IsLoading(static_cast<decltype(group)&&>(group)); }
+    bool MakeActive(Source2ModSpawnGroup group) override { return spawngroups::spawnGroupsManager.MakeActive(static_cast<decltype(group)&&>(group)); }
+    Source2ModSpawnGroup GetEntitySpawnGroup(CEntityInstance* entity) override { return spawngroups::spawnGroupsManager.GetEntitySpawnGroup(static_cast<decltype(entity)&&>(entity)); }
+
+private:
+    PluginId m_owner;
+};
+
 class SQLForPlugin final : public ISource2ModSQL
 {
 public:
@@ -703,6 +721,7 @@ void* Create(const char* iface, PluginId owner)
     if (!strcmp(iface, SOURCE2MOD_SCHEDULER_INTERFACE)) return static_cast<ISource2ModScheduler*>(new SchedulerForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_SCRIPTS_INTERFACE)) return static_cast<ISource2ModScripts*>(new ScriptsForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_SOUNDS_INTERFACE)) return static_cast<ISource2ModSounds*>(new SoundsForPlugin(owner));
+    if (!strcmp(iface, SOURCE2MOD_SPAWNGROUPS_INTERFACE)) return static_cast<ISource2ModSpawnGroups*>(new SpawnGroupsForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_SQL_INTERFACE)) return static_cast<ISource2ModSQL*>(new SQLForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_TARGETING_INTERFACE)) return static_cast<ISource2ModTargeting*>(new TargetingForPlugin(owner));
     if (!strcmp(iface, SOURCE2MOD_TRANSLATIONS_INTERFACE)) return static_cast<ISource2ModTranslations*>(new TranslationsForPlugin(owner));

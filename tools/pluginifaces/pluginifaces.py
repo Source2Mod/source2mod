@@ -39,6 +39,7 @@ IFACES = [
     ("Scheduler", "SCHEDULER", "scheduler::schedulerManager", "core/runtime/scheduler"),
     ("Scripts", "SCRIPTS", "scripts::scriptsManager", "core/game/scripts"),
     ("Sounds", "SOUNDS", "sounds::soundsManager", "core/game/sounds"),
+    ("SpawnGroups", "SPAWNGROUPS", "spawngroups::spawnGroupsManager", "core/game/spawngroups"),
     ("SQL", "SQL", "mysql::mysqlManager", "core/data/mysql"),
     ("Targeting", "TARGETING", "targeting::targetingManager", "core/game/targeting"),
     ("Translations", "TRANSLATIONS", "translations::translationsManager", "core/game/translations"),

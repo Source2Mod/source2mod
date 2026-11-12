@@ -96,6 +96,7 @@ namespace appsystem
             // runtime drops it there, and the runtimes have to go before the VM.
             SystemId::SourcePawn,
             SystemId::GameSystems,
+            SystemId::SpawnGroups,
             // Takes the engine-level change callback back out with it.
             SystemId::ConVars,
             SystemId::HTTP,
@@ -127,7 +128,7 @@ namespace appsystem
         constexpr SystemId kPluginRemovalOrder[] = {
             SystemId::Voice,
             SystemId::PluginKHook, SystemId::CrashHandler, SystemId::Events, SystemId::Commands, SystemId::Configs, SystemId::CustomHud, SystemId::ConVars,
-            SystemId::NetworkMessages, SystemId::Sounds, SystemId::Transmit, SystemId::GameSystems,
+            SystemId::NetworkMessages, SystemId::Sounds, SystemId::Transmit, SystemId::GameSystems, SystemId::SpawnGroups,
             SystemId::Scripts, SystemId::Scheduler, SystemId::HTTP, SystemId::WebSockets, SystemId::MySQL,
             SystemId::Menus, SystemId::Hooks, SystemId::Entities, SystemId::Permissions, SystemId::Cookies,
             SystemId::Clients, SystemId::Translations, SystemId::Targeting, SystemId::Functions,
@@ -143,7 +144,7 @@ namespace appsystem
             SystemId::HTTP, SystemId::CrashHandler, SystemId::Scheduler, SystemId::CustomHud, SystemId::Sounds,
             SystemId::Transmit, SystemId::Menus, SystemId::SlotInput, SystemId::Scripts, SystemId::Maps,
             SystemId::Permissions, SystemId::Cookies, SystemId::Clients, SystemId::Net, SystemId::DynamicHooks,
-            SystemId::MySQL,
+            SystemId::MySQL, SystemId::SpawnGroups,
         };
     }
 
