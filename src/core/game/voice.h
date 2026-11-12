@@ -52,6 +52,8 @@ namespace voice
         int m_flags[kSlots] = {};
         uint8_t m_listen[kSlots][kSlots] = {};
         uint32_t m_selfMutes[kSlots] = {};
+        // The client's "VModEnable 0" (voice_modenable 0): hears nobody, whatever the flags say.
+        bool m_voiceOff[kSlots] = {};
         Source2ModHookId m_hook = 0;
     };
 

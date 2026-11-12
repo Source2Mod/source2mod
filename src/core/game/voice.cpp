@@ -11,6 +11,7 @@
 #include <convar.h>
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 namespace voice
@@ -51,7 +52,7 @@ namespace voice
         if (!ValidSlot(receiver) || !ValidSlot(sender))
             return false;
 
-        if (sender < 32 && (m_selfMutes[receiver] & (1u << sender)))
+        if (m_voiceOff[receiver] || (sender < 32 && (m_selfMutes[receiver] & (1u << sender))))
         {
             listen = false;
             return true;
@@ -171,7 +172,19 @@ namespace voice
 
     void VoiceManager::OnClientCommand(CPlayerSlot slot, const CCommand& args)
     {
-        if (!ValidSlot(slot.Get()) || args.ArgC() < 2 || V_stricmp(args.Arg(0), "vban"))
+        if (!ValidSlot(slot.Get()) || args.ArgC() < 2)
+            return;
+
+        // voice_modenable 0 (the scoreboard's "incoming comms" toggle): the client plays whatever the server
+        // sends it, the game stops sending by passing false to SetClientListening (CVoiceGameMgr UpdateMasks,
+        // g_PlayerModEnable) -- which a plugin's All/ListenAll/Hear would turn back to true.
+        if (!V_stricmp(args.Arg(0), "VModEnable"))
+        {
+            m_voiceOff[slot.Get()] = std::atoi(args.Arg(1)) == 0;
+            return;
+        }
+
+        if (V_stricmp(args.Arg(0), "vban"))
             return;
 
         EnsureHook();
@@ -187,6 +200,7 @@ namespace voice
             return;
 
         m_selfMutes[s] = 0;
+        m_voiceOff[s] = false;
         for (const auto& [owner, state] : m_owners)
         {
             state->flags[s] = 0;
