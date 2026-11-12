@@ -48,3 +48,4 @@ Plugin API 11: ISource2ModAPI hands out the resource system, manifest registry, 
 Plugin API 11 interfaces are required now (GET_V_IFACE_CURRENT like the others; all nine resolve on the current DS).
 CS2 14197 (2026-11-11): built against the new net message layout (s2sdk), CSource2Server::GetNavMeshData Windows signature. Rebuild every plugin against the current SDK.
 SourcePawn updated to upstream master (SP 2.0 dev): nested enum struct initializers, static properties, const enum struct methods, compiler fixes.
+SourcePawn: Source2ModGameTypes (game type/mode names, map groups, random map, maxplayers) and Source2ModEntities.AcceptInputInt/Float/Bool/Vector/Color.

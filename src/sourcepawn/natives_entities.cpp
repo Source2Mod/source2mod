@@ -55,6 +55,7 @@
 #include "scriptplugin.h"
 
 #include "core/game/entities.h"
+#include "core/game/addresses.h"
 #include "utils/log.h"
 
 #include <tier0/memalloc.h>
@@ -2352,6 +2353,55 @@ namespace sourcepawn
             return 0;
         }
 
+        // Typed AcceptInput: the value goes to the input as that type (a variant_t of FIELD_INT32,
+        // FIELD_FLOAT32, ...), not as a string the input parses. Params: target, input, value..., activator, caller.
+        template <typename Make>
+        cell_t TypedAcceptInput(IPluginContext* ctx, const cell_t* params, int entityParams, Make make)
+        {
+            CEntityInstance* target = CheckEntity(ctx, params[1]);
+            bool ok1, ok2;
+            CEntityInstance* activator = OptionalEntity(ctx, params[entityParams], &ok1);
+            CEntityInstance* caller = OptionalEntity(ctx, params[entityParams + 1], &ok2);
+            if (!target || !ok1 || !ok2)
+                return 0;
+            const variant_t value = make();
+            return addresses::source2modAddresses.CEntityInstance_AcceptInput()(target, LocalString(ctx, params[2]), activator, caller, value);
+        }
+
+        // (target, input, int value, activator, caller)
+        cell_t N_EntsAcceptInputInt(IPluginContext* ctx, const cell_t* params)
+        {
+            return TypedAcceptInput(ctx, params, 4, [&] { return variant_t(static_cast<int32>(params[3])); });
+        }
+
+        // (target, input, float value, activator, caller)
+        cell_t N_EntsAcceptInputFloat(IPluginContext* ctx, const cell_t* params)
+        {
+            return TypedAcceptInput(ctx, params, 4, [&] { return variant_t(static_cast<float32>(sp_ctof(params[3]))); });
+        }
+
+        // (target, input, bool value, activator, caller)
+        cell_t N_EntsAcceptInputBool(IPluginContext* ctx, const cell_t* params)
+        {
+            return TypedAcceptInput(ctx, params, 4, [&] { return variant_t(params[3] != 0); });
+        }
+
+        // (target, input, const float value[3], activator, caller)
+        cell_t N_EntsAcceptInputVector(IPluginContext* ctx, const cell_t* params)
+        {
+            cell_t* v = nullptr;
+            ctx->LocalToPhysAddr(params[3], &v);
+            const Vector vec = v ? Vector(sp_ctof(v[0]), sp_ctof(v[1]), sp_ctof(v[2])) : Vector(0, 0, 0);
+            return TypedAcceptInput(ctx, params, 4, [&] { return variant_t(vec, true); });
+        }
+
+        // (target, input, int r, int g, int b, int a, activator, caller)
+        cell_t N_EntsAcceptInputColor(IPluginContext* ctx, const cell_t* params)
+        {
+            const Color color(params[3], params[4], params[5], params[6]);
+            return TypedAcceptInput(ctx, params, 7, [&] { return variant_t(color); });
+        }
+
         cell_t N_EntsAddEntityIOEvent(IPluginContext* ctx, const cell_t* params)
         {
             CEntityInstance* target = CheckEntity(ctx, params[1]);
@@ -2715,6 +2765,11 @@ namespace sourcepawn
             { "Source2ModEntities.CreateEntityByName", N_EntsCreateEntityByName },
             { "Source2ModEntities.SpawnEntityByClassname", N_EntsSpawnEntityByClassname },
             { "Source2ModEntities.AcceptInput", N_EntsAcceptInput },
+            { "Source2ModEntities.AcceptInputInt", N_EntsAcceptInputInt },
+            { "Source2ModEntities.AcceptInputFloat", N_EntsAcceptInputFloat },
+            { "Source2ModEntities.AcceptInputBool", N_EntsAcceptInputBool },
+            { "Source2ModEntities.AcceptInputVector", N_EntsAcceptInputVector },
+            { "Source2ModEntities.AcceptInputColor", N_EntsAcceptInputColor },
             { "Source2ModEntities.AddEntityIOEvent", N_EntsAddEntityIOEvent },
             { nullptr, nullptr },
         };

@@ -46,6 +46,10 @@
 
 #include "core/game/maps.h"
 
+#include <interfaces/interfaces.h>
+#include <matchmaking/igametypes.h>
+#include <tier0/utlstringlist.h>
+
 #include <functional>
 #include <string>
 #include <vector>
@@ -166,6 +170,81 @@ namespace sourcepawn
             return FillStringList(ctx, params[3], list, false, kMapBlockSize, CallerId(ctx));
         }
 
+        // ---- Source2ModGameTypes (IGameTypes, gamemodes.txt / gamemodes_server.txt) ----
+
+        // Null on a server that does not load matchmaking; every native then answers "nothing".
+        IGameTypes* GameTypes() { return g_pGameTypes; }
+
+        cell_t N_GTGetCurrentGameType(IPluginContext*, const cell_t*)
+        {
+            return GameTypes() ? GameTypes()->GetCurrentGameType() : -1;
+        }
+
+        cell_t N_GTGetCurrentGameMode(IPluginContext*, const cell_t*)
+        {
+            return GameTypes() ? GameTypes()->GetCurrentGameMode() : -1;
+        }
+
+        // (char[] buffer, int maxlen)
+        cell_t N_GTGetCurrentGameModeName(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = GameTypes() ? GameTypes()->GetCurrentGameModeName() : nullptr;
+            return ToBuffer(ctx, params[1], params[2], name ? name : "");
+        }
+
+        // (char[] buffer, int maxlen)
+        cell_t N_GTGetCurrentMapGroup(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = GameTypes() ? GameTypes()->GetCurrentMapGroupName() : nullptr;
+            return ToBuffer(ctx, params[1], params[2], name ? name : "");
+        }
+
+        // (int gameType, char[] buffer, int maxlen)
+        cell_t N_GTGetGameTypeName(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = GameTypes() ? GameTypes()->GetGameTypeFromInt(params[1]) : nullptr;
+            return ToBuffer(ctx, params[2], params[3], name ? name : "");
+        }
+
+        // (int gameType, int gameMode, char[] buffer, int maxlen)
+        cell_t N_GTGetGameModeName(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* name = GameTypes() ? GameTypes()->GetGameModeFromInt(params[1], params[2]) : nullptr;
+            return ToBuffer(ctx, params[3], params[4], name ? name : "");
+        }
+
+        // (const char[] mapGroup)
+        cell_t N_GTIsValidMapGroup(IPluginContext* ctx, const cell_t* params)
+        {
+            return GameTypes() && GameTypes()->IsValidMapGroupName(LocalString(ctx, params[1]));
+        }
+
+        // (const char[] mapGroup, ArrayList list = null)
+        cell_t N_GTGetMapGroupMaps(IPluginContext* ctx, const cell_t* params)
+        {
+            const CUtlStringList* maps = GameTypes() ? GameTypes()->GetMapGroupMapList(LocalString(ctx, params[1])) : nullptr;
+            if (!maps)
+                return 0;
+            std::vector<std::string> list;
+            for (int i = 0; i < maps->Count(); i++)
+                if ((*maps)[i])
+                    list.emplace_back((*maps)[i]);
+            return FillStringList(ctx, params[2], list, false, kMapBlockSize, CallerId(ctx));
+        }
+
+        // (const char[] mapGroup, char[] buffer, int maxlen)
+        cell_t N_GTGetRandomMap(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* map = GameTypes() ? GameTypes()->GetRandomMap(LocalString(ctx, params[1])) : nullptr;
+            return map ? ToBuffer(ctx, params[2], params[3], map) : 0;
+        }
+
+        // (int gameType, int gameMode)
+        cell_t N_GTGetMaxPlayers(IPluginContext*, const cell_t* params)
+        {
+            return GameTypes() ? GameTypes()->GetMaxPlayersForTypeAndMode(params[1], params[2], 0) : 0;
+        }
+
         const sp_nativeinfo_t g_mapNatives[] = {
             // halflife.inc / nextmap.inc / source2mod.inc
 
@@ -179,6 +258,16 @@ namespace sourcepawn
             { "Source2ModMaps.GetMapHistorySize", N_GetMapHistorySize },
             { "Source2ModMaps.GetMapHistory", N_MapsGetMapHistory },
             { "Source2ModMaps.ReadMapList", N_MapsReadMapList },
+            { "Source2ModGameTypes.GetCurrentGameType", N_GTGetCurrentGameType },
+            { "Source2ModGameTypes.GetCurrentGameMode", N_GTGetCurrentGameMode },
+            { "Source2ModGameTypes.GetCurrentGameModeName", N_GTGetCurrentGameModeName },
+            { "Source2ModGameTypes.GetCurrentMapGroup", N_GTGetCurrentMapGroup },
+            { "Source2ModGameTypes.GetGameTypeName", N_GTGetGameTypeName },
+            { "Source2ModGameTypes.GetGameModeName", N_GTGetGameModeName },
+            { "Source2ModGameTypes.IsValidMapGroup", N_GTIsValidMapGroup },
+            { "Source2ModGameTypes.GetMapGroupMaps", N_GTGetMapGroupMaps },
+            { "Source2ModGameTypes.GetRandomMap", N_GTGetRandomMap },
+            { "Source2ModGameTypes.GetMaxPlayers", N_GTGetMaxPlayers },
             { nullptr, nullptr },
         };
     }
