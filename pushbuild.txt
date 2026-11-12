@@ -47,3 +47,4 @@ Writing a field of an embedded schema object no longer crashes or goes to the wr
 Plugin API 11: ISource2ModAPI hands out the resource system, manifest registry, resource handle utils, flattened serializers, serialized entities, game types, script manager, async file system and process utils (SOURCE2MOD_FILLGAMEVARS fills s2sdk's globals); built against s2sdk cs2 21654ee5.
 Plugin API 11 interfaces are required now (GET_V_IFACE_CURRENT like the others; all nine resolve on the current DS).
 CS2 14197 (2026-11-11): built against the new net message layout (s2sdk), CSource2Server::GetNavMeshData Windows signature. Rebuild every plugin against the current SDK.
+SourcePawn updated to upstream master (SP 2.0 dev): nested enum struct initializers, static properties, const enum struct methods, compiler fixes.
