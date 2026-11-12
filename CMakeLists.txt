@@ -248,7 +248,9 @@ target_link_libraries(${PROJECT_NAME}
 
 # breakpad_types.h insists on this being defined before <inttypes.h> is
 # first seen, which with the SDK's headers is long before it gets a say.
-target_compile_definitions(${PROJECT_NAME} PRIVATE __STDC_FORMAT_MACROS)
+# Empty, the way amtl's am-string.h defines it again: a plain -D would make it
+# 1 and every SourcePawn file would warn about the redefinition.
+target_compile_definitions(${PROJECT_NAME} PRIVATE __STDC_FORMAT_MACROS=)
 
 if (UNIX AND NOT APPLE)
     # Breakpad is an implementation detail of the core. Kept out of the .so's

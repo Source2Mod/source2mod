@@ -151,7 +151,16 @@ namespace sourcepawn
         crashinfo::Shutdown();
         g_pEnv->SetDebugger(nullptr);
         g_pEnv->Shutdown();
+        // Its exact type, the one Environment::New() made: sp::Environment has no
+        // virtual destructor (nor ISourcePawnEnvironment), which is all clang means.
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdelete-non-abstract-non-virtual-dtor"
+#endif
         delete g_pEnv;
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         g_pEnv = nullptr;
     }
 

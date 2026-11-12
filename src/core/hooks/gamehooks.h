@@ -88,7 +88,7 @@ namespace gamehooks
         void Install(HookPointId point);
 
         void Shutdown() override;
-        void RemoveAllForPlugin(PluginId id);
+        void RemoveAllForPlugin(PluginId id) override;
         void RemoveInstance(const void* instance);
 
     private:
