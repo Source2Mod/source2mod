@@ -111,7 +111,7 @@ namespace sounds
         /// the type rather than through a void*.
         struct SoundMessage
         {
-            INetworkMessageInternal* info = nullptr;
+            NetMessageInfo_t* info = nullptr;
             CNetMessagePB<google::protobuf::Message>* net = nullptr;
             google::protobuf::Message* pb = nullptr;
 

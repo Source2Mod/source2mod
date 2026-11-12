@@ -93,7 +93,7 @@ namespace clients
             if (!SlotInRange(slot) || !message || !g_pNetworkMessages || !shared::g_pGameEventSystem)
                 return;
 
-            static INetworkMessageInternal* s_textMsg = g_pNetworkMessages->FindNetworkMessagePartial("TextMsg");
+            static NetMessageInfo_t* s_textMsg = g_pNetworkMessages->FindNetworkMessagePartial("TextMsg");
             if (!s_textMsg)
                 return;
 
@@ -267,7 +267,7 @@ namespace clients
         if (!client || client->IsFakePlayer() || !client->GetNetChannel() || !client->IsConnected())
             return -1;
 
-        static INetworkMessageInternal* s_getCvarValue = g_pNetworkMessages->FindNetworkMessageById(CSVCMsg_GetCvarValue_t::kMsgId);
+        static NetMessageInfo_t* s_getCvarValue = g_pNetworkMessages->FindNetworkMessageById(CSVCMsg_GetCvarValue_t::kMsgId);
         if (!s_getCvarValue)
             return -1;
 
@@ -355,7 +355,7 @@ namespace clients
         if (!channel)
             return false;
 
-        static INetworkMessageInternal* s_setConVar = g_pNetworkMessages->FindNetworkMessageById(CNETMsg_SetConVar_t::kMsgId);
+        static NetMessageInfo_t* s_setConVar = g_pNetworkMessages->FindNetworkMessageById(CNETMsg_SetConVar_t::kMsgId);
         if (!s_setConVar)
             return false;
 

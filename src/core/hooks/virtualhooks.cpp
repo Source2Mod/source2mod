@@ -177,7 +177,7 @@ namespace virtualhooks
         KHOOK_NEW(m_hSteamAPIActivated, &ISource2Server::GameServerSteamAPIActivated, this, &Virtuals::Hook_GameServerSteamAPIActivatedPre, &Virtuals::Hook_GameServerSteamAPIActivated),
         KHOOK_NEW(m_hSteamAPIDeactivated, &ISource2Server::GameServerSteamAPIDeactivated, this, &Virtuals::Hook_GameServerSteamAPIDeactivated, &Virtuals::Hook_GameServerSteamAPIDeactivatedPost),
         // PostEventAbstract is overloaded, so the member function pointer has to be disambiguated explicitly.
-        KHOOK_NEW(m_hPostEventAbstract, static_cast<void (IGameEventSystem::*)(CSplitScreenSlot, bool, int, const uint64*, INetworkMessageInternal*, const CNetMessage*, unsigned long, NetChannelBufType_t)>(&IGameEventSystem::PostEventAbstract), this, &Virtuals::Hook_PostEventAbstract, nullptr),
+        KHOOK_NEW(m_hPostEventAbstract, static_cast<void (IGameEventSystem::*)(CSplitScreenSlot, bool, int, const uint64*, NetMessageInfo_t*, const CNetMessage*, unsigned long, NetChannelBufType_t)>(&IGameEventSystem::PostEventAbstract), this, &Virtuals::Hook_PostEventAbstract, nullptr),
         KHOOK_NEW(m_hOnServerGamePostSimulate, &IGameSystem::OnServerGamePostSimulate, this, nullptr, &Virtuals::Hook_OnServerGamePostSimulate),
         KHOOK_NEW(m_hLoadEventsFromFile, &IGameEventManager2::LoadEventsFromFile, this, &Virtuals::Hook_LoadEventsFromFilePre, &Virtuals::Hook_LoadEventsFromFile),
         KHOOK_NEW(m_hFireEvent, &IGameEventManager2::FireEvent, this, &Virtuals::Hook_FireEvent, &Virtuals::Hook_FireEventPost),
@@ -761,14 +761,14 @@ namespace virtualhooks
         return { KHook::Action::Ignore };
     }
 
-    KHook::Return<void> Virtuals::Hook_PostEventAbstract(IGameEventSystem* pThis, CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64* clients, INetworkMessageInternal* pEvent, const CNetMessage* pData, unsigned long nSize, NetChannelBufType_t bufType)
+    KHook::Return<void> Virtuals::Hook_PostEventAbstract(IGameEventSystem* pThis, CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64* clients, NetMessageInfo_t* pEvent, const CNetMessage* pData, unsigned long nSize, NetChannelBufType_t bufType)
     {
         FP_VPROF("Source2Mod::PostEventAbstract");
 
         if (!pEvent || !pData)
             return { KHook::Action::Ignore };
 
-        NetMessageInfo_t* pInfo = pEvent->GetNetMessageInfo();
+        NetMessageInfo_t* pInfo = pEvent;
         if (!pInfo)
             return { KHook::Action::Ignore };
 
@@ -1059,11 +1059,11 @@ namespace virtualhooks
         if (!pThis || !pData)
             return { KHook::Action::Ignore, true };
 
-        INetworkMessageInternal* pNetMsg = pData->GetNetMessage();
+        NetMessageInfo_t* pNetMsg = pData->GetNetMessage();
         if (!pNetMsg)
             return { KHook::Action::Ignore, true };
 
-        NetMessageInfo_t* pInfo = pNetMsg->GetNetMessageInfo();
+        NetMessageInfo_t* pInfo = pNetMsg;
         if (!pInfo)
             return { KHook::Action::Ignore, true };
 
@@ -1086,11 +1086,11 @@ namespace virtualhooks
         if (!pThis || !pData)
             return { KHook::Action::Ignore, true };
 
-        INetworkMessageInternal* pNetMsg = pData->GetNetMessage();
+        NetMessageInfo_t* pNetMsg = pData->GetNetMessage();
         if (!pNetMsg)
             return { KHook::Action::Ignore, true };
 
-        NetMessageInfo_t* pInfo = pNetMsg->GetNetMessageInfo();
+        NetMessageInfo_t* pInfo = pNetMsg;
         if (!pInfo)
             return { KHook::Action::Ignore, true };
 

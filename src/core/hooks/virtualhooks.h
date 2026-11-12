@@ -99,7 +99,7 @@ namespace virtualhooks {
         KHook::Return<void> Hook_GameServerSteamAPIActivatedPre(ISource2Server* pThis);
         KHook::Return<void> Hook_GameServerSteamAPIDeactivated(ISource2Server* pThis);
         KHook::Return<void> Hook_GameServerSteamAPIDeactivatedPost(ISource2Server* pThis);
-        KHook::Return<void> Hook_PostEventAbstract(IGameEventSystem* pThis, CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64* clients, INetworkMessageInternal* pEvent, const CNetMessage* pData, unsigned long nSize, NetChannelBufType_t bufType);
+        KHook::Return<void> Hook_PostEventAbstract(IGameEventSystem* pThis, CSplitScreenSlot nSlot, bool bLocalOnly, int nClientCount, const uint64* clients, NetMessageInfo_t* pEvent, const CNetMessage* pData, unsigned long nSize, NetChannelBufType_t bufType);
         KHook::Return<void> Hook_OnServerGamePostSimulate(IGameSystem* pThis, const EventServerGamePostSimulate_t* const pMsg);
         KHook::Return<int>  Hook_LoadEventsFromFile(IGameEventManager2* pThis, const char* filename, bool bSearchAll);
         KHook::Return<int>  Hook_LoadEventsFromFilePre(IGameEventManager2* pThis, const char* filename, bool bSearchAll);
@@ -131,7 +131,7 @@ namespace virtualhooks {
         Source2ModKHook::Virtual<ISource2GameClients, void, CPlayerSlot, ENetworkDisconnectionReason, const char*, uint64, const char*>* m_hClientDisconnect = nullptr;
         Source2ModKHook::Virtual<ISource2Server, void>* m_hSteamAPIActivated = nullptr;
         Source2ModKHook::Virtual<ISource2Server, void>* m_hSteamAPIDeactivated = nullptr;
-        Source2ModKHook::Virtual<IGameEventSystem, void, CSplitScreenSlot, bool, int, const uint64*, INetworkMessageInternal*, const CNetMessage*, unsigned long, NetChannelBufType_t>* m_hPostEventAbstract = nullptr;
+        Source2ModKHook::Virtual<IGameEventSystem, void, CSplitScreenSlot, bool, int, const uint64*, NetMessageInfo_t*, const CNetMessage*, unsigned long, NetChannelBufType_t>* m_hPostEventAbstract = nullptr;
         Source2ModKHook::Virtual<IGameSystem, void, const EventServerGamePostSimulate_t*>* m_hOnServerGamePostSimulate = nullptr;
         Source2ModKHook::Virtual<IGameEventManager2, int, const char*, bool>* m_hLoadEventsFromFile = nullptr;
         // Pre and Post on the one object.
