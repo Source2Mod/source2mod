@@ -51,3 +51,4 @@ SourcePawn updated to upstream master (SP 2.0 dev): nested enum struct initializ
 SourcePawn: Source2ModGameTypes (game type/mode names, map groups, random map, maxplayers) and Source2ModEntities.AcceptInputInt/Float/Bool/Vector/Color.
 CS2 14197: net message handles are NetMessageInfo_t (upstream s2sdk), INetworkMessageInternal is gone.
 Spawn groups: ISource2ModSpawnGroups001 (plugin API 12) and source2mod/spawngroups.inc -- load a map, prefab or skybox at an offset with a ready/gone callback; unloaded with the plugin.
+Voice: a client with voice_modenable 0 (scoreboard comms off) hears nobody, whatever the plugins' voice flags.
