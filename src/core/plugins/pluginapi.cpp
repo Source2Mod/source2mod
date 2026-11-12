@@ -78,6 +78,7 @@
 #include "core/game/sounds.h"
 #include "core/game/transmit.h"
 #include "core/game/spawngroups.h"
+#include "core/game/snapshots.h"
 #include "compat/compat.h"
 #include "sourcepawn/natives.h"
 #include "utils/log.h"
@@ -345,6 +346,7 @@ namespace
             { SOURCE2MOD_TRACE_INTERFACE, &raytrace::rayTrace },
             { SOURCE2MOD_TRANSMIT_INTERFACE, &transmit::transmitManager },
             { SOURCE2MOD_SPAWNGROUPS_INTERFACE, static_cast<ISource2ModSpawnGroups*>(&spawngroups::spawnGroupsManager) },
+            { SOURCE2MOD_SNAPSHOTS_INTERFACE, &snapshots::snapshotsManager },
             { SOURCE2MOD_TRANSLATIONS_INTERFACE, &translations::translationsManager },
             { SOURCE2MOD_FILES_INTERFACE, &files::filesManager },
             { SOURCE2MOD_UTILS_INTERFACE, &utils::utilsManager },

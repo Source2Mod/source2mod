@@ -45,6 +45,7 @@
 #include "core/plugins/pluginapi.h"
 #include "core/plugins/pluginmanager.h"
 #include "core/game/raytrace.h"
+#include "core/game/snapshots.h"
 #include "core/data/coreconfig.h"
 #include "core/runtime/shared.h"
 #include "core/ui/slotinput.h"
@@ -236,6 +237,7 @@ namespace commands {
                 help.AddRow({ C_CMD "s2m hookdebug", C_DIM "<game hook|all|off>", "Log every call of matching game hooks" });
                 help.AddRow({ C_CMD "s2m admins", C_DIM "<list|reload|info <slot|steamid>>", "Players' permissions" });
                 help.AddRow({ C_CMD "s2m config", C_DIM "<list|reload|dump|upgrade> [core|id|name] [config]", "JSON configs of the core and plugins" });
+                help.AddRow({ C_CMD "s2m snapshot", C_DIM "<entity index> [field | dump]", "What an entity sends to the clients, as encoded" });
             }
             help.AddRow({ C_CMD "s2m version", "", "Build, API and Metamod versions" });
             help.AddRow({ C_CMD "s2m credits", "", "Who made Source2Mod" });
@@ -563,6 +565,39 @@ namespace commands {
             pluginManager.LoadMissing();
 
             REPLY_OK("Done.");
+        }
+
+        else if (strcmp(cmd, "snapshot") == 0)
+        {
+            if (argc < 3)
+            {
+                REPLY_ERROR("Usage: s2m snapshot <entity index> [field | dump]");
+                return;
+            }
+
+            CEntityInstance* entity = shared::g_pEntitySystem ? shared::g_pEntitySystem->GetEntityInstance(CEntityIndex(atoi(args.Arg(2)))) : nullptr;
+            const char* networkClass = entity ? snapshots::snapshotsManager.GetNetworkClassName(entity) : nullptr;
+            if (!networkClass)
+            {
+                REPLY_ERROR("No networked entity %s.", args.Arg(2));
+                return;
+            }
+
+            const char* what = argc >= 4 ? args.Arg(3) : "";
+            int count = 0;
+            if (!strcmp(what, "dump"))
+                count = snapshots::snapshotsManager.Dump(entity, [&](const char* line) { REPLY_INFO("%s", line); });
+            else
+                count = snapshots::snapshotsManager.GetFields(entity, [&](uint32_t path, const char* name, const char* type, const char* value)
+                {
+                    if (!*what || strstr(name, what))
+                        REPLY_INFO(C_DIM "%08x " C_NAME "%s" C_DIM " (%s) = " C_OK "%s", path, name, type, value);
+                });
+
+            if (count < 0)
+                REPLY_ERROR("Entity %s (%s) could not be encoded.", args.Arg(2), networkClass);
+            else
+                REPLY_OK("%s: %d %s.", networkClass, count, !strcmp(what, "dump") ? "lines" : "fields sent");
         }
 
         else if (strcmp(cmd, "version") == 0)
