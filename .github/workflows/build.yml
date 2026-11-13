@@ -230,6 +230,10 @@ jobs:
           # The linker's incremental state is no part of a release.
           rm -f artifacts/windows/addons/source2mod/scripting/spcomp.ilk
 
+          # upload-artifact drops file modes: without this the Linux spcomp
+          # comes out of the tarball as -rw-r--r-- and does not run.
+          chmod +x artifacts/linux/addons/source2mod/scripting/spcomp
+
           mkdir -p release
           tar -czf release/source2mod_${VERSION}-linux.tar.gz \
             -C artifacts/linux .
