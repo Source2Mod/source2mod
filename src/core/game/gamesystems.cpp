@@ -49,6 +49,14 @@
 
 #include <cstring>
 
+#ifdef _WIN32
+// WinSock2.h first, as in pluginmanager.h: Windows.h alone pulls in winsock.h.
+#include <WinSock2.h>
+#include <Windows.h>
+#else
+#include <dlfcn.h>
+#endif
+
 // The engine's factory list. The static is declared by the s2sdk header and
 // defined by whichever binary uses it.
 CBaseGameSystemFactory** CBaseGameSystemFactory::sm_pFirst = nullptr;
@@ -301,6 +309,8 @@ namespace gamesystems
         UpdateHost();
 
         m_hostAttached = AttachHost();
+        if (m_hostAttached)
+            m_standIn = FindStandIn();
         FP_DEBUG("Game systems {} ({} factories, {} active).", m_hostAttached ? "ready" : "unavailable", factories->Count(), active->Count());
         return m_hostAttached;
     }
@@ -313,6 +323,42 @@ namespace gamesystems
         if (!symbol.IsValid() || static_cast<int>(static_cast<UtlSymId_t>(symbol)) >= factories->Count())
             return nullptr;
         return &factories->Element(static_cast<UtlSymId_t>(symbol));
+    }
+
+    namespace
+    {
+        // The module an address belongs to.
+        const void* ModuleOf(const void* address)
+        {
+#ifdef _WIN32
+            HMODULE module = nullptr;
+            if (!GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+                                    static_cast<LPCSTR>(address), &module))
+                return nullptr;
+            return module;
+#else
+            Dl_info info{};
+            return dladdr(address, &info) ? info.dli_fbase : nullptr;
+#endif
+        }
+    }
+
+    void* GameSystemsManager::FindStandIn()
+    {
+        // libserver's own factories only: their vtables are in the module of
+        // CDontUseThisGameSystem's.
+        const void* server = m_pDefaultVTable ? ModuleOf(m_pDefaultVTable) : nullptr;
+        if (!server)
+            return nullptr;
+        for (auto* f = reinterpret_cast<FactoryLink*>(*m_ppFirst); f; f = f->m_pNext)
+        {
+            if (f == reinterpret_cast<FactoryLink*>(m_factory.get()))
+                continue;
+            auto* factory = reinterpret_cast<IGameSystemFactory*>(f);
+            if (ModuleOf(*reinterpret_cast<void**>(factory)) == server && factory->IsReallocating())
+                return factory;
+        }
+        return nullptr;
     }
 
     bool GameSystemsManager::AttachHost()
@@ -585,13 +631,10 @@ namespace gamesystems
         // ShutdownAllSystems calls nothing of the core's.
         if (auto* entry = static_cast<FactoryEntry_t*>(FactoryEntry()))
         {
-            IGameSystemFactory* stand_in = nullptr;
-            for (auto* f = reinterpret_cast<FactoryLink*>(*m_ppFirst); f && !stand_in; f = f->m_pNext)
-            {
-                auto* factory = reinterpret_cast<IGameSystemFactory*>(f);
-                if (factory->IsReallocating())
-                    stand_in = factory;
-            }
+            // Picked at attach time: the list now may hold factories of plugins
+            // that already went away (CounterStrikeSharp's lives in .NET code that
+            // is unmapped by the server's exit -- calling it crashed on every quit).
+            auto* stand_in = static_cast<IGameSystemFactory*>(m_standIn);
             if (stand_in)
                 entry->m_pFactory = stand_in;
             else

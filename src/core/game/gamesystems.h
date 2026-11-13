@@ -134,6 +134,7 @@ namespace gamesystems {
         bool IsHooked(int slot) const;
         void UpdateHost();
         bool AttachHost();
+        void* FindStandIn();
         void* FactoryEntry();
 
         CBaseGameSystemFactory** m_ppFirst = nullptr;
@@ -148,6 +149,11 @@ namespace gamesystems {
         void** m_hostOwnVTable = nullptr;
         std::unique_ptr<void*[]> m_hostVTable;
         bool m_hostAttached = false;
+        // One of libserver's own reallocating factories, picked while every
+        // factory in the list is alive: Shutdown() leaves it in the host's table
+        // entry. At the server's exit another plugin's factory (CounterStrikeSharp's)
+        // may already be gone, so Shutdown() asks no factory anything.
+        void* m_standIn = nullptr;
 
         std::map<Source2ModGameSystemId, std::unique_ptr<System>> m_systems;
         std::map<Source2ModHookId, Source2ModGameSystemId> m_hooks;
