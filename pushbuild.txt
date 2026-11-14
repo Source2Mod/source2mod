@@ -55,3 +55,4 @@ Voice: a client with voice_modenable 0 (scoreboard comms off) hears nobody, what
 Snapshot inspector: ISource2ModSnapshots001, source2mod/snapshots.inc and "s2m snapshot <entity index> [field | dump]" -- what an entity sends to the clients, as encoded.
 Fix: no crash on server exit when CounterStrikeSharp is loaded next to Source2Mod (game system factory stand-in picked at attach time, libserver's own only). Release spcomp is executable again.
 Schema NetworkStateChanged from the schema (SDK): one DECLARE_SCHEMA_CLASS, embedded objects through their NetworkVar wrapper, plain structs through their owner; SourcePawn setters the same way.
+Game systems: the engine globals and IGameSystem's vtable size come from gamedata (disp32 offset next to each signature); voice and targeting on the SDK's MAX_PLAYERS / CS_TEAM_* constants.
