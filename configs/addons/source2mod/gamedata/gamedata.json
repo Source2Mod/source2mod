@@ -722,6 +722,10 @@
       "library": "server",
       "windows": "48 8B 1D ? ? ? ? 48 85 DB 0F 84 ? ? ? ? BD",
       "linux": "4C 8B 35 ? ? ? ? 4D 85 F6 75 ? E9"
+    },
+    "offsets": {
+      "windows": 3,
+      "linux": 3
     }
   },
   "IGameSystem::InitAllSystems->SymbolTable": {
@@ -729,6 +733,10 @@
       "library": "server",
       "windows": "48 8D 0D ? ? ? ? FF 15 ? ? ? ? 66 39 28",
       "linux": "4C 8D 25 ? ? ? ? 53 48 83 EC 68"
+    },
+    "offsets": {
+      "windows": 3,
+      "linux": 3
     }
   },
   "IGameSystem::InitAllSystems->Factories": {
@@ -736,6 +744,10 @@
       "library": "server",
       "windows": "8B 15 ? ? ? ? 3B D7 7F",
       "linux": "39 15 ? ? ? ? 7F ? 8B 3D"
+    },
+    "offsets": {
+      "windows": 2,
+      "linux": 2
     }
   },
   "IGameSystem::LoopInitAllSystems->ActiveSystems": {
@@ -743,6 +755,10 @@
       "library": "server",
       "windows": "48 63 1D ? ? ? ? 48 8B 0D ? ? ? ? 48 8B D3",
       "linux": "48 63 1D ? ? ? ? 41 C6 44 24 08 01"
+    },
+    "offsets": {
+      "windows": 3,
+      "linux": 3
     }
   },
   "IGameSystem::LoopInitAllSystems->sm_pEventDispatcher": {
@@ -750,6 +766,16 @@
       "library": "server",
       "windows": "4C 8D 05 ? ? ? ? 48 8B FB 4C 89 05",
       "linux": "4C 8D 25 ? ? ? ? 45 31 F6 4C 89 25"
+    },
+    "offsets": {
+      "windows": 13,
+      "linux": 13
+    }
+  },
+  "IGameSystem::VTableSize": {
+    "offsets": {
+      "windows": 65,
+      "linux": 66
     }
   },
   "IGameSystem::OnServerGamePostSimulate": {

@@ -126,15 +126,23 @@ namespace gamesystems
             return false;
         }
 
-        // IGameSystem's slots: Init .. DoesGameSystemReallocate (0..62), the
-        // destructor (two on Itanium) and YouForgot_DECLARE_GAME_SYSTEM.
-#if defined(_WIN32)
-        constexpr int kVTableSlots = 65;
-#else
-        constexpr int kVTableSlots = 66;
-#endif
-        constexpr int kFirstEventSlot = 3;
-        constexpr int kLastEventSlot = 58;
+        // The hookable events' slots, for UpdateHost().
+        constexpr GameSystemEvent kEvents[] = {
+#define S2M_EVENT(name) GameSystemEvent::name,
+            S2M_EVENT(GameInit) S2M_EVENT(GameShutdown) S2M_EVENT(GamePostInit) S2M_EVENT(GamePreShutdown)
+            S2M_EVENT(BuildGameSessionManifest) S2M_EVENT(GameActivate) S2M_EVENT(ClientFullySignedOn)
+            S2M_EVENT(ClientDisconnect) S2M_EVENT(GameDeactivate) S2M_EVENT(SpawnGroupPrecache)
+            S2M_EVENT(SpawnGroupUncache) S2M_EVENT(PreSpawnGroupLoad) S2M_EVENT(PostSpawnGroupLoad)
+            S2M_EVENT(PreSpawnGroupUnload) S2M_EVENT(PostSpawnGroupUnload) S2M_EVENT(ActiveSpawnGroupChanged)
+            S2M_EVENT(ServerPreEntityThink) S2M_EVENT(ServerPostEntityThink) S2M_EVENT(ServerPostPhysicsSimulate)
+            S2M_EVENT(ServerPreClientUpdate) S2M_EVENT(ServerAdvanceTick) S2M_EVENT(ServerGamePostSimulate)
+            S2M_EVENT(ServerPostAdvanceTick) S2M_EVENT(ServerBeginAsyncPostTickWork)
+            S2M_EVENT(ServerGameBeginAsyncPostTickWork) S2M_EVENT(ServerPreEndAsyncPostTickWork)
+            S2M_EVENT(ServerPostEndAsyncPostTickWork) S2M_EVENT(GameFrameBoundary) S2M_EVENT(SaveGame)
+            S2M_EVENT(RestoreGame) S2M_EVENT(NewLevelPlayerConnect) S2M_EVENT(WorldGroupCreated)
+            S2M_EVENT(WorldGroupDestroyed) S2M_EVENT(ServerPrePackEntities)
+#undef S2M_EVENT
+        };
 
         bool IsHookable(int slot)
         {
@@ -160,17 +168,18 @@ namespace gamesystems
             }
         }
 
-        uint8* Rip(uint8* displacement)
-        {
-            return displacement + 4 + *reinterpret_cast<int32*>(displacement);
-        }
-
-        uint8* FindSignature(DynLibUtils::CModule& mod, const char* key)
+        // The global an instruction of the entry's signature addresses: the
+        // entry's offset is where in the match its rip-relative disp32 is.
+        uint8* ResolveGlobal(DynLibUtils::CModule& mod, const char* key)
         {
             const std::string signature = gameconfig::gameConfig.GetSignature(key);
-            if (signature.empty())
+            const int disp = gameconfig::gameConfig.GetOffset(key);
+            if (signature.empty() || disp < 0)
                 return nullptr;
-            return mod.FindPattern(DynLibUtils::ParsePattern(signature)).RCast<uint8*>();
+            DynLibUtils::CMemory match = mod.FindPattern(DynLibUtils::ParsePattern(signature));
+            if (!match)
+                return nullptr;
+            return match.ResolveRelativeAddress(disp, disp + 4).RCast<uint8*>();
         }
     }
 
@@ -259,32 +268,37 @@ namespace gamesystems
 
         // IGameSystem::InitAllSystems: the factory list, the name -> index
         // symbol table, the factory table.
-        uint8* pFirst = FindSignature(mod, "IGameSystem::InitAllSystems->pFirst");
-        uint8* pSymbols = FindSignature(mod, "IGameSystem::InitAllSystems->SymbolTable");
-        uint8* pFactories = FindSignature(mod, "IGameSystem::InitAllSystems->Factories");
+        uint8* pFirst = ResolveGlobal(mod, "IGameSystem::InitAllSystems->pFirst");
+        uint8* pSymbols = ResolveGlobal(mod, "IGameSystem::InitAllSystems->SymbolTable");
+        uint8* pFactories = ResolveGlobal(mod, "IGameSystem::InitAllSystems->Factories");
         // LoopInitAllSystems: the active list, the event dispatcher.
-        uint8* pActive = FindSignature(mod, "IGameSystem::LoopInitAllSystems->ActiveSystems");
-        uint8* pDispatcher = FindSignature(mod, "IGameSystem::LoopInitAllSystems->sm_pEventDispatcher");
+        uint8* pActive = ResolveGlobal(mod, "IGameSystem::LoopInitAllSystems->ActiveSystems");
+        uint8* pDispatcher = ResolveGlobal(mod, "IGameSystem::LoopInitAllSystems->sm_pEventDispatcher");
 
         DynLibUtils::CModule libserver(g_pSource2Server);
         void** pDefault = libserver.GetVirtualTableByName("CDontUseThisGameSystem").RCast<void**>();
 
+        // IGameSystem's vtable: every event slot, the destructor (two on
+        // Itanium) and YouForgot_DECLARE_GAME_SYSTEM.
+        const int vtableSize = gameconfig::gameConfig.GetOffset("IGameSystem::VTableSize");
+        const bool sizeOk = vtableSize > static_cast<int>(GameSystemEvent::ServerPrePackEntities);
+
         if (pFirst)
         {
-            m_ppFirst = reinterpret_cast<CBaseGameSystemFactory**>(Rip(pFirst + 3));
+            m_ppFirst = reinterpret_cast<CBaseGameSystemFactory**>(pFirst);
             CBaseGameSystemFactory::sm_pFirst = m_ppFirst;
         }
 
-        if (!pFirst || !pSymbols || !pFactories || !pActive || !pDispatcher || !pDefault)
+        if (!pFirst || !pSymbols || !pFactories || !pActive || !pDispatcher || !pDefault || !sizeOk)
         {
-            FP_ERROR("Game systems unavailable, not found:{}{}{}{}{}{}", pFirst ? "" : " factory list", pSymbols ? "" : " symbol table",
+            FP_ERROR("Game systems unavailable, not found:{}{}{}{}{}{}{}", pFirst ? "" : " factory list", pSymbols ? "" : " symbol table",
                      pFactories ? "" : " factory table", pActive ? "" : " active list", pDispatcher ? "" : " event dispatcher",
-                     pDefault ? "" : " CDontUseThisGameSystem");
+                     pDefault ? "" : " CDontUseThisGameSystem", sizeOk ? "" : " IGameSystem::VTableSize");
             return false;
         }
 
-        auto* factories = reinterpret_cast<FactoryTable*>(Rip(pFactories + 2));
-        auto* active = reinterpret_cast<ActiveSystems*>(Rip(pActive + 3));
+        auto* factories = reinterpret_cast<FactoryTable*>(pFactories);
+        auto* active = reinterpret_cast<ActiveSystems*>(pActive);
         if (factories->Count() < 0 || factories->Count() > 4096 || active->Count() < 0 || active->Count() > 4096)
         {
             FP_ERROR("Game systems unavailable: the engine's lists do not look like lists ({} factories, {} active).",
@@ -292,10 +306,10 @@ namespace gamesystems
             return false;
         }
 
-        m_pSymbols = Rip(pSymbols + 3);
+        m_pSymbols = pSymbols;
         m_pFactories = factories;
         m_pActive = active;
-        m_ppDispatcher = reinterpret_cast<void**>(Rip(pDispatcher + 13));
+        m_ppDispatcher = reinterpret_cast<void**>(pDispatcher);
         m_pDefaultVTable = pDefault;
 
         // The host, with its own copy of its vtable: UpdateHost() points the
@@ -303,8 +317,8 @@ namespace gamesystems
         m_host = std::make_unique<HostGameSystem>();
         m_factory = std::make_unique<HostFactory>(m_host.get());
         m_hostOwnVTable = *reinterpret_cast<void***>(m_host.get());
-        m_hostVTable = std::make_unique<void*[]>(kVTableSlots);
-        std::memcpy(m_hostVTable.get(), m_hostOwnVTable, sizeof(void*) * kVTableSlots);
+        m_hostVTable = std::make_unique<void*[]>(vtableSize);
+        std::memcpy(m_hostVTable.get(), m_hostOwnVTable, sizeof(void*) * vtableSize);
         *reinterpret_cast<void***>(m_host.get()) = m_hostVTable.get();
         UpdateHost();
 
@@ -431,8 +445,9 @@ namespace gamesystems
             return;
 
         auto* dispatcher = m_hostAttached && m_ppDispatcher ? static_cast<IGameSystemEventDispatcher*>(*m_ppDispatcher) : nullptr;
-        for (int slot = kFirstEventSlot; slot <= kLastEventSlot; ++slot)
+        for (const GameSystemEvent event : kEvents)
         {
+            const int slot = static_cast<int>(event);
             const bool hooked = IsHooked(slot);
             m_hostVTable[slot] = hooked ? m_hostOwnVTable[slot] : m_pDefaultVTable[slot];
 
