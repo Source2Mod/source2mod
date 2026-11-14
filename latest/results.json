@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-12T09:28:57+00:00",
+  "generated_at": "2026-11-14T11:26:10+00:00",
   "build": {
     "buildid": "26598758",
     "linux_manifest": "3634295490837307276",
@@ -1620,6 +1620,26 @@
         "library": "server",
         "vtable_size": 66,
         "status": "ok"
+      }
+    },
+    {
+      "name": "IGameSystem::VTableSize",
+      "kind": "offset",
+      "windows": {
+        "value": 65,
+        "class": "IGameSystem",
+        "library": "server",
+        "vtable_size": 65,
+        "status": "broken",
+        "detail": "index 65 past the end of IGameSystem (65 functions)"
+      },
+      "linux": {
+        "value": 66,
+        "class": "IGameSystem",
+        "library": "server",
+        "vtable_size": 66,
+        "status": "broken",
+        "detail": "index 66 past the end of IGameSystem (66 functions)"
       }
     },
     {

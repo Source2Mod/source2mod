@@ -1,14 +1,16 @@
 # Gamedata validation
 
-CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manifest `5946971774180560324` · 2026-11-12T09:28:57+00:00
+CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manifest `5946971774180560324` · 2026-11-14T11:26:10+00:00
 
 | | Windows | Linux |
 |---|---|---|
 | Signatures | 🟢 74 | 🟢 74 |
-| Offsets | 🟢 47 ⚪ 3 | 🟢 47 ⚪ 3 |
+| Offsets | 🟢 47 🔴 1 ⚪ 3 | 🟢 47 🔴 1 ⚪ 3 |
 
-## Everything resolves
+## Needs attention
 
+- 🔴 **IGameSystem::VTableSize** (windows): index 65 past the end of IGameSystem (65 functions)
+- 🔴 **IGameSystem::VTableSize** (linux): index 66 past the end of IGameSystem (66 functions)
 
 <details><summary>All entries (Windows, Linux)</summary>
 
@@ -118,6 +120,7 @@ CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manife
 - 🟢🟢 `IGameSystem::LoopInitAllSystems->ActiveSystems`
 - 🟢🟢 `IGameSystem::LoopInitAllSystems->sm_pEventDispatcher`
 - 🟢🟢 `IGameSystem::OnServerGamePostSimulate` — W 37/65 · L 37/66
+- 🔴🔴 `IGameSystem::VTableSize` — W 65/65 · L 66/66
 - ⚪⚪ `INetworkMessageProcessingPreFilter::FilterMessage`
 - 🟢🟢 `INetworkServerService::StartupServer` — W 26/51 · L 27/53
 - 🟢🟢 `ISource2GameClients::ClientCommand` — W 17/46 · L 17/46
