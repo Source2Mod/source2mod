@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-14T11:40:32+00:00",
+  "generated_at": "2026-11-14T15:04:24+00:00",
   "build": {
     "buildid": "26598758",
     "linux_manifest": "3634295490837307276",
@@ -1358,20 +1358,6 @@
         "matches": 1,
         "address": "0x1bd4cb0",
         "status": "ok"
-      }
-    },
-    {
-      "name": "CTakeDamageInfo::HitGroup",
-      "kind": "offset",
-      "windows": {
-        "status": "unchecked",
-        "detail": "field offset",
-        "value": 104
-      },
-      "linux": {
-        "status": "unchecked",
-        "detail": "field offset",
-        "value": 104
       }
     },
     {

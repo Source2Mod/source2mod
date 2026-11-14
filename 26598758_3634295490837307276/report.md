@@ -1,11 +1,11 @@
 # Gamedata validation
 
-CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manifest `5946971774180560324` · 2026-11-14T11:40:32+00:00
+CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manifest `5946971774180560324` · 2026-11-14T15:04:24+00:00
 
 | | Windows | Linux |
 |---|---|---|
 | Signatures | 🟢 74 | 🟢 74 |
-| Offsets | 🟢 48 ⚪ 3 | 🟢 48 ⚪ 3 |
+| Offsets | 🟢 48 ⚪ 2 | 🟢 48 ⚪ 2 |
 
 ## Everything resolves
 
@@ -101,7 +101,6 @@ CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manife
 - 🟢🟢 `CSoundSystem::TakeGuid` — W 76/135 · L 75/136
 - 🟢🟢 `CSource2Server::GetNavMeshData`
 - 🟢🟢 `CTakeDamageInfo::Constructor`
-- ⚪⚪ `CTakeDamageInfo::HitGroup`
 - 🟢🟢 `Cmd_ExecuteCommand`
 - 🟢🟢 `DispatchParticleEffect`
 - 🟢🟢 `FilterWorkshopCommands`
