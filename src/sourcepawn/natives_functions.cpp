@@ -307,6 +307,69 @@ namespace sourcepawn
             return 0;
         }
 
+        // The first word of a declaration ("int32 receiver" -> "int32"), trimmed.
+        std::string TypeWord(const std::string& text)
+        {
+            const size_t begin = text.find_first_not_of(" \t");
+            if (begin == std::string::npos)
+                return {};
+            const size_t end = text.find_first_of(" \t", begin);
+            return text.substr(begin, end == std::string::npos ? std::string::npos : end - begin);
+        }
+
+        // SetTypes(const char[] signature): "bool (pointer this, int32, int32, bool)" --
+        // the return type and every parameter (`this` first for a member) in the
+        // gamedata's type names, replacing what the function had.
+        cell_t N_FnSetTypes(IPluginContext* ctx, const cell_t* params)
+        {
+            Function* fn = FnOf(ctx, params[1]);
+            if (!fn)
+                return 0;
+            if (!fn->owned)
+                return ctx->ThrowNativeError("The function's types come from its gamedata entry");
+
+            const std::string text = LocalString(ctx, params[2]);
+            const size_t open = text.find('(');
+            const size_t close = text.rfind(')');
+            if (open == std::string::npos || close == std::string::npos || close < open)
+                return ctx->ThrowNativeError("\"%s\": expected \"return (param, ...)\"", text.c_str());
+
+            Source2ModType ret;
+            const std::string retName = TypeWord(text.substr(0, open));
+            if (!functions::FunctionsManager::ParseType(retName, ret) || static_cast<cell_t>(ret) > T_Pointer)
+                return ctx->ThrowNativeError("\"%s\": unsupported return type \"%s\"", text.c_str(), retName.c_str());
+
+            std::vector<Source2ModType> types;
+            const std::string list = text.substr(open + 1, close - open - 1);
+            if (list.find_first_not_of(" \t") != std::string::npos)
+            {
+                size_t pos = 0;
+                while (pos <= list.size())
+                {
+                    const size_t comma = list.find(',', pos);
+                    const std::string name = TypeWord(list.substr(pos, comma == std::string::npos ? std::string::npos : comma - pos));
+                    Source2ModType t;
+                    if (!functions::FunctionsManager::ParseType(name, t) || !ValidParam(static_cast<cell_t>(t)))
+                        return ctx->ThrowNativeError("\"%s\": unsupported parameter type \"%s\"", text.c_str(), name.c_str());
+                    types.push_back(t);
+                    if (comma == std::string::npos)
+                        break;
+                    pos = comma + 1;
+                }
+            }
+
+            fn->returnType = static_cast<Type>(ret);
+            fn->params.clear();
+            for (Source2ModType t : types)
+                fn->params.push_back(static_cast<Type>(t));
+            if (auto* cf = static_cast<functions::CFunction*>(fn->described))
+            {
+                cf->returnType = ret;
+                cf->params = types;
+            }
+            return 1;
+        }
+
         // ---- what the function is (ISource2ModFunction's introspection) ---------
         // The core's description when there is one (it is what Find hands out,
         // with the gamedata's own types); the script's shape otherwise.
@@ -876,6 +939,7 @@ namespace sourcepawn
             { "Source2ModFunction.FromPointer", N_FnFromPointer },
             { "Source2ModFunction.Address.get", N_FnAddress },
             { "Source2ModFunction.AddParam", N_FnAddParam },
+            { "Source2ModFunction.SetTypes", N_FnSetTypes },
             { "Source2ModFunction.ReturnType.get", N_FnGetReturnType },
             { "Source2ModFunction.ParamCount.get", N_FnGetParamCount },
             { "Source2ModFunction.GetParamType", N_FnGetParamType },

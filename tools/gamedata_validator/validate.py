@@ -149,6 +149,12 @@ def check_offset(libs, plat, name, offsets, cfg, previous):
         return {'status': UNCHECKED, 'detail': 'no RTTI for %s' % cls, 'value': value}
     res = {'value': value, 'class': cls, 'library': lib, 'vtable_size': size}
     prev = previous.get('vtables', {}).get(plat, {}).get(cls)
+    if name.endswith('::VTableSize'):
+        # The number of slots, not one of them: the vtable's own size.
+        res['status'] = OK if value == size else BROKEN
+        if value != size:
+            res['detail'] = '%s has %d functions, the entry says %d' % (cls, size, value)
+        return res
     if value >= size:
         res['status'] = BROKEN
         res['detail'] = 'index %d past the end of %s (%d functions)' % (value, cls, size)

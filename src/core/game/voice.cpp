@@ -31,9 +31,9 @@ namespace voice
         if (m_hook || !g_pEngineServer)
             return;
 
-        static const Source2ModType kParams[] = { Source2ModType::Pointer, Source2ModType::Int32, Source2ModType::Int32, Source2ModType::Bool };
-        ISource2ModFunction* function = functions::functionsManager.FromVirtual(
-            PluginId(0), KHook::GetVtableIndex(&IVEngineServer2::SetClientListening), { Source2ModType::Bool, kParams, 4, true });
+        // Slot and types (bool (this, CPlayerSlot, CPlayerSlot, bool)) read off the method.
+        constexpr auto method = &IVEngineServer2::SetClientListening;
+        ISource2ModFunction* function = functions::functionsManager.FromVirtual(PluginId(0), KHook::GetVtableIndex(method), Source2ModFunctionTypes(method));
 
         ISource2ModHooks& hooks = hooks::hooksManager;
         m_hook = hooks.Hook(HookPoint::Function(function), HookTarget::Instance(g_pEngineServer), [this](FunctionContext& ctx, bool)
