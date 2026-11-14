@@ -521,33 +521,36 @@ namespace sourcepawn
             if (!base || !key.valid || !key.networked)
                 return;
 
-            // A class with a chainer (services, game rules) passes it on itself.
-            const int16_t chain = schema::FindChainOffset(cls);
-            if (chain != 0)
+            // The way the C++ field setters take (schema::FieldStateChanged): read
+            // off the schema, the chainer (services, game rules), the entity, or
+            // the NetworkVar_<field> wrapper of an embedded object with a vtable
+            // (m_Collision, m_Glow).
+            const uintptr_t object = reinterpret_cast<uintptr_t>(base);
+            const schema::ClassNsc nsc = schema::GetClassNsc(cls, hash_32_fnv1a_const(cls));
+            if (const int16_t chain = static_cast<int16_t>(nsc & 0xFFFF))
             {
-                ChainNetworkStateChanged(reinterpret_cast<uintptr_t>(base) + chain, key.offset + extra);
+                ChainNetworkStateChanged(object + chain, key.offset + extra);
                 return;
             }
+            if (nsc & schema::CLASS_NSC_ENTITY)
+            {
+                EntityNetworkStateChanged(object, key.offset + extra);
+                return;
+            }
+            if ((nsc & schema::CLASS_NSC_VIRTUAL) && schema::NetworkVarStateChanged(object, key.offset + extra))
+                return;
 
-            // An object embedded in another one (m_Collision, m_Glow,
-            // m_vecViewOffset) is no entity: CEntityInstance::NetworkStateChanged
-            // on it went through its first qword as a vtable -- a NetworkVar
-            // wrapper's vtable at another slot, or plain data (0 for the view
-            // offset: SIGSEGV). Its owner marks the whole embedded field changed
-            // instead, as Utilities.SetStateChanged(pawn, "CBaseModelEntity",
-            // "m_vecViewOffset") does.
+            // A plain struct embedded in its owner (m_vecViewOffset): the owner
+            // marks the whole embedded field changed, as Utilities.SetStateChanged(
+            // pawn, "CBaseModelEntity", "m_vecViewOffset") does. Unlike C++, the
+            // path here says exactly who the owner is.
             if (ref && depth > 0)
             {
                 const auto& [ownerCls, ownerField] = ref->chain[depth - 1];
                 const Field& step = FindField(ownerCls.c_str(), ownerField.c_str());
                 if (step.found && step.kind == Kind::Embedded)
-                {
                     NotifyField(ResolveRefTo(*ref, depth - 1), ref, depth - 1, step.declClass.c_str(), step.name.c_str(), 0);
-                    return;
-                }
             }
-
-            EntityNetworkStateChanged(reinterpret_cast<uintptr_t>(base), key.offset + extra);
         }
 
         // A networked field changed: tell the owner, through the class's
