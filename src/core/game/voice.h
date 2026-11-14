@@ -4,6 +4,8 @@
 
 #include <source2mod/ISource2ModVoice.h>
 
+#include <shareddefs.h>
+
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -35,12 +37,10 @@ namespace voice
         void OnClientCommand(CPlayerSlot slot, const CCommand& args);
 
     private:
-        static constexpr int kSlots = 64;
-
         struct OwnerState
         {
-            int flags[kSlots] = {};
-            uint8_t listen[kSlots][kSlots] = {};
+            int flags[MAX_PLAYERS] = {};
+            uint8_t listen[MAX_PLAYERS][MAX_PLAYERS] = {};
         };
 
         void EnsureHook();
@@ -49,11 +49,11 @@ namespace voice
 
         std::map<PluginId, std::unique_ptr<OwnerState>> m_owners;
         // What the hook reads, once per pair per frame: every owner together.
-        int m_flags[kSlots] = {};
-        uint8_t m_listen[kSlots][kSlots] = {};
-        uint32_t m_selfMutes[kSlots] = {};
+        int m_flags[MAX_PLAYERS] = {};
+        uint8_t m_listen[MAX_PLAYERS][MAX_PLAYERS] = {};
+        uint32_t m_selfMutes[MAX_PLAYERS] = {};
         // The client's "VModEnable 0" (voice_modenable 0): hears nobody, whatever the flags say.
-        bool m_voiceOff[kSlots] = {};
+        bool m_voiceOff[MAX_PLAYERS] = {};
         Source2ModHookId m_hook = 0;
     };
 

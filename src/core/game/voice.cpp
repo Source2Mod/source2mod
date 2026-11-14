@@ -22,7 +22,7 @@ namespace voice
     {
         bool ValidSlot(int slot)
         {
-            return slot >= 0 && slot < 64;
+            return slot >= 0 && slot < MAX_PLAYERS;
         }
     }
 
@@ -98,10 +98,10 @@ namespace voice
         std::memset(m_listen, 0, sizeof(m_listen));
         for (const auto& [owner, state] : m_owners)
         {
-            for (int receiver = 0; receiver < kSlots; receiver++)
+            for (int receiver = 0; receiver < MAX_PLAYERS; receiver++)
             {
                 m_flags[receiver] |= state->flags[receiver];
-                for (int sender = 0; sender < kSlots; sender++)
+                for (int sender = 0; sender < MAX_PLAYERS; sender++)
                 {
                     const uint8_t listen = state->listen[receiver][sender];
                     // A mute from any plugin wins over a hear from another.
@@ -204,7 +204,7 @@ namespace voice
         for (const auto& [owner, state] : m_owners)
         {
             state->flags[s] = 0;
-            for (int other = 0; other < kSlots; other++)
+            for (int other = 0; other < MAX_PLAYERS; other++)
             {
                 state->listen[s][other] = 0;
                 state->listen[other][s] = 0;

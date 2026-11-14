@@ -60,10 +60,6 @@ namespace targeting
 
     namespace
     {
-        constexpr int kTeamSpectator = 1;
-        constexpr int kTeamT = 2;
-        constexpr int kTeamCT = 3;
-
         bool EqualNoCase(const std::string& a, const std::string& b)
         {
             return a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(),
@@ -144,11 +140,11 @@ namespace targeting
             if (name == "all")
                 return true;
             if (name == "t")
-                return player->m_iTeamNum() == kTeamT;
+                return player->m_iTeamNum() == CS_TEAM_T;
             if (name == "ct")
-                return player->m_iTeamNum() == kTeamCT;
+                return player->m_iTeamNum() == CS_TEAM_CT;
             if (name == "spec")
-                return player->m_iTeamNum() == kTeamSpectator;
+                return player->m_iTeamNum() == CS_TEAM_SPECTATOR;
             if (name == "alive")
                 return IsAlive(player);
             if (name == "dead")
