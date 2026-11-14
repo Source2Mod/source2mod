@@ -57,3 +57,4 @@ Fix: no crash on server exit when CounterStrikeSharp is loaded next to Source2Mo
 Schema NetworkStateChanged from the schema (SDK): one DECLARE_SCHEMA_CLASS, embedded objects through their NetworkVar wrapper, plain structs through their owner; SourcePawn setters the same way.
 Game systems: the engine globals and IGameSystem's vtable size come from gamedata (disp32 offset next to each signature); voice and targeting on the SDK's MAX_PLAYERS / CS_TEAM_* constants.
 Function types from C++ function types: FromVirtual(&Interface::Method), FromGameConfig<void (Class::*)(int)>(...) and the other From* read return and parameter types (and a virtual's slot) off the type; SourcePawn: Source2ModFunction.SetTypes("bool (pointer this, int32, int32, bool)") instead of AddParam one by one.
+CTakeDamageInfo::GetHitGroup reads the hit box through the typed trace (m_pTrace -> CGameTrace::m_pHitbox -> CHitBox::m_nGroupId); the gamedata entry CTakeDamageInfo::HitGroup is gone.
