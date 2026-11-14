@@ -9,7 +9,6 @@
 
   "field_offsets": [
     "CCSPointScriptEntity::ScriptComponent",
-    "CTakeDamageInfo::HitGroup",
     "*::m_*",
     "*::sizeof"
   ],

@@ -658,12 +658,6 @@
     },
     "function": {"this": "object", "return": "void", "params": ["entity", "entity", "entity", "vector", "vector", "float", "int32", "int32", "pointer"]}
   },
-  "CTakeDamageInfo::HitGroup": {
-    "offsets": {
-      "windows": 104,
-      "linux": 104
-    }
-  },
   "DispatchParticleEffect": {
     "signatures": {
       "library": "server",
