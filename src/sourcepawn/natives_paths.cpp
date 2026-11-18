@@ -81,6 +81,7 @@ namespace sourcepawn
         S2M_PATH_NATIVE(RootDirectory)
         S2M_PATH_NATIVE(ConfigsDirectory)
         S2M_PATH_NATIVE(GamedataDirectory)
+        S2M_PATH_NATIVE(LogsDirectory)
         S2M_PATH_NATIVE(PluginsDirectory)
         S2M_PATH_NATIVE(SharedDirectory)
 #undef S2M_PATH_NATIVE
@@ -95,6 +96,7 @@ namespace sourcepawn
             { "Source2ModPaths.RootDirectory", N_PathsRootDirectory },
             { "Source2ModPaths.ConfigsDirectory", N_PathsConfigsDirectory },
             { "Source2ModPaths.GamedataDirectory", N_PathsGamedataDirectory },
+            { "Source2ModPaths.LogsDirectory", N_PathsLogsDirectory },
             { "Source2ModPaths.PluginsDirectory", N_PathsPluginsDirectory },
             { "Source2ModPaths.SharedDirectory", N_PathsSharedDirectory },
             { "Source2ModPaths.PluginConfigDirectory", N_PathsPluginConfigDirectory },

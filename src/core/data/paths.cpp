@@ -49,7 +49,7 @@ namespace paths
     {
         namespace fs = std::filesystem;
 
-        for (const auto& dir : { GetRootDirectory(), GetConfigsDirectory(), GetGamedataDirectory(),
+        for (const auto& dir : { GetRootDirectory(), GetConfigsDirectory(), GetGamedataDirectory(), GetLogsDirectory(),
                                  GetPluginsDirectory(), GetSharedDirectory(), GetDumpsDirectory() })
         {
             std::error_code ec;
@@ -81,6 +81,7 @@ namespace paths
     const char* PathsManager::RootDirectory()     { return Cached(m_sRoot,     &paths::GetRootDirectory); }
     const char* PathsManager::ConfigsDirectory()  { return Cached(m_sConfigs,  &paths::GetConfigsDirectory); }
     const char* PathsManager::GamedataDirectory() { return Cached(m_sGamedata, &paths::GetGamedataDirectory); }
+    const char* PathsManager::LogsDirectory()     { return Cached(m_sLogs,     &paths::GetLogsDirectory); }
     const char* PathsManager::PluginsDirectory()  { return Cached(m_sPlugins,  &paths::GetPluginsDirectory); }
     const char* PathsManager::SharedDirectory()   { return Cached(m_sShared,   &paths::GetSharedDirectory); }
 

@@ -57,6 +57,7 @@ namespace paths {
     inline std::string GetRootDirectory() { return GameDirectory() + "/addons/source2mod"; }
     inline std::string GetConfigsDirectory() { return GameDirectory() + "/addons/source2mod/configs"; }
     inline std::string GetGamedataDirectory() { return GameDirectory() + "/addons/source2mod/gamedata"; }
+    inline std::string GetLogsDirectory() { return GameDirectory() + "/addons/source2mod/logs"; }
     inline std::string GetPluginsDirectory() { return GameDirectory() + "/addons/source2mod/plugins"; }
     inline std::string GetSharedDirectory() { return GameDirectory() + "/addons/source2mod/shared"; }
     // Private copies native plugins are loaded from (PluginManager).

@@ -448,6 +448,7 @@ public:
     const char* RootDirectory() override { return paths::pathsManager.RootDirectory(); }
     const char* ConfigsDirectory() override { return paths::pathsManager.ConfigsDirectory(); }
     const char* GamedataDirectory() override { return paths::pathsManager.GamedataDirectory(); }
+    const char* LogsDirectory() override { return paths::pathsManager.LogsDirectory(); }
     const char* PluginsDirectory() override { return paths::pathsManager.PluginsDirectory(); }
     const char* SharedDirectory() override { return paths::pathsManager.SharedDirectory(); }
     const char* PluginConfigDirectory() override { return paths::pathsManager.PluginConfigDirectory(m_owner); }

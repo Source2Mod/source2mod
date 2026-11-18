@@ -39,6 +39,7 @@ namespace paths
         const char* RootDirectory() override;
         const char* ConfigsDirectory() override;
         const char* GamedataDirectory() override;
+        const char* LogsDirectory() override;
         const char* PluginsDirectory() override;
         const char* SharedDirectory() override;
         const char* PluginConfigDirectory() override { return PluginConfigDirectory(PluginId(0)); }
@@ -47,7 +48,7 @@ namespace paths
     private:
         // The interface hands out const char*, so the strings have to outlive
         // the call. These are built once and kept.
-        std::string m_sGame, m_sRoot, m_sConfigs, m_sGamedata, m_sPlugins, m_sShared;
+        std::string m_sGame, m_sRoot, m_sConfigs, m_sGamedata, m_sLogs, m_sPlugins, m_sShared;
         std::unordered_map<PluginId, std::string> m_PluginConfigs;
     };
 

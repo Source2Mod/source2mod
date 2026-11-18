@@ -10,6 +10,7 @@ void* GetISource2ModEntities004(CurrentInterfaceFn current, int owner);
 void* GetISource2ModEvents002(CurrentInterfaceFn current, int owner);
 void* GetISource2ModEvents003(CurrentInterfaceFn current, int owner);
 void* GetISource2ModMenus008(CurrentInterfaceFn current, int owner);
+void* GetISource2ModPaths002(CurrentInterfaceFn current, int owner);
 
 const FrozenInterface* FrozenInterfaces(size_t& count)
 {
@@ -20,6 +21,7 @@ const FrozenInterface* FrozenInterfaces(size_t& count)
         { "ISource2ModEvents002", &GetISource2ModEvents002 },
         { "ISource2ModEvents003", &GetISource2ModEvents003 },
         { "ISource2ModMenus008", &GetISource2ModMenus008 },
+        { "ISource2ModPaths002", &GetISource2ModPaths002 },
     };
     count = sizeof(s_frozen) / sizeof(s_frozen[0]);
     return s_frozen;
