@@ -60,3 +60,4 @@ Function types from C++ function types: FromVirtual(&Interface::Method), FromGam
 CTakeDamageInfo::GetHitGroup reads the hit box through the typed trace (m_pTrace -> CGameTrace::m_pHitbox -> CHitBox::m_nGroupId); the gamedata entry CTakeDamageInfo::HitGroup is gone.
 Paths: addons/source2mod/logs is part of the layout, ISource2ModPaths003::LogsDirectory() / SOURCE2MOD_LOGS_DIR() and Source2ModPaths.LogsDirectory in SourcePawn (002 still served).
 Gamedata CModel::FindBodygroupByName for the SDK's CBaseModelEntity::GetBodygroupByName (with GetModel); GET_SOURCE2MOD_IFACE / GET_METAMOD_IFACE take the serving plugin's id as a fifth argument (nullptr for none).
+Plugin API 13: ISource2ModAPI::SetFailState for C++ plugins; nothing a plugin does while the server shuts down reaches the engine (no unload requests, no queued s2m commands).

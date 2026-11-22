@@ -681,6 +681,13 @@ bool PluginManager::LoadAll()
 
 void PluginManager::UnloadAll()
 {
+    // A plugin answering another's OnPluginUnload (SetFailState on a lost
+    // dependency) must not reach the engine now: no unload requests, no
+    // "s2m _pending" into a command buffer that is going away.
+    m_bUnloadingAll = true;
+    m_unloadRequests.clear();
+    m_reloadRequests.clear();
+
     for (auto& p : m_plugins)
     {
         for (auto& other : m_plugins)
@@ -1029,7 +1036,7 @@ void PluginManager::OnLevelShutdown()
 
 void PluginManager::QueuePending()
 {
-    if (m_bPendingQueued)
+    if (m_bPendingQueued || m_bUnloadingAll)
         return;
 
     m_bPendingQueued = true;
@@ -1038,6 +1045,9 @@ void PluginManager::QueuePending()
 
 bool PluginManager::RequestUnload(int id)
 {
+    if (m_bUnloadingAll)
+        return true;
+
     const bool known = std::any_of(m_plugins.begin(), m_plugins.end(), [id](const auto& p) { return p->id == id; });
     if (known)
     {
@@ -1049,6 +1059,9 @@ bool PluginManager::RequestUnload(int id)
 
 void PluginManager::RequestReload(const std::string& fullPath)
 {
+    if (m_bUnloadingAll)
+        return;
+
     m_reloadRequests.push_back(fullPath);
     QueuePending();
 }

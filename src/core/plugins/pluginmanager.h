@@ -110,6 +110,8 @@ public:
 
     bool LoadAll();
     void UnloadAll();
+    /// Inside UnloadAll(): the server is shutting down.
+    bool IsUnloadingAll() const { return m_bUnloadingAll; }
 
     void StartFileWatcher();
     void StopFileWatcher();
@@ -180,6 +182,7 @@ private:
     std::vector<int> m_unloadRequests;
     std::vector<std::string> m_reloadRequests;
     bool m_bPendingQueued = false;
+    bool m_bUnloadingAll = false;
 
     void QueuePending();
 };

@@ -564,6 +564,15 @@ ISource2ModHooks* PluginApi::Hooks()
     return m_owner ? static_cast<ISource2ModHooks*>(pluginifaces::ForPlugin(SOURCE2MOD_HOOKS_INTERFACE, m_owner, shared)) : shared;
 }
 
+void PluginApi::SetFailState(const char* pszReason)
+{
+    Log("Failed: %s\n", pszReason ? pszReason : "");
+
+    // RequestUnload ignores it while the server shuts down
+    if (m_owner)
+        pluginManager.RequestUnload(m_owner);
+}
+
 ISource2ModSpawnGroups* PluginApi::SpawnGroups()
 {
     ISource2ModSpawnGroups* shared = &spawngroups::spawnGroupsManager;

@@ -131,6 +131,7 @@ public:
     IAsyncFileSystem2* GetAsyncFileSystem() override;
     IProcessUtils* GetProcessUtils() override;
     ISource2ModSpawnGroups* SpawnGroups() override;
+    void SetFailState(const char* pszReason) override;
     ISource2ModClients* Clients() override;
     ISource2ModConfigs* Configs() override;
     ISource2ModCookies* Cookies() override;
