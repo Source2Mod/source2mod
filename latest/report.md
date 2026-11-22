@@ -1,14 +1,15 @@
 # Gamedata validation
 
-CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manifest `5946971774180560324` · 2026-11-14T15:04:24+00:00
+CS2 build **26798866** · Linux manifest `5121219979210617382` · Windows manifest `4200138934793327916` · 2026-11-22T19:15:11+00:00
 
 | | Windows | Linux |
 |---|---|---|
-| Signatures | 🟢 74 | 🟢 74 |
+| Signatures | 🟢 74 🔴 1 | 🟢 75 |
 | Offsets | 🟢 48 ⚪ 2 | 🟢 48 ⚪ 2 |
 
-## Everything resolves
+## Needs attention
 
+- 🔴 **CSource2Server::GetNavMeshData** (windows): no match
 
 <details><summary>All entries (Windows, Linux)</summary>
 
@@ -92,6 +93,7 @@ CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manife
 - 🟢🟢 `CGameSceneNode::GetSkeletonInstance` — W 12/31 · L 13/32
 - 🟢🟢 `CHEGrenadeProjectile::EmitGrenade`
 - 🟢🟢 `CLoggingSystem::LogDirect`
+- 🟢🟢 `CModel::FindBodygroupByName`
 - 🟢🟢 `CMolotovProjectile::EmitGrenade`
 - 🟢🟢 `CPlayer_MovementServices::RunCommand` — W 25/51 · L 26/52
 - 🟢🟢 `CPlayer_ObserverServices::IsValidObserverTarget`
@@ -99,7 +101,7 @@ CS2 build **26598758** · Linux manifest `3634295490837307276` · Windows manife
 - 🟢🟢 `CServerSideClientBase::SendNetMessage` — W 15/79 · L 16/81
 - 🟢🟢 `CSmokeGrenadeProjectile::EmitGrenade`
 - 🟢🟢 `CSoundSystem::TakeGuid` — W 76/135 · L 75/136
-- 🟢🟢 `CSource2Server::GetNavMeshData`
+- 🔴🟢 `CSource2Server::GetNavMeshData`
 - 🟢🟢 `CTakeDamageInfo::Constructor`
 - 🟢🟢 `Cmd_ExecuteCommand`
 - 🟢🟢 `DispatchParticleEffect`
