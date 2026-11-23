@@ -61,3 +61,4 @@ CTakeDamageInfo::GetHitGroup reads the hit box through the typed trace (m_pTrace
 Paths: addons/source2mod/logs is part of the layout, ISource2ModPaths003::LogsDirectory() / SOURCE2MOD_LOGS_DIR() and Source2ModPaths.LogsDirectory in SourcePawn (002 still served).
 Gamedata CModel::FindBodygroupByName for the SDK's CBaseModelEntity::GetBodygroupByName (with GetModel); GET_SOURCE2MOD_IFACE / GET_METAMOD_IFACE take the serving plugin's id as a fifth argument (nullptr for none).
 Plugin API 13: ISource2ModAPI::SetFailState for C++ plugins; nothing a plugin does while the server shuts down reaches the engine (no unload requests, no queued s2m commands).
+Plugins load in alphabetical order, upper and lower case alike (anti_dlc, AntiCheat, Core, customhud_manager, ...), the same on every server, instead of whatever order the directory lists them in.

@@ -74,10 +74,12 @@
 #include <source2mod/ISource2ModPlugin.h>
 
 #include <algorithm>
+#include <cctype>
 #include <chrono>
 #include <cstring>
 #include <filesystem>
 #include <unordered_map>
+#include <vector>
 
 // The file watch: inotify here, ReadDirectoryChangesW (Windows.h, via
 // pluginmanager.h) on Windows. networkmessages.h above is not platform
@@ -188,6 +190,38 @@ static void* GetSymbol(LibHandle lib, const char* name)
 #else
     return dlsym(lib, name);
 #endif
+}
+
+// The .smx files in a plugins directory, in alphabetical order ignoring case:
+// "anti_dlc" < "AntiCheat" < "Core" < "customhud_manager". The directory's own
+// order (readdir: a hash of the name on ext4) is no order at all, and plain
+// std::string ordering would put every capitalised name before the lowercase
+// ones. Names equal but for case fall back to that so the order stays fixed.
+static std::vector<std::filesystem::path> ListPluginFiles(const std::filesystem::path& dir)
+{
+    namespace fs = std::filesystem;
+    std::vector<fs::path> files;
+
+    for (const auto& entry : fs::directory_iterator(dir))
+    {
+        if (!entry.is_regular_file() || entry.path().extension() != ".smx")
+            continue;
+
+        files.push_back(entry.path());
+    }
+
+    std::sort(files.begin(), files.end(), [](const fs::path& a, const fs::path& b) {
+        const std::string x = a.filename().string(), y = b.filename().string();
+        const bool less = std::lexicographical_compare(x.begin(), x.end(), y.begin(), y.end(), [](unsigned char c1, unsigned char c2) {
+            return std::tolower(c1) < std::tolower(c2);
+        });
+        const bool greater = std::lexicographical_compare(y.begin(), y.end(), x.begin(), x.end(), [](unsigned char c1, unsigned char c2) {
+            return std::tolower(c1) < std::tolower(c2);
+        });
+        return less || (!greater && x < y);
+    });
+
+    return files;
 }
 
 // The plugin "s2m load <name>" means: the file named exactly that (with or
@@ -609,16 +643,8 @@ bool PluginManager::LoadMissing()
 
     char error[256];
 
-    for (const auto& entry : fs::directory_iterator(dir))
+    for (const auto& path : ListPluginFiles(dir))
     {
-        if (!entry.is_regular_file())
-            continue;
-
-        auto path = entry.path();
-
-        if (path.extension() != ".smx")
-            continue;
-
         auto fullPath = path.string();
 
         if (IsPluginLoaded(fullPath))
@@ -654,16 +680,9 @@ bool PluginManager::LoadAll()
     char error[256];
     int failed = 0;
 
-    for (const auto& entry : fs::directory_iterator(dir))
+    // Alphabetical, so every server loads the same set in the same order.
+    for (const auto& path : ListPluginFiles(dir))
     {
-        if (!entry.is_regular_file())
-            continue;
-
-        auto path = entry.path();
-
-        if (path.extension() != ".smx")
-            continue;
-
         if (!LoadPlugin(path.stem().string().c_str(), error, sizeof(error)))
             failed++;
     }
