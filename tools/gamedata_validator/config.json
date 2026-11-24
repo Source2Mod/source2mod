@@ -10,7 +10,8 @@
   "field_offsets": [
     "CCSPointScriptEntity::ScriptComponent",
     "*::m_*",
-    "*::sizeof"
+    "*::sizeof",
+    "*->*"
   ],
 
   "class_aliases": {

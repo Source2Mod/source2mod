@@ -148,7 +148,7 @@
     "signatures": {
       "library": "server",
       "windows": "4C 89 4C 24 ? 53 55 56 57 41 54 41 55",
-      "linux": "55 48 89 E5 41 57 41 56 41 55 41 89 D5 41 54 41 89 F4 53 48 89 FB 48 83 EC 78 48 89 8D"
+      "linux": "55 48 89 E5 41 57 41 56 41 55 41 89 D5 41 54 41 89 F4 53 48 89 FB 48 83 EC ? 8B 87 84 01 00 00"
     },
     "function": {"this": "object", "return": "void", "params": ["int32", "int32", "pointer"]}
   },
@@ -633,7 +633,7 @@
   "CSource2Server::GetNavMeshData": {
     "signatures": {
       "library": "server",
-      "windows": "48 83 3D ? ? ? ? ? 0F 95 C0 C3 CC CC CC CC 40 53",
+      "windows": "48 83 3D ? ? ? ? ? 0F 95 C0 C3 CC CC CC CC C2",
       "linux": "48 8D 05 ? ? ? ? 48 83 38 ? 0F 95 C0 C3"
     }
   },
@@ -860,20 +860,20 @@
   },
   "ISource2Server::GameFrame": {
     "offsets": {
-      "windows": 19,
-      "linux": 19
+      "windows": 20,
+      "linux": 20
     }
   },
   "ISource2Server::GameServerSteamAPIActivated": {
     "offsets": {
-      "windows": 41,
-      "linux": 41
+      "windows": 42,
+      "linux": 42
     }
   },
   "ISource2Server::GameServerSteamAPIDeactivated": {
     "offsets": {
-      "windows": 42,
-      "linux": 42
+      "windows": 43,
+      "linux": 43
     }
   },
   "LegacyGameEventListener": {

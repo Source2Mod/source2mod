@@ -47,7 +47,9 @@ Either platform alone works too; the other is reported as not checked.
   with the reason; one or more matches is good for them.
 - `field_offsets` -- offsets that are struct fields, not vtable indices. Names
   or `fnmatch` patterns: `*::m_*` and `*::sizeof` cover plugin gamedata
-  (e.g. FUNPLAY's `CEntityWriteInfo::m_pBuf`) that follows the `m_` naming.
+  (e.g. FUNPLAY's `CEntityWriteInfo::m_pBuf`) that follows the `m_` naming;
+  `*->*` covers byte offsets into another entry's match (InventoryManager's
+  `CCSChickenManager::SpawnPet->SetPet`).
 - `class_aliases` -- the class whose vtable an offset is checked against, when
   the gamedata name is an interface (`ISource2GameClients` ->
   `CSource2GameClients`). An offset on a derived class belongs under that
