@@ -1,15 +1,20 @@
 # Gamedata validation
 
-CS2 build **26798866** · Linux manifest `5121219979210617382` · Windows manifest `4200138934793327916` · 2026-11-22T19:15:11+00:00
+CS2 build **26879581** · Linux manifest `4380993310429599899` · Windows manifest `319757798029483889` · 2026-11-24T06:16:25+00:00
 
 | | Windows | Linux |
 |---|---|---|
-| Signatures | 🟢 74 🔴 1 | 🟢 75 |
-| Offsets | 🟢 48 ⚪ 2 | 🟢 48 ⚪ 2 |
+| Signatures | 🟢 75 | 🟢 75 |
+| Offsets | 🟢 45 🟡 3 ⚪ 2 | 🟢 45 🟡 3 ⚪ 2 |
 
 ## Needs attention
 
-- 🔴 **CSource2Server::GetNavMeshData** (windows): no match
+- 🟡 **ISource2Server::GameFrame** (windows): CSource2Server changed from 103 to 104 functions -- check the index
+- 🟡 **ISource2Server::GameFrame** (linux): CSource2Server changed from 104 to 105 functions -- check the index
+- 🟡 **ISource2Server::GameServerSteamAPIActivated** (windows): CSource2Server changed from 103 to 104 functions -- check the index
+- 🟡 **ISource2Server::GameServerSteamAPIActivated** (linux): CSource2Server changed from 104 to 105 functions -- check the index
+- 🟡 **ISource2Server::GameServerSteamAPIDeactivated** (windows): CSource2Server changed from 103 to 104 functions -- check the index
+- 🟡 **ISource2Server::GameServerSteamAPIDeactivated** (linux): CSource2Server changed from 104 to 105 functions -- check the index
 
 <details><summary>All entries (Windows, Linux)</summary>
 
@@ -101,7 +106,7 @@ CS2 build **26798866** · Linux manifest `5121219979210617382` · Windows manife
 - 🟢🟢 `CServerSideClientBase::SendNetMessage` — W 15/79 · L 16/81
 - 🟢🟢 `CSmokeGrenadeProjectile::EmitGrenade`
 - 🟢🟢 `CSoundSystem::TakeGuid` — W 76/135 · L 75/136
-- 🔴🟢 `CSource2Server::GetNavMeshData`
+- 🟢🟢 `CSource2Server::GetNavMeshData`
 - 🟢🟢 `CTakeDamageInfo::Constructor`
 - 🟢🟢 `Cmd_ExecuteCommand`
 - 🟢🟢 `DispatchParticleEffect`
@@ -132,9 +137,9 @@ CS2 build **26798866** · Linux manifest `5121219979210617382` · Windows manife
 - 🟢🟢 `ISource2GameClients::ClientVoice` — W 27/46 · L 27/46
 - 🟢🟢 `ISource2GameClients::OnClientConnected` — W 11/46 · L 11/46
 - 🟢🟢 `ISource2GameEntities::CheckTransmit` — W 12/18 · L 13/21
-- 🟢🟢 `ISource2Server::GameFrame` — W 19/103 · L 19/104
-- 🟢🟢 `ISource2Server::GameServerSteamAPIActivated` — W 41/103 · L 41/104
-- 🟢🟢 `ISource2Server::GameServerSteamAPIDeactivated` — W 42/103 · L 42/104
+- 🟡🟡 `ISource2Server::GameFrame` — W 20/104 · L 20/105
+- 🟡🟡 `ISource2Server::GameServerSteamAPIActivated` — W 42/104 · L 42/105
+- 🟡🟡 `ISource2Server::GameServerSteamAPIDeactivated` — W 43/104 · L 43/105
 - 🟢🟢 `LegacyGameEventListener`
 - 🟢🟢 `UTIL::CreateEntityByName`
 - 🟢🟢 `UTIL::Remove`

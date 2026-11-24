@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-11-22T19:15:11+00:00",
+  "generated_at": "2026-11-24T06:16:25+00:00",
   "build": {
-    "buildid": "26798866",
-    "linux_manifest": "5121219979210617382",
-    "windows_manifest": "4200138934793327916"
+    "buildid": "26879581",
+    "linux_manifest": "4380993310429599899",
+    "windows_manifest": "319757798029483889"
   },
   "entries": [
     {
@@ -11,12 +11,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1802ba1da",
+        "address": "0x1802ba9aa",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xc01991",
+        "address": "0xc01e51",
         "status": "ok"
       }
     },
@@ -25,12 +25,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x181062740",
+        "address": "0x1810670c0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1c94b00",
+        "address": "0x1c95200",
         "status": "ok"
       }
     },
@@ -75,12 +75,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180c9c9f0",
+        "address": "0x180ca0f80",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x17f8500",
+        "address": "0x17f86b0",
         "status": "ok"
       }
     },
@@ -161,12 +161,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1803ea240",
+        "address": "0x1803eb0a0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xd57b00",
+        "address": "0xd580c0",
         "status": "ok"
       }
     },
@@ -229,12 +229,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1803c3a50",
+        "address": "0x1803c48b0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xd4b900",
+        "address": "0xd4bec0",
         "status": "ok"
       }
     },
@@ -261,12 +261,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180b6f7c0",
+        "address": "0x180b735b0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x16365c0",
+        "address": "0x1636880",
         "status": "ok"
       }
     },
@@ -275,12 +275,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180b60230",
+        "address": "0x180b64080",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1681010",
+        "address": "0x1681310",
         "status": "ok"
       }
     },
@@ -289,12 +289,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180b6fec0",
+        "address": "0x180b73cb0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x164c020",
+        "address": "0x164c170",
         "status": "ok"
       }
     },
@@ -321,12 +321,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180d059f0",
+        "address": "0x180d0a050",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x187e500",
+        "address": "0x187eaa0",
         "status": "ok"
       }
     },
@@ -335,12 +335,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1808cf230",
+        "address": "0x1808d2850",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1322620",
+        "address": "0x1322e00",
         "status": "ok"
       }
     },
@@ -349,12 +349,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1808cfd30",
+        "address": "0x1808d3350",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1321aa0",
+        "address": "0x1323360",
         "status": "ok"
       }
     },
@@ -381,12 +381,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x18095f060",
+        "address": "0x180962810",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x13e2820",
+        "address": "0x13e2380",
         "status": "ok"
       }
     },
@@ -413,12 +413,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180b61f10",
+        "address": "0x180b65d60",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x167f970",
+        "address": "0x167fc70",
         "status": "ok"
       }
     },
@@ -445,12 +445,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180a94950",
+        "address": "0x180a983a0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1539bb0",
+        "address": "0x1539c30",
         "status": "ok"
       }
     },
@@ -459,12 +459,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180a961f0",
+        "address": "0x180a99c40",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x157b3e0",
+        "address": "0x157b4c0",
         "status": "ok"
       }
     },
@@ -491,12 +491,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab5690",
+        "address": "0x180ab90e0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15a9320",
+        "address": "0x15a9400",
         "status": "ok"
       }
     },
@@ -505,12 +505,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab5dd0",
+        "address": "0x180ab9820",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15a84d0",
+        "address": "0x15a85b0",
         "status": "ok"
       }
     },
@@ -519,12 +519,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab5840",
+        "address": "0x180ab9290",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15b22f0",
+        "address": "0x15b23d0",
         "status": "ok"
       }
     },
@@ -533,12 +533,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ae0100",
+        "address": "0x180ae3b50",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15b1910",
+        "address": "0x15b19f0",
         "status": "ok"
       }
     },
@@ -547,7 +547,7 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180234880",
+        "address": "0x180234ee0",
         "status": "ok"
       },
       "linux": {
@@ -561,12 +561,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab4210",
+        "address": "0x180ab7c60",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x158f370",
+        "address": "0x158f450",
         "status": "ok"
       }
     },
@@ -575,12 +575,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab3000",
+        "address": "0x180ab6a50",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x159a620",
+        "address": "0x159a700",
         "status": "ok"
       }
     },
@@ -607,12 +607,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab1fd0",
+        "address": "0x180ab5a20",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15819f0",
+        "address": "0x1581ad0",
         "status": "ok"
       }
     },
@@ -639,12 +639,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab0e00",
+        "address": "0x180ab4850",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1589840",
+        "address": "0x1589920",
         "status": "ok"
       }
     },
@@ -653,12 +653,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180adcef0",
+        "address": "0x180ae0940",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d4d80",
+        "address": "0x15d4e40",
         "status": "ok"
       }
     },
@@ -667,12 +667,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab4530",
+        "address": "0x180ab7f80",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15877b0",
+        "address": "0x1587890",
         "status": "ok"
       }
     },
@@ -681,12 +681,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab4bb0",
+        "address": "0x180ab8600",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15a4920",
+        "address": "0x15a4a00",
         "status": "ok"
       }
     },
@@ -695,12 +695,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab5220",
+        "address": "0x180ab8c70",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15b2920",
+        "address": "0x15b2a00",
         "status": "ok"
       }
     },
@@ -709,12 +709,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab68f0",
+        "address": "0x180aba340",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15a1590",
+        "address": "0x15a1670",
         "status": "ok"
       }
     },
@@ -723,12 +723,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab7490",
+        "address": "0x180abaee0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d1ca0",
+        "address": "0x15d1d60",
         "status": "ok"
       }
     },
@@ -737,12 +737,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab7c70",
+        "address": "0x180abb6c0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1584b90",
+        "address": "0x1584c70",
         "status": "ok"
       }
     },
@@ -751,12 +751,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180abb910",
+        "address": "0x180abf360",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15b4470",
+        "address": "0x15b4550",
         "status": "ok"
       }
     },
@@ -765,12 +765,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180abed60",
+        "address": "0x180ac27b0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1589f00",
+        "address": "0x1589fe0",
         "status": "ok"
       }
     },
@@ -779,12 +779,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ad64d0",
+        "address": "0x180ad9f20",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d5430",
+        "address": "0x15d54f0",
         "status": "ok"
       }
     },
@@ -793,12 +793,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ab0710",
+        "address": "0x180ab4160",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x158a370",
+        "address": "0x158a450",
         "status": "ok"
       }
     },
@@ -807,12 +807,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180aceba0",
+        "address": "0x180ad25f0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15ab7f0",
+        "address": "0x15ab8d0",
         "status": "ok"
       }
     },
@@ -821,12 +821,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ad6880",
+        "address": "0x180ada2d0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15af290",
+        "address": "0x15af370",
         "status": "ok"
       }
     },
@@ -835,12 +835,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ad5de0",
+        "address": "0x180ad9830",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d56e0",
+        "address": "0x15d57a0",
         "status": "ok"
       }
     },
@@ -849,12 +849,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ad9280",
+        "address": "0x180adccd0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d5b60",
+        "address": "0x15d5c20",
         "status": "ok"
       }
     },
@@ -863,12 +863,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180adbd70",
+        "address": "0x180adf7c0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d09b0",
+        "address": "0x15d0a70",
         "status": "ok"
       }
     },
@@ -877,12 +877,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ae0890",
+        "address": "0x180ae42e0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x158c7c0",
+        "address": "0x158c8a0",
         "status": "ok"
       }
     },
@@ -891,12 +891,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ae4220",
+        "address": "0x180ae7c70",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d3bf0",
+        "address": "0x15d3cb0",
         "status": "ok"
       }
     },
@@ -905,12 +905,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180ae52d0",
+        "address": "0x180ae8d20",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1598ea0",
+        "address": "0x1598f80",
         "status": "ok"
       }
     },
@@ -955,12 +955,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180afe3c0",
+        "address": "0x180b01cf0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15d7a90",
+        "address": "0x15d7b50",
         "status": "ok"
       }
     },
@@ -987,12 +987,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180b049d0",
+        "address": "0x180b08300",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x15f08b0",
+        "address": "0x15f09b0",
         "status": "ok"
       }
     },
@@ -1033,12 +1033,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1809b04e0",
+        "address": "0x1809b3b70",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1459ec0",
+        "address": "0x14598c0",
         "status": "ok"
       }
     },
@@ -1047,12 +1047,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x181382c60",
+        "address": "0x1813875e0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x227b530",
+        "address": "0x227bc30",
         "status": "ok"
       }
     },
@@ -1061,12 +1061,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x18139ccf0",
+        "address": "0x1813a1670",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x226e230",
+        "address": "0x226e930",
         "status": "ok"
       }
     },
@@ -1075,12 +1075,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1813996f0",
+        "address": "0x18139e070",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x2271880",
+        "address": "0x2271f80",
         "status": "ok"
       }
     },
@@ -1089,12 +1089,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x18136bc80",
+        "address": "0x181370600",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x22c2200",
+        "address": "0x22c2900",
         "status": "ok"
       }
     },
@@ -1103,12 +1103,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1803a1390",
+        "address": "0x1803a21f0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xd22ab0",
+        "address": "0xd23070",
         "status": "ok"
       }
     },
@@ -1117,12 +1117,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180bf5060",
+        "address": "0x180bf8fa0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1712bd0",
+        "address": "0x1712ed0",
         "status": "ok"
       }
     },
@@ -1131,12 +1131,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180bf5590",
+        "address": "0x180bf94d0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1712c00",
+        "address": "0x1712f00",
         "status": "ok"
       }
     },
@@ -1199,12 +1199,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1803a1440",
+        "address": "0x1803a22a0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xd23410",
+        "address": "0xd239d0",
         "status": "ok"
       }
     },
@@ -1227,12 +1227,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1814905f0",
+        "address": "0x181494f70",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1e6ad80",
+        "address": "0x1e6b480",
         "status": "ok"
       }
     },
@@ -1241,12 +1241,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1809b09a0",
+        "address": "0x1809b4030",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x14577a0",
+        "address": "0x14571e0",
         "status": "ok"
       }
     },
@@ -1273,12 +1273,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180c71490",
+        "address": "0x180c75770",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x17ac1a0",
+        "address": "0x17ac160",
         "status": "ok"
       }
     },
@@ -1287,12 +1287,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1801cc1e0",
+        "address": "0x1801cc7c0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xac6120",
+        "address": "0xac6060",
         "status": "ok"
       }
     },
@@ -1319,12 +1319,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1809b1270",
+        "address": "0x1809b4900",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x145ac90",
+        "address": "0x145a5f0",
         "status": "ok"
       }
     },
@@ -1350,13 +1350,13 @@
       "name": "CSource2Server::GetNavMeshData",
       "kind": "signature",
       "windows": {
-        "status": "broken",
-        "detail": "no match",
-        "matches": 0
+        "matches": 1,
+        "address": "0x180dd0460",
+        "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x197e930",
+        "address": "0x197e700",
         "status": "ok"
       }
     },
@@ -1365,12 +1365,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180fad3a0",
+        "address": "0x180fb1cc0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1bd6db0",
+        "address": "0x1bd7430",
         "status": "ok"
       }
     },
@@ -1379,12 +1379,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x1801c21d0",
+        "address": "0x1801c2200",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x3ff860",
+        "address": "0x3ff8a0",
         "status": "ok"
       }
     },
@@ -1393,12 +1393,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180c47f50",
+        "address": "0x180c4bef0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1797b80",
+        "address": "0x1797510",
         "status": "ok"
       }
     },
@@ -1407,7 +1407,7 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180276c70",
+        "address": "0x1802772d0",
         "status": "ok"
       },
       "linux": {
@@ -1421,12 +1421,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180545380",
+        "address": "0x180546bb0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xee18c0",
+        "address": "0xee1dc0",
         "status": "ok"
       }
     },
@@ -1435,12 +1435,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180cee590",
+        "address": "0x180cf2b70",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x185e4c0",
+        "address": "0x185e680",
         "status": "ok"
       }
     },
@@ -1539,12 +1539,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x18054117b",
+        "address": "0x1805429ab",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xf02de9",
+        "address": "0xf032e9",
         "status": "ok"
       }
     },
@@ -1553,12 +1553,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x18054113c",
+        "address": "0x18054296c",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xf02d37",
+        "address": "0xf03237",
         "status": "ok"
       }
     },
@@ -1567,12 +1567,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180541113",
+        "address": "0x180542943",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xf02d66",
+        "address": "0xf03266",
         "status": "ok"
       }
     },
@@ -1581,12 +1581,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x18054632c",
+        "address": "0x180547b5c",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xf09c19",
+        "address": "0xf0a119",
         "status": "ok"
       }
     },
@@ -1595,12 +1595,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180546355",
+        "address": "0x180547b85",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0xf09db6",
+        "address": "0xf0a2b6",
         "status": "ok"
       }
     },
@@ -1856,54 +1856,60 @@
       "name": "ISource2Server::GameFrame",
       "kind": "offset",
       "windows": {
-        "value": 19,
-        "class": "CSource2Server",
-        "library": "server",
-        "vtable_size": 103,
-        "status": "ok"
-      },
-      "linux": {
-        "value": 19,
+        "value": 20,
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 104,
-        "status": "ok"
+        "status": "changed",
+        "detail": "CSource2Server changed from 103 to 104 functions -- check the index"
+      },
+      "linux": {
+        "value": 20,
+        "class": "CSource2Server",
+        "library": "server",
+        "vtable_size": 105,
+        "status": "changed",
+        "detail": "CSource2Server changed from 104 to 105 functions -- check the index"
       }
     },
     {
       "name": "ISource2Server::GameServerSteamAPIActivated",
       "kind": "offset",
       "windows": {
-        "value": 41,
-        "class": "CSource2Server",
-        "library": "server",
-        "vtable_size": 103,
-        "status": "ok"
-      },
-      "linux": {
-        "value": 41,
+        "value": 42,
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 104,
-        "status": "ok"
+        "status": "changed",
+        "detail": "CSource2Server changed from 103 to 104 functions -- check the index"
+      },
+      "linux": {
+        "value": 42,
+        "class": "CSource2Server",
+        "library": "server",
+        "vtable_size": 105,
+        "status": "changed",
+        "detail": "CSource2Server changed from 104 to 105 functions -- check the index"
       }
     },
     {
       "name": "ISource2Server::GameServerSteamAPIDeactivated",
       "kind": "offset",
       "windows": {
-        "value": 42,
-        "class": "CSource2Server",
-        "library": "server",
-        "vtable_size": 103,
-        "status": "ok"
-      },
-      "linux": {
-        "value": 42,
+        "value": 43,
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 104,
-        "status": "ok"
+        "status": "changed",
+        "detail": "CSource2Server changed from 103 to 104 functions -- check the index"
+      },
+      "linux": {
+        "value": 43,
+        "class": "CSource2Server",
+        "library": "server",
+        "vtable_size": 105,
+        "status": "changed",
+        "detail": "CSource2Server changed from 104 to 105 functions -- check the index"
       }
     },
     {
@@ -1911,12 +1917,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180bfb630",
+        "address": "0x180bff570",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1717fe0",
+        "address": "0x17182e0",
         "status": "ok"
       }
     },
@@ -1925,12 +1931,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180be8280",
+        "address": "0x180bec1c0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1715f00",
+        "address": "0x1716200",
         "status": "ok"
       }
     },
@@ -1939,12 +1945,12 @@
       "kind": "signature",
       "windows": {
         "matches": 1,
-        "address": "0x180c29790",
+        "address": "0x180c2d6d0",
         "status": "ok"
       },
       "linux": {
         "matches": 1,
-        "address": "0x1716220",
+        "address": "0x1716520",
         "status": "ok"
       }
     }
@@ -1970,7 +1976,7 @@
       "CNetworkServerService": 51,
       "CSource2GameClients": 46,
       "CSource2GameEntities": 18,
-      "CSource2Server": 103
+      "CSource2Server": 104
     },
     "linux": {
       "CBaseEntity": 239,
@@ -1992,7 +1998,7 @@
       "CNetworkServerService": 53,
       "CSource2GameClients": 46,
       "CSource2GameEntities": 21,
-      "CSource2Server": 104
+      "CSource2Server": 105
     }
   }
 }
