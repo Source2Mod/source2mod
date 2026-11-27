@@ -132,6 +132,7 @@ public:
     IProcessUtils* GetProcessUtils() override;
     ISource2ModSpawnGroups* SpawnGroups() override;
     void SetFailState(const char* pszReason) override;
+    PluginId GetPluginId() override { return m_owner; }
     ISource2ModClients* Clients() override;
     ISource2ModConfigs* Configs() override;
     ISource2ModCookies* Cookies() override;

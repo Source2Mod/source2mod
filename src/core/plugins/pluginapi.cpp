@@ -138,6 +138,15 @@ void PluginApi::Log(const char* msg, ...)
     ConPrintf("[%s] %s", name, buffer);
 }
 
+void PluginApi::SetFailState(const char* pszReason)
+{
+    Log("Failed: %s\n", pszReason ? pszReason : "");
+
+    // RequestUnload ignores it while the server shuts down
+    if (m_owner)
+        pluginManager.RequestUnload(m_owner);
+}
+
 void PluginApi::ConPrint(const char* msg)
 {
     g_SMAPI->ConPrint(msg);
@@ -306,61 +315,93 @@ void PluginApi::SetLoadingPlugin(Source2ModPlugin* plugin)
     s_pLoadingPlugin = plugin;
 }
 
+// Every Source2Mod interface the core serves at its current revision, with the
+// accessor ISource2ModAPI has for it and the object behind it. One list for
+// the factory's table and the accessors, so the two cannot drift apart.
+#define SOURCE2MOD_CURRENT_INTERFACES(X)                                                                  \
+    X(Clients,         ISource2ModClients,         SOURCE2MOD_CLIENTS_INTERFACE,         &clients::clientsManager)                 \
+    X(Commands,        ISource2ModCommands,        SOURCE2MOD_COMMANDS_INTERFACE,        &commands::commandsManager)               \
+    X(Configs,         ISource2ModConfigs,         SOURCE2MOD_CONFIGS_INTERFACE,         &configs::configsManager)                 \
+    X(ConVars,         ISource2ModConVars,         SOURCE2MOD_CONVARS_INTERFACE,         &convars::convarsManager)                 \
+    X(Cookies,         ISource2ModCookies,         SOURCE2MOD_COOKIES_INTERFACE,         &cookies::cookiesManager)                 \
+    X(Crash,           ISource2ModCrash,           SOURCE2MOD_CRASH_INTERFACE,           &crashhandler::crashListeners)            \
+    X(CustomHud,       ISource2ModCustomHud,       SOURCE2MOD_CUSTOMHUD_INTERFACE,       &customhud::customHudManager)             \
+    X(Entities,        ISource2ModEntities,        SOURCE2MOD_ENTITIES_INTERFACE,        &entities::entitiesManager)               \
+    X(Events,          ISource2ModEvents,          SOURCE2MOD_EVENTS_INTERFACE,          &events::eventManager)                    \
+    X(Features,        ISource2ModFeatures,        SOURCE2MOD_FEATURES_INTERFACE,        &features::featuresManager)               \
+    X(Files,           ISource2ModFiles,           SOURCE2MOD_FILES_INTERFACE,           &files::filesManager)                     \
+    X(Functions,       ISource2ModFunctions,       SOURCE2MOD_FUNCTIONS_INTERFACE,       &functions::functionsManager)             \
+    X(GameConfig,      ISource2ModGameConfig,      SOURCE2MOD_GAMECONFIG_INTERFACE,      &gameconfig::gameConfig)                  \
+    X(GameSystems,     ISource2ModGameSystems,     SOURCE2MOD_GAMESYSTEMS_INTERFACE,     &gamesystems::gameSystemsManager)         \
+    X(GeoIP,           ISource2ModGeoIP,           SOURCE2MOD_GEOIP_INTERFACE,           &geoip::geoIpManager)                     \
+    X(Hooks,           ISource2ModHooks,           SOURCE2MOD_HOOKS_INTERFACE,           &hooks::hooksManager)                     \
+    X(HTTP,            ISource2ModHTTP,            SOURCE2MOD_HTTP_INTERFACE,            &http::httpManager)                       \
+    X(JSON,            ISource2ModJSON,            SOURCE2MOD_JSON_INTERFACE,            &json::jsonManager)                       \
+    X(Maps,            ISource2ModMaps,            SOURCE2MOD_MAPS_INTERFACE,            &maps::mapsManager)                       \
+    X(Menus,           ISource2ModMenus,           SOURCE2MOD_MENUS_INTERFACE,           &menus::menuManager)                      \
+    X(Modules,         ISource2ModModules,         SOURCE2MOD_MODULES_INTERFACE,         &modules::modulesManager)                 \
+    X(Natives,         ISource2ModNatives,         SOURCE2MOD_NATIVES_INTERFACE,         sourcepawn::NativesInterface())           \
+    X(NetworkMessages, ISource2ModNetworkMessages, SOURCE2MOD_NETWORKMESSAGES_INTERFACE, &networkmessages::networkMessagesManager) \
+    X(Paths,           ISource2ModPaths,           SOURCE2MOD_PATHS_INTERFACE,           &paths::pathsManager)                     \
+    X(Permissions,     ISource2ModPermissions,     SOURCE2MOD_PERMISSIONS_INTERFACE,     &permissions::permissionsManager)         \
+    X(Scheduler,       ISource2ModScheduler,       SOURCE2MOD_SCHEDULER_INTERFACE,       &scheduler::schedulerManager)             \
+    X(SchemaMethods,   ISource2ModSchemaMethods,   SOURCE2MOD_SCHEMAMETHODS_INTERFACE,   Source2ModSchemaMethodsImpl())            \
+    X(Scripts,         ISource2ModScripts,         SOURCE2MOD_SCRIPTS_INTERFACE,         &scripts::scriptsManager)                 \
+    X(Sounds,          ISource2ModSounds,          SOURCE2MOD_SOUNDS_INTERFACE,          &sounds::soundsManager)                   \
+    X(SpawnGroups,     ISource2ModSpawnGroups,     SOURCE2MOD_SPAWNGROUPS_INTERFACE,     &spawngroups::spawnGroupsManager)         \
+    X(SQL,             ISource2ModSQL,             SOURCE2MOD_SQL_INTERFACE,             &mysql::mysqlManager)                     \
+    X(Targeting,       ISource2ModTargeting,       SOURCE2MOD_TARGETING_INTERFACE,       &targeting::targetingManager)             \
+    X(Trace,           ISource2ModTrace,           SOURCE2MOD_TRACE_INTERFACE,           &raytrace::rayTrace)                      \
+    X(Translations,    ISource2ModTranslations,    SOURCE2MOD_TRANSLATIONS_INTERFACE,    &translations::translationsManager)       \
+    X(Transmit,        ISource2ModTransmit,        SOURCE2MOD_TRANSMIT_INTERFACE,        &transmit::transmitManager)               \
+    X(Utils,           ISource2ModUtils,           SOURCE2MOD_UTILS_INTERFACE,           &utils::utilsManager)                     \
+    X(Voice,           ISource2ModVoice,           SOURCE2MOD_VOICE_INTERFACE,           &voice::voiceManager)                     \
+    X(WebSockets,      ISource2ModWebSockets,      SOURCE2MOD_WEBSOCKETS_INTERFACE,      &websockets::webSocketsManager)
+
 namespace
 {
     struct CurrentInterface
     {
         const char* iface;
-        void* ptr;
+        void* ptr;   // the interface pointer (converted from the object, not the object's address)
     };
 
     // Every source2mod interface at its current revision. Built on first use,
     // after the core's Load() filled the pointers in.
     const CurrentInterface* CurrentInterfaces(size_t& count)
     {
+#define SOURCE2MOD_TABLE_ENTRY(name, type, iface, object) { iface, static_cast<type*>(object) },
         static const CurrentInterface s_current[] = {
-            { SOURCE2MOD_COMMANDS_INTERFACE, &commands::commandsManager },
-            { SOURCE2MOD_CONFIGS_INTERFACE, &configs::configsManager },
-            { SOURCE2MOD_CONVARS_INTERFACE, &convars::convarsManager },
-            { SOURCE2MOD_COOKIES_INTERFACE, &cookies::cookiesManager },
-            { SOURCE2MOD_CRASH_INTERFACE, &crashhandler::crashListeners },
-            { SOURCE2MOD_CUSTOMHUD_INTERFACE, &customhud::customHudManager },
-            { SOURCE2MOD_ENTITIES_INTERFACE, &entities::entitiesManager },
-            { SOURCE2MOD_EVENTS_INTERFACE, &events::eventManager },
-            { SOURCE2MOD_FEATURES_INTERFACE, &features::featuresManager },
-            { SOURCE2MOD_GAMECONFIG_INTERFACE, &gameconfig::gameConfig },
-            { SOURCE2MOD_GAMESYSTEMS_INTERFACE, &gamesystems::gameSystemsManager },
-            { SOURCE2MOD_GEOIP_INTERFACE, &geoip::geoIpManager },
-            { SOURCE2MOD_HOOKS_INTERFACE, &hooks::hooksManager },
-            { SOURCE2MOD_HTTP_INTERFACE, &http::httpManager },
-            { SOURCE2MOD_JSON_INTERFACE, &json::jsonManager },
-            { SOURCE2MOD_MAPS_INTERFACE, &maps::mapsManager },
-            { SOURCE2MOD_VOICE_INTERFACE, static_cast<ISource2ModVoice*>(&voice::voiceManager) },
-            { SOURCE2MOD_MODULES_INTERFACE, &modules::modulesManager },
-            { SOURCE2MOD_MENUS_INTERFACE, &menus::menuManager },
-            { SOURCE2MOD_SQL_INTERFACE, &mysql::mysqlManager },
-            { SOURCE2MOD_NETWORKMESSAGES_INTERFACE, &networkmessages::networkMessagesManager },
-            { SOURCE2MOD_SCHEDULER_INTERFACE, &scheduler::schedulerManager },
-            { SOURCE2MOD_SCRIPTS_INTERFACE, &scripts::scriptsManager },
-            { SOURCE2MOD_SOUNDS_INTERFACE, &sounds::soundsManager },
-            { SOURCE2MOD_TRACE_INTERFACE, &raytrace::rayTrace },
-            { SOURCE2MOD_TRANSMIT_INTERFACE, &transmit::transmitManager },
-            { SOURCE2MOD_SPAWNGROUPS_INTERFACE, static_cast<ISource2ModSpawnGroups*>(&spawngroups::spawnGroupsManager) },
-            { SOURCE2MOD_SNAPSHOTS_INTERFACE, &snapshots::snapshotsManager },
-            { SOURCE2MOD_TRANSLATIONS_INTERFACE, &translations::translationsManager },
-            { SOURCE2MOD_FILES_INTERFACE, &files::filesManager },
-            { SOURCE2MOD_UTILS_INTERFACE, &utils::utilsManager },
-            { SOURCE2MOD_WEBSOCKETS_INTERFACE, &websockets::webSocketsManager },
-            { SOURCE2MOD_CLIENTS_INTERFACE, &clients::clientsManager },
-            { SOURCE2MOD_TARGETING_INTERFACE, &targeting::targetingManager },
-            { SOURCE2MOD_FUNCTIONS_INTERFACE, &functions::functionsManager },
-            { SOURCE2MOD_PATHS_INTERFACE, &paths::pathsManager },
-            { SOURCE2MOD_PERMISSIONS_INTERFACE, &permissions::permissionsManager },
-            { SOURCE2MOD_NATIVES_INTERFACE, sourcepawn::NativesInterface() },
-            { SOURCE2MOD_SCHEMAMETHODS_INTERFACE, Source2ModSchemaMethodsImpl() },
+            SOURCE2MOD_CURRENT_INTERFACES(SOURCE2MOD_TABLE_ENTRY)
+            // No accessor on ISource2ModAPI: asked through the factory only.
+            { SOURCE2MOD_SNAPSHOTS_INTERFACE, static_cast<ISource2ModSnapshots*>(&snapshots::snapshotsManager) },
         };
+#undef SOURCE2MOD_TABLE_ENTRY
         count = sizeof(s_current) / sizeof(s_current[0]);
         return s_current;
+    }
+
+    // What a plugin asked for while it loaded, for "s2m info"; once each.
+    void RecordUse(const char* iface)
+    {
+        if (!s_pLoadingPlugin)
+            return;
+        auto& used = s_pLoadingPlugin->ifaces;
+        if (std::find(used.begin(), used.end(), iface) == used.end())
+            used.emplace_back(iface);
+    }
+
+    // The plugin's instance of a current interface: its own object where the
+    // interface keeps something per plugin (pluginifaces: timers, commands,
+    // hooks, overrides, ... that go when it unloads), the shared one otherwise
+    // and for the core itself (owner 0).
+    template <typename T>
+    T* ForOwner(PluginId owner, const char* iface, T* shared)
+    {
+        if (!shared)
+            return nullptr;
+        RecordUse(iface);
+        return owner ? static_cast<T*>(pluginifaces::ForPlugin(iface, owner, shared)) : shared;
     }
 
     // The current revision by its exact version string; what a frozen
@@ -507,8 +548,7 @@ void* PluginApi::Source2ModFactory(const char* iface, int* ret, PluginId* id)
 
     if (ptr)
     {
-        if (s_pLoadingPlugin)
-            s_pLoadingPlugin->ifaces.push_back(iface);
+        RecordUse(iface);
         if (ret) *ret = SOURCE2MOD_IFACE_OK;
         return ptr;
     }
@@ -534,122 +574,16 @@ void* PluginApi::MetaFactory(const char* iface, int* ret, PluginId* id)
     return g_SMAPI->MetaFactory(iface, ret, id);
 }
 
-ISource2ModCommands* PluginApi::Commands()
-{
-    ISource2ModCommands* shared = &commands::commandsManager;
-    return m_owner ? static_cast<ISource2ModCommands*>(pluginifaces::ForPlugin(SOURCE2MOD_COMMANDS_INTERFACE, m_owner, shared)) : shared;
-}
+// ---- Source2Mod interfaces ------------------------------------------------------
+// One accessor per interface of SOURCE2MOD_CURRENT_INTERFACES, all alike: the
+// plugin's instance (ForOwner), as Source2ModFactory() hands it out.
 
-ISource2ModConVars* PluginApi::ConVars()
-{
-    ISource2ModConVars* shared = &convars::convarsManager;
-    return m_owner ? static_cast<ISource2ModConVars*>(pluginifaces::ForPlugin(SOURCE2MOD_CONVARS_INTERFACE, m_owner, shared)) : shared;
-}
+#define SOURCE2MOD_ACCESSOR(name, type, iface, object) \
+    type* PluginApi::name() { return ForOwner<type>(m_owner, iface, object); }
+SOURCE2MOD_CURRENT_INTERFACES(SOURCE2MOD_ACCESSOR)
+#undef SOURCE2MOD_ACCESSOR
 
-ISource2ModCustomHud* PluginApi::CustomHud()
-{
-    ISource2ModCustomHud* shared = &customhud::customHudManager;
-    return m_owner ? static_cast<ISource2ModCustomHud*>(pluginifaces::ForPlugin(SOURCE2MOD_CUSTOMHUD_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModSounds* PluginApi::Sounds()
-{
-    ISource2ModSounds* shared = &sounds::soundsManager;
-    return m_owner ? static_cast<ISource2ModSounds*>(pluginifaces::ForPlugin(SOURCE2MOD_SOUNDS_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModHooks* PluginApi::Hooks()
-{
-    ISource2ModHooks* shared = &hooks::hooksManager;
-    return m_owner ? static_cast<ISource2ModHooks*>(pluginifaces::ForPlugin(SOURCE2MOD_HOOKS_INTERFACE, m_owner, shared)) : shared;
-}
-
-void PluginApi::SetFailState(const char* pszReason)
-{
-    Log("Failed: %s\n", pszReason ? pszReason : "");
-
-    // RequestUnload ignores it while the server shuts down
-    if (m_owner)
-        pluginManager.RequestUnload(m_owner);
-}
-
-ISource2ModSpawnGroups* PluginApi::SpawnGroups()
-{
-    ISource2ModSpawnGroups* shared = &spawngroups::spawnGroupsManager;
-    return m_owner ? static_cast<ISource2ModSpawnGroups*>(pluginifaces::ForPlugin(SOURCE2MOD_SPAWNGROUPS_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModTransmit* PluginApi::Transmit()
-{
-    ISource2ModTransmit* shared = &transmit::transmitManager;
-    return m_owner ? static_cast<ISource2ModTransmit*>(pluginifaces::ForPlugin(SOURCE2MOD_TRANSMIT_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModEntities* PluginApi::Entities()
-{
-    ISource2ModEntities* shared = &entities::entitiesManager;
-    return m_owner ? static_cast<ISource2ModEntities*>(pluginifaces::ForPlugin(SOURCE2MOD_ENTITIES_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModEvents* PluginApi::Events()
-{
-    ISource2ModEvents* shared = &events::eventManager;
-    return m_owner ? static_cast<ISource2ModEvents*>(pluginifaces::ForPlugin(SOURCE2MOD_EVENTS_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModGameConfig* PluginApi::GameConfig()
-{
-    ISource2ModGameConfig* shared = &gameconfig::gameConfig;
-    return m_owner ? static_cast<ISource2ModGameConfig*>(pluginifaces::ForPlugin(SOURCE2MOD_GAMECONFIG_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModGameSystems* PluginApi::GameSystems()
-{
-    ISource2ModGameSystems* shared = &gamesystems::gameSystemsManager;
-    return m_owner ? static_cast<ISource2ModGameSystems*>(pluginifaces::ForPlugin(SOURCE2MOD_GAMESYSTEMS_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModHTTP* PluginApi::HTTP()
-{
-    ISource2ModHTTP* shared = &http::httpManager;
-    return m_owner ? static_cast<ISource2ModHTTP*>(pluginifaces::ForPlugin(SOURCE2MOD_HTTP_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModMenus* PluginApi::Menus()
-{
-    ISource2ModMenus* shared = &menus::menuManager;
-    return m_owner ? static_cast<ISource2ModMenus*>(pluginifaces::ForPlugin(SOURCE2MOD_MENUS_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModSQL* PluginApi::SQL()
-{
-    ISource2ModSQL* shared = &mysql::mysqlManager;
-    return m_owner ? static_cast<ISource2ModSQL*>(pluginifaces::ForPlugin(SOURCE2MOD_SQL_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModNetworkMessages* PluginApi::NetworkMessages()
-{
-    ISource2ModNetworkMessages* shared = &networkmessages::networkMessagesManager;
-    return m_owner ? static_cast<ISource2ModNetworkMessages*>(pluginifaces::ForPlugin(SOURCE2MOD_NETWORKMESSAGES_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModScheduler* PluginApi::Scheduler()
-{
-    ISource2ModScheduler* shared = &scheduler::schedulerManager;
-    return m_owner ? static_cast<ISource2ModScheduler*>(pluginifaces::ForPlugin(SOURCE2MOD_SCHEDULER_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModTrace* PluginApi::Trace()
-{
-    ISource2ModTrace* shared = &raytrace::rayTrace;
-    return m_owner ? static_cast<ISource2ModTrace*>(pluginifaces::ForPlugin(SOURCE2MOD_TRACE_INTERFACE, m_owner, shared)) : shared;
-}
-
-ISource2ModPaths* PluginApi::Paths()
-{
-    ISource2ModPaths* shared = &paths::pathsManager;
-    return m_owner ? static_cast<ISource2ModPaths*>(pluginifaces::ForPlugin(SOURCE2MOD_PATHS_INTERFACE, m_owner, shared)) : shared;
-}
+// ---- engine interfaces ------------------------------------------------------------
 
 ISource2Server* PluginApi::GetSource2Server()
 {
@@ -802,103 +736,3 @@ IScriptManager* PluginApi::GetScriptManager() { return g_pScriptManager; }
 IAsyncFileSystem2* PluginApi::GetAsyncFileSystem() { return g_pAsyncFileSystem; }
 IProcessUtils* PluginApi::GetProcessUtils() { return g_pProcessUtils; }
 
-// The interfaces of plugin API 9 on: what the factory hands this plugin.
-ISource2ModClients* PluginApi::Clients()
-{
-    return static_cast<ISource2ModClients*>(Source2ModFactory(SOURCE2MOD_CLIENTS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModConfigs* PluginApi::Configs()
-{
-    return static_cast<ISource2ModConfigs*>(Source2ModFactory(SOURCE2MOD_CONFIGS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModCookies* PluginApi::Cookies()
-{
-    return static_cast<ISource2ModCookies*>(Source2ModFactory(SOURCE2MOD_COOKIES_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModCrash* PluginApi::Crash()
-{
-    return static_cast<ISource2ModCrash*>(Source2ModFactory(SOURCE2MOD_CRASH_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModFeatures* PluginApi::Features()
-{
-    return static_cast<ISource2ModFeatures*>(Source2ModFactory(SOURCE2MOD_FEATURES_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModFiles* PluginApi::Files()
-{
-    return static_cast<ISource2ModFiles*>(Source2ModFactory(SOURCE2MOD_FILES_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModFunctions* PluginApi::Functions()
-{
-    return static_cast<ISource2ModFunctions*>(Source2ModFactory(SOURCE2MOD_FUNCTIONS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModGeoIP* PluginApi::GeoIP()
-{
-    return static_cast<ISource2ModGeoIP*>(Source2ModFactory(SOURCE2MOD_GEOIP_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModJSON* PluginApi::JSON()
-{
-    return static_cast<ISource2ModJSON*>(Source2ModFactory(SOURCE2MOD_JSON_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModMaps* PluginApi::Maps()
-{
-    return static_cast<ISource2ModMaps*>(Source2ModFactory(SOURCE2MOD_MAPS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModModules* PluginApi::Modules()
-{
-    return static_cast<ISource2ModModules*>(Source2ModFactory(SOURCE2MOD_MODULES_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModNatives* PluginApi::Natives()
-{
-    return static_cast<ISource2ModNatives*>(Source2ModFactory(SOURCE2MOD_NATIVES_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModPermissions* PluginApi::Permissions()
-{
-    return static_cast<ISource2ModPermissions*>(Source2ModFactory(SOURCE2MOD_PERMISSIONS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModSchemaMethods* PluginApi::SchemaMethods()
-{
-    return static_cast<ISource2ModSchemaMethods*>(Source2ModFactory(SOURCE2MOD_SCHEMAMETHODS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModScripts* PluginApi::Scripts()
-{
-    return static_cast<ISource2ModScripts*>(Source2ModFactory(SOURCE2MOD_SCRIPTS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModTargeting* PluginApi::Targeting()
-{
-    return static_cast<ISource2ModTargeting*>(Source2ModFactory(SOURCE2MOD_TARGETING_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModTranslations* PluginApi::Translations()
-{
-    return static_cast<ISource2ModTranslations*>(Source2ModFactory(SOURCE2MOD_TRANSLATIONS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModUtils* PluginApi::Utils()
-{
-    return static_cast<ISource2ModUtils*>(Source2ModFactory(SOURCE2MOD_UTILS_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModVoice* PluginApi::Voice()
-{
-    return static_cast<ISource2ModVoice*>(Source2ModFactory(SOURCE2MOD_VOICE_INTERFACE, nullptr, nullptr));
-}
-
-ISource2ModWebSockets* PluginApi::WebSockets()
-{
-    return static_cast<ISource2ModWebSockets*>(Source2ModFactory(SOURCE2MOD_WEBSOCKETS_INTERFACE, nullptr, nullptr));
-}
