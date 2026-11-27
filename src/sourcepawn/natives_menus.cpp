@@ -100,15 +100,51 @@ namespace sourcepawn
 
         // ---- CenterHtmlMenu ------------------------------------------------------------
 
+        struct ScriptMenu;
+
+        /// The script's CenterHtmlMenu: IBaseMenu::OnOptionSelected goes through
+        /// the menu-wide OnSelect callback first, when the script set one.
+        struct ScriptCenterMenu final : CenterHtmlMenu
+        {
+            ScriptCenterMenu(const char* title, ScriptMenu* owner) : CenterHtmlMenu(title), script(owner) {}
+
+            void OnOptionSelected(CCSPlayerController* player, ChatMenuOption& option, int index) override;
+
+            ScriptMenu* script;
+        };
+
         struct ScriptMenu : HandleObject
         {
-            explicit ScriptMenu(const char* title) : menu(title) {}
+            explicit ScriptMenu(const char* title) : menu(title, this) {}
 
-            CenterHtmlMenu menu;
+            ScriptCenterMenu menu;
             PluginId owner = 0;
             cell_t handle = 0;
             bool dead = false;
+            IPluginFunction* onSelect = nullptr;   // OnSelect: (player, menu, option) -> bool
         };
+
+        void ScriptCenterMenu::OnOptionSelected(CCSPlayerController* player, ChatMenuOption& option, int index)
+        {
+            ScriptMenu* m = script;
+            if (m->dead)
+                return;
+            if (m->onSelect)
+            {
+                sp::CallArgs args;
+                args.PushCell(EntityCell(player));
+                args.PushCell(m->handle);
+                args.PushCell(index);
+                cell_t run = 1;
+                if (!Invoke(m->onSelect, args, &run) || m->dead || !run)
+                    return;
+            }
+            // The option's own handler can rebuild the menu (ClearOptions), so
+            // it is looked up again rather than trusting the reference.
+            if (index < 0 || index >= static_cast<int>(Options().size()))
+                return;
+            CenterHtmlMenu::OnOptionSelected(player, Options()[index], index);
+        }
 
         /// The script menus by their CenterHtmlMenu, for GetActiveMenu.
         std::unordered_map<const IMenu*, ScriptMenu*> g_menus;
@@ -404,6 +440,93 @@ namespace sourcepawn
             }
             if (IPluginFunction* fn = Function(ctx, params[3]))
                 opt.DisabledEvaluator = Evaluator(m, fn, params[2], params[4], true);
+            return 0;
+        }
+
+        // SetOptionHandler(option, handler, data): the option's handler from now
+        // on; INVALID_FUNCTION removes it (the option stays, picking it does nothing).
+        cell_t N_MenuSetOptionHandler(IPluginContext* ctx, const cell_t* params)
+        {
+            ScriptMenu* m = MenuOf(ctx, params[1]);
+            if (!m || !OptionOk(ctx, m, params[2]))
+                return 0;
+            ChatMenuOption& opt = m->menu.Options()[params[2]];
+            if (IsUnset(params[3]))
+            {
+                opt.OnSelect = nullptr;
+                return 0;
+            }
+            if (IPluginFunction* fn = Function(ctx, params[3]))
+                opt.OnSelect = Handler(m, fn, params[2], params[4]);
+            return 0;
+        }
+
+        // SetOptionTextEvaluator(option, text, data): the option's text worked out
+        // per player from now on; INVALID_FUNCTION goes back to its fixed text.
+        cell_t N_MenuSetOptionTextEvaluator(IPluginContext* ctx, const cell_t* params)
+        {
+            ScriptMenu* m = MenuOf(ctx, params[1]);
+            if (!m || !OptionOk(ctx, m, params[2]))
+                return 0;
+            ChatMenuOption& opt = m->menu.Options()[params[2]];
+            if (IsUnset(params[3]))
+            {
+                opt.TextEvaluator = nullptr;
+                return 0;
+            }
+            if (IPluginFunction* fn = Function(ctx, params[3]))
+                opt.TextEvaluator = TextFrom(m, fn, params[2], params[4]);
+            return 0;
+        }
+
+        // SetOptionVisibleEvaluator(option, visible, data): INVALID_FUNCTION removes it.
+        cell_t N_MenuSetOptionVisibleEvaluator(IPluginContext* ctx, const cell_t* params)
+        {
+            ScriptMenu* m = MenuOf(ctx, params[1]);
+            if (!m || !OptionOk(ctx, m, params[2]))
+                return 0;
+            ChatMenuOption& opt = m->menu.Options()[params[2]];
+            if (IsUnset(params[3]))
+            {
+                opt.VisibleEvaluator = nullptr;
+                return 0;
+            }
+            if (IPluginFunction* fn = Function(ctx, params[3]))
+                opt.VisibleEvaluator = Evaluator(m, fn, params[2], params[4], false);
+            return 0;
+        }
+
+        // GetOptionSubmenu(option) -> the CenterHtmlMenu it opens, null when none.
+        cell_t N_MenuGetOptionSubmenu(IPluginContext* ctx, const cell_t* params)
+        {
+            ScriptMenu* m = MenuOf(ctx, params[1]);
+            if (!m || !OptionOk(ctx, m, params[2]))
+                return 0;
+            const IBaseMenu* sub = m->menu.Options()[params[2]].Submenu;
+            const auto it = sub ? g_menus.find(sub) : g_menus.end();
+            return it != g_menus.end() && !it->second->dead ? it->second->handle : 0;
+        }
+
+        // IsOptionText(option): a line added with AddText.
+        cell_t N_MenuIsOptionText(IPluginContext* ctx, const cell_t* params)
+        {
+            ScriptMenu* m = MenuOf(ctx, params[1]);
+            return m && OptionOk(ctx, m, params[2]) && m->menu.Options()[params[2]].IsText;
+        }
+
+        // OnSelect(callback): (player, menu, option) -> bool before any option's
+        // own handler; false skips that handler. INVALID_FUNCTION removes it.
+        cell_t N_MenuOnSelect(IPluginContext* ctx, const cell_t* params)
+        {
+            ScriptMenu* m = MenuOf(ctx, params[1]);
+            if (!m)
+                return 0;
+            if (IsUnset(params[2]))
+            {
+                m->onSelect = nullptr;
+                return 0;
+            }
+            m->onSelect = Function(ctx, params[2]);
             return 0;
         }
 
@@ -714,6 +837,12 @@ namespace sourcepawn
             { "CenterHtmlMenu.SetOptionDisabled", N_MenuSetOptionDisabled },
             { "CenterHtmlMenu.IsOptionDisabled", N_MenuIsOptionDisabled },
             { "CenterHtmlMenu.SetOptionDisabledEvaluator", N_MenuSetOptionDisabledEvaluator },
+            { "CenterHtmlMenu.SetOptionHandler", N_MenuSetOptionHandler },
+            { "CenterHtmlMenu.SetOptionTextEvaluator", N_MenuSetOptionTextEvaluator },
+            { "CenterHtmlMenu.SetOptionVisibleEvaluator", N_MenuSetOptionVisibleEvaluator },
+            { "CenterHtmlMenu.GetOptionSubmenu", N_MenuGetOptionSubmenu },
+            { "CenterHtmlMenu.IsOptionText", N_MenuIsOptionText },
+            { "CenterHtmlMenu.OnSelect", N_MenuOnSelect },
             { "CenterHtmlMenu.AddSubmenu", N_MenuAddSubmenu },
             { "CenterHtmlMenu.AddText", N_MenuAddText },
             { "CenterHtmlMenu.AddDynamicOption", N_MenuAddDynamicOption },

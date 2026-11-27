@@ -251,6 +251,20 @@ namespace sourcepawn
             return FillStringList(ctx, 0, names, false, 64, plugin ? plugin->Id() : 0);
         }
 
+        // ResetByPrefix(prefix): ICvar::ResetConVarsToDefaultValuesByName, every
+        // ConVar whose name starts with prefix back to its default
+        // (FCVAR_COMMANDLINE_ENFORCED ones too). "" would reset the whole
+        // server's ConVars, so it is refused.
+        cell_t N_CVResetByPrefix(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* prefix = LocalString(ctx, params[1]);
+            if (!*prefix)
+                return ctx->ThrowNativeError("Source2ModConVars.ResetByPrefix: an empty prefix would reset every ConVar");
+            if (g_pCVar)
+                g_pCVar->ResetConVarsToDefaultValuesByName(prefix);
+            return 0;
+        }
+
         // GetBounds(ConVarBounds type, float &value): ConVarBound_Upper = 0, ConVarBound_Lower.
         cell_t N_GetBounds(IPluginContext* ctx, const cell_t* params)
         {
@@ -752,6 +766,7 @@ namespace sourcepawn
             { "Source2ModConVars.SetColor", N_CVSetColor },
             { "Source2ModConVars.DeleteConVar", N_CVDeleteConVar },
             { "Source2ModConVars.ListNames", N_CVListNames },
+            { "Source2ModConVars.ResetByPrefix", N_CVResetByPrefix },
             { nullptr, nullptr },
         };
     }

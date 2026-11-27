@@ -91,6 +91,7 @@
 #include <source2mod/utils/plat.h>
 
 #include <entity2/entitykeyvalues.h>
+#include <resourcefile/resourcetype.h>
 
 #include <schemalib/schemaclassinfo.h>
 #include <schemalib/schematype.h>
@@ -151,6 +152,8 @@ namespace sourcepawn
             Color,
             CharArray,
             StringPtr,      // CUtlSymbolLarge, CUtlString, CGlobalSymbol: a char* at the field
+            Floats,         // Vector2D, RotationVector, Quaternion, Vector4D: size / 4 floats in a row
+            Resource,       // CStrongHandle<T>, CStrongHandleCopyable<T>: a ResourceHandle_t
             Pointer,        // to a schema class
             Embedded,       // a schema class in place
             Array,          // a fixed array of anything but char (elem* below)
@@ -253,8 +256,17 @@ namespace sourcepawn
                 f.kind = Kind::Vector;
             else if (n == "Color")
                 f.kind = Kind::Color;
-            else if (n == "CUtlSymbolLarge" || n == "CUtlString" || n == "CGlobalSymbol")
+            // CGameSoundEventName: the event name's char* first (checked on an
+            // ambient_generic's m_iszSound, 1.42.0.1).
+            else if (n == "CUtlSymbolLarge" || n == "CUtlString" || n == "CGlobalSymbol" || n == "CGameSoundEventName")
                 f.kind = Kind::StringPtr;
+            else if (n == "Vector2D" || n == "RotationVector" || n == "Quaternion" || n == "Vector4D")
+            {
+                f.kind = Kind::Floats;
+                f.count = size / 4;
+            }
+            else if (n.rfind("CStrongHandle<", 0) == 0 || n.rfind("CStrongHandleCopyable<", 0) == 0)
+                f.kind = Kind::Resource;
             else if (n == "GameTime_t")
             {
                 f.kind = Kind::Float;
@@ -1049,6 +1061,149 @@ namespace sourcepawn
             a.addr[len] = '\0';
             Changed(a);
             return 0;
+        }
+
+        // ---- reflection: the running game's server schema ---------------------------
+
+        CSchemaClassInfo* BaseOf(const CSchemaClassInfo* c)
+        {
+            return c && c->m_nNumBaseClasses ? c->m_pBaseClasses[0].m_pClass : nullptr;
+        }
+
+        /// Every class of the server's type scope (m_ClassBindings), unordered.
+        std::vector<CSchemaClassInfo*> AllServerClasses()
+        {
+            std::vector<CSchemaClassInfo*> out;
+            CSchemaSystem* system = GetSchemaSystem();
+            CSchemaSystemTypeScope* scope = system ? system->FindTypeScopeForModule(MODULE_PREFIX "server" MODULE_EXT) : nullptr;
+            if (!scope)
+                return out;
+            auto& bindings = scope->m_ClassBindings;
+            std::vector<UtlTSHashHandle_t> handles(static_cast<size_t>(bindings.Count()));
+            const int n = handles.empty() ? 0 : bindings.GetElements(0, static_cast<int>(handles.size()), handles.data());
+            out.reserve(static_cast<size_t>(n));
+            for (int i = 0; i < n; ++i)
+                if (CSchemaClassInfo* c = bindings.Element(handles[i]))
+                    out.push_back(c);
+            return out;
+        }
+
+        PluginId OwnerOf(IPluginContext* ctx)
+        {
+            ScriptPlugin* plugin = ScriptPlugin::FromContext(ctx);
+            return plugin ? plugin->Id() : 0;
+        }
+
+        // GetClassFields(className, includeBases) -> ArrayList of field names, the
+        // class's own first, then its bases'; null when there is no such class.
+        cell_t N_GetClassFields(IPluginContext* ctx, const cell_t* params)
+        {
+            CSchemaClassInfo* c = FindClass(LocalString(ctx, params[1]));
+            if (!c)
+                return 0;
+            const bool bases = params[0] >= 2 && params[2];
+            std::vector<std::string> names;
+            for (; c; c = bases ? BaseOf(c) : nullptr)
+                for (uint16 i = 0; i < c->m_nNumFields; ++i)
+                    names.emplace_back(c->m_pFields[i].m_pName);
+            return FillStringList(ctx, 0, names, false, 64, OwnerOf(ctx));
+        }
+
+        // GetFieldTypeName(className, field, buffer, maxlen): the schema type's name
+        // ("int32", "CHandle< CBaseEntity >", "Vector", ...); 0 for no such field.
+        cell_t N_GetFieldTypeName(IPluginContext* ctx, const cell_t* params)
+        {
+            const Field& f = FindField(LocalString(ctx, params[1]), LocalString(ctx, params[2]));
+            size_t written = 0;
+            ctx->StringToLocalUTF8(params[3], params[4], f.found ? f.typeName.c_str() : "", &written);
+            return f.found ? static_cast<cell_t>(written) : 0;
+        }
+
+        // GetBaseClassName(className, buffer, maxlen): false at the root or for no such class.
+        cell_t N_GetBaseClassName(IPluginContext* ctx, const cell_t* params)
+        {
+            const CSchemaClassInfo* base = BaseOf(FindClass(LocalString(ctx, params[1])));
+            ctx->StringToLocalUTF8(params[2], params[3], base ? base->m_pName : "", nullptr);
+            return base != nullptr;
+        }
+
+        // GetSubclassNames(baseClass, direct) -> ArrayList, sorted: every server class
+        // deriving from it (direct: only its children); "" = every class.
+        cell_t N_GetSubclassNames(IPluginContext* ctx, const cell_t* params)
+        {
+            const std::string base = LocalString(ctx, params[1]);
+            const bool direct = params[0] >= 2 && params[2];
+            std::vector<std::string> names;
+            for (CSchemaClassInfo* c : AllServerClasses())
+            {
+                if (base.empty())
+                {
+                    names.emplace_back(c->m_pName);
+                    continue;
+                }
+                int depth = 0;
+                for (const CSchemaClassInfo* p = BaseOf(c); p && depth < 64; p = BaseOf(p), ++depth)
+                {
+                    if (base == p->m_pName)
+                    {
+                        names.emplace_back(c->m_pName);
+                        break;
+                    }
+                    if (direct)
+                        break;
+                }
+            }
+            std::sort(names.begin(), names.end());
+            return FillStringList(ctx, 0, names, false, 64, OwnerOf(ctx));
+        }
+
+        // GetFloats(instance, className, field, float[] values, count): a field of
+        // floats in a row (Vector2D, RotationVector, Quaternion, Vector4D).
+        // Returns how many the field holds; at most count are copied.
+        cell_t N_GetFloats(IPluginContext* ctx, const cell_t* params)
+        {
+            Access a;
+            if (!Lookup(ctx, params, a, Kind::Floats, "a row of floats (Vector2D, RotationVector, Quaternion, Vector4D)"))
+                return 0;
+            cell_t* out = nullptr;
+            if (ctx->LocalToPhysAddr(params[4], &out) != SP_ERROR_NONE)
+                return 0;
+            const int n = std::min<int>(a.field->count, std::max<cell_t>(params[5], 0));
+            const auto* values = reinterpret_cast<const float*>(a.addr);
+            for (int i = 0; i < n; ++i)
+                out[i] = sp_ftoc(values[i]);
+            return a.field->count;
+        }
+
+        cell_t N_SetFloats(IPluginContext* ctx, const cell_t* params)
+        {
+            Access a;
+            if (!Lookup(ctx, params, a, Kind::Floats, "a row of floats (Vector2D, RotationVector, Quaternion, Vector4D)"))
+                return 0;
+            cell_t* in = nullptr;
+            if (ctx->LocalToPhysAddr(params[4], &in) != SP_ERROR_NONE)
+                return 0;
+            const int n = std::min<int>(a.field->count, std::max<cell_t>(params[5], 0));
+            auto* values = reinterpret_cast<float*>(a.addr);
+            for (int i = 0; i < n; ++i)
+                values[i] = sp_ctof(in[i]);
+            Changed(a);
+            return 0;
+        }
+
+        // GetResourceName(instance, className, field, buffer, maxlen): the path of
+        // the resource a CStrongHandle field holds ("materials/.../x.vmat"), ""
+        // when it holds none.
+        cell_t N_GetResourceName(IPluginContext* ctx, const cell_t* params)
+        {
+            Access a;
+            if (!Lookup(ctx, params, a, Kind::Resource, "a resource handle (CStrongHandle)"))
+                return 0;
+            const ResourceHandle_t binding = *reinterpret_cast<const ResourceHandle_t*>(a.addr);
+            const char* name = binding && binding->m_Name ? binding->m_Name->m_ResourceNameSymbol.String() : nullptr;
+            size_t written = 0;
+            ctx->StringToLocalUTF8(params[4], params[5], name ? name : "", &written);
+            return static_cast<cell_t>(written);
         }
 
         cell_t N_GetOffset(IPluginContext* ctx, const cell_t* params)
@@ -2610,6 +2765,13 @@ namespace sourcepawn
             { "Source2ModSchema.GetString", N_GetString },
             { "Source2ModSchema.SetString", Guarded<N_SetString> },
             { "Source2ModSchema.GetOffset", N_GetOffset },
+            { "Source2ModSchema.GetFloats", N_GetFloats },
+            { "Source2ModSchema.SetFloats", N_SetFloats },
+            { "Source2ModSchema.GetResourceName", N_GetResourceName },
+            { "Source2ModSchema.GetClassFields", N_GetClassFields },
+            { "Source2ModSchema.GetFieldTypeName", N_GetFieldTypeName },
+            { "Source2ModSchema.GetBaseClassName", N_GetBaseClassName },
+            { "Source2ModSchema.GetSubclassNames", N_GetSubclassNames },
             { "Source2ModSchema.StateChanged", N_StateChanged },
             { "Source2ModSchema.GetIntAt", N_GetIntAt },
             { "Source2ModSchema.SetIntAt", N_SetIntAt },

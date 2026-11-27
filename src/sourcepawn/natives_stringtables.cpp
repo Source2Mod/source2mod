@@ -10,11 +10,16 @@
 
 #include "core/runtime/shared.h"
 
+#include <bitbuf.h>
 #include <engine2/iengineservicemgr.h>
+#include <engine2/igameeventsystem.h>
 #include <engine2/isource2engine.h>
 #include <engine2/ivengineserver2.h>
 #include <interfaces/interfaces.h>
+#include <netmessages.pb.h>
 #include <networkstringtabledefs.h>
+#include <networksystem/inetworkmessages.h>
+#include <recipientfilter.h>
 
 #include <algorithm>
 #include <cstring>
@@ -118,6 +123,64 @@ namespace sourcepawn
             return 1;
         }
 
+        // ReplicateUserData(slot, value, data, length): the user data of one of
+        // the table's strings as one client sees it, the table itself (and every
+        // other client) unchanged. A CSVCMsg_UpdateStringTable with that one
+        // entry goes to the slot only; the next real change of the string, or a
+        // full update, puts the client back on the server's data.
+        cell_t N_ReplicateUserData(IPluginContext* ctx, const cell_t* params)
+        {
+            INetworkStringTable* table = Table(params[1]);
+            const CPlayerSlot slot(params[2]);
+            if (!table || !g_pEngineServer || !g_pNetworkMessages || !shared::g_pGameEventSystem)
+                return 0;
+            if (slot.Get() < 0 || slot.Get() >= ABSOLUTE_PLAYER_LIMIT || !g_pEngineServer->GetPlayerNetInfo(slot))
+                return 0;
+
+            const int index = table->FindStringIndex(LocalString(ctx, params[3]));
+            if (index == INVALID_STRING_INDEX)
+                return 0;
+
+            const cell_t length = params[5];
+            char* data = nullptr;
+            if (length < 0 || length > 1024 || ctx->LocalToString(params[4], &data) != SP_ERROR_NONE)
+                return ctx->ThrowNativeError("Invalid user data length %d (0-1024)", length);
+
+            static NetMessageInfo_t* s_update = g_pNetworkMessages->FindNetworkMessagePartial("CSVCMsg_UpdateStringTable");
+            if (!s_update)
+                return 0;
+
+            // One changed entry: the index as a delta from -1, not a new string,
+            // then the user data (or none).
+            uint8_t buffer[2048];
+            bf_write buf(buffer, sizeof(buffer));
+            buf.WriteOneBit(0);
+            buf.WriteVarInt32(index - 1);
+            buf.WriteOneBit(0);
+            if (length > 0)
+            {
+                buf.WriteOneBit(1);
+                buf.WriteUBitVar(static_cast<unsigned int>(length));
+                buf.WriteBits(data, length * 8);
+            }
+            else
+            {
+                buf.WriteOneBit(0);
+            }
+            if (buf.IsOverflowed())
+                return 0;
+
+            auto* msg = s_update->AllocateMessage()->ToPB<CSVCMsg_UpdateStringTable>();
+            msg->set_table_id(table->GetTableId());
+            msg->set_num_changed_entries(1);
+            msg->mutable_string_data()->assign(buffer, buffer + BitByte(buf.GetNumBitsWritten()));
+
+            CReliableSingleUserRecipientFilter filter(slot);
+            shared::g_pGameEventSystem->PostEventAbstract(-1, false, &filter, s_update, msg, 0);
+            delete msg;
+            return 1;
+        }
+
         // ---- addons -----------------------------------------------------------------
 
         cell_t N_GetMountedAddons(IPluginContext* ctx, const cell_t* params)
@@ -140,6 +203,7 @@ namespace sourcepawn
             { "NetworkStringTable.AddString", N_AddString },
             { "NetworkStringTable.GetUserData", N_GetUserData },
             { "NetworkStringTable.SetUserData", N_SetUserData },
+            { "NetworkStringTable.ReplicateUserData", N_ReplicateUserData },
             { "Source2ModMaps.GetMountedAddons", N_GetMountedAddons },
             { "Source2ModMaps.IsAddonMounted", N_IsAddonMounted },
             { nullptr, nullptr },

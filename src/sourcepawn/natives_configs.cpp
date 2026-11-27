@@ -41,6 +41,8 @@
 
 #include <sp_callable.h>
 
+#include <cerrno>
+#include <cstdlib>
 #include <string>
 
 using namespace SourcePawn;
@@ -355,6 +357,31 @@ namespace sourcepawn
             return Set(ctx, params, [&](ISource2ModConfig* c, const char* p) { return c->SetDouble(p, sp_ctof(params[3])); });
         }
 
+        // SetInt64(pointer, value) / SetDouble(pointer, value): the value as
+        // decimal text, for numbers a cell cannot hold (64-bit ids, doubles
+        // past float precision). Text that is not one whole number fails.
+        cell_t N_ConfigSetInt64(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* text = LocalString(ctx, params[3]);
+            char* end = nullptr;
+            errno = 0;
+            const long long value = strtoll(text, &end, 10);
+            if (!*text || *end || errno == ERANGE)
+                return 0;
+            return Set(ctx, params, [&](ISource2ModConfig* c, const char* p) { return c->SetInt64(p, static_cast<int64_t>(value)); });
+        }
+
+        cell_t N_ConfigSetDouble(IPluginContext* ctx, const cell_t* params)
+        {
+            const char* text = LocalString(ctx, params[3]);
+            char* end = nullptr;
+            errno = 0;
+            const double value = strtod(text, &end);
+            if (!*text || *end || errno == ERANGE)
+                return 0;
+            return Set(ctx, params, [&](ISource2ModConfig* c, const char* p) { return c->SetDouble(p, value); });
+        }
+
         cell_t N_ConfigSetBool(IPluginContext* ctx, const cell_t* params)
         {
             return Set(ctx, params, [&](ISource2ModConfig* c, const char* p) { return c->SetBool(p, params[3] != 0); });
@@ -408,6 +435,8 @@ namespace sourcepawn
             { "Source2ModConfig.SetString", N_ConfigSetString },
             { "Source2ModConfig.SetInt", N_ConfigSetInt },
             { "Source2ModConfig.SetFloat", N_ConfigSetFloat },
+            { "Source2ModConfig.SetInt64", N_ConfigSetInt64 },
+            { "Source2ModConfig.SetDouble", N_ConfigSetDouble },
             { "Source2ModConfig.SetBool", N_ConfigSetBool },
             { "Source2ModConfig.SetJSON", N_ConfigSetJSON },
             { "Source2ModConfig.Remove", N_ConfigRemove },

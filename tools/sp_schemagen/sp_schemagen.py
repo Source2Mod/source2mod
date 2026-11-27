@@ -68,9 +68,12 @@ ENUMS = [
     "ForcedCrouchState_t", "SurroundingBoundsType_t", "EntityPlatformTypes_t", "RumbleEffect_t",
     "JointMotion_t",
 ]
-FLOAT_TYPES = {"float", "float32", "GameTime_t"}
+# double / float64 go through the same accessors; the core reads 8 bytes for them.
+FLOAT_TYPES = {"float", "float32", "GameTime_t", "double", "float64"}
 VECTOR_TYPES = {"Vector", "QAngle", "VectorWS"}
-STRING_TYPES = {"CUtlSymbolLarge", "CUtlString", "CGlobalSymbol"}
+STRING_TYPES = {"CUtlSymbolLarge", "CUtlString", "CGlobalSymbol", "CGameSoundEventName"}
+# Floats in a row, through GetFloats / SetFloats: type -> how many.
+FLOATS_TYPES = {"Vector2D": 2, "RotationVector": 3, "Quaternion": 4, "Vector4D": 4}
 
 
 def split_args(s):
@@ -254,6 +257,13 @@ def property_for(owner, macro, ctype, field, classes, enums):
                 f"\tpublic void Set_{field}(const int color[4]) {{ Source2ModSchema.SetColor(this, {acc}, color); }}"]
     if t in STRING_TYPES:
         return [f"\tpublic int {field}(char[] buffer, int maxlen) {{ return Source2ModSchema.GetString(this, {acc}, buffer, maxlen); }}"]
+    if t in FLOATS_TYPES:
+        n = FLOATS_TYPES[t]
+        return [f"\tpublic void {field}(float value[{n}]) {{ Source2ModSchema.GetFloats(this, {acc}, value, {n}); }}",
+                f"\tpublic void Set_{field}(const float value[{n}]) {{ Source2ModSchema.SetFloats(this, {acc}, value, {n}); }}"]
+    if re.fullmatch(r"CStrongHandle(Copyable)?<.*>", t):
+        # The resource's path; read only.
+        return [f"\tpublic int {field}(char[] buffer, int maxlen) {{ return Source2ModSchema.GetResourceName(this, {acc}, buffer, maxlen); }}"]
 
     m = re.fullmatch(r"CHandle<\s*([A-Za-z_][A-Za-z0-9_]*)\s*>", t)
     if m or t == "CEntityHandle":

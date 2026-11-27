@@ -418,6 +418,37 @@ namespace sourcepawn
             return fn->described ? fn->described->IsMember() : fn->vtableIndex >= 0;
         }
 
+        // CheckCall(returnType, const Source2ModType[] params, count): whether a
+        // call of this shape matches. The core's description reports a mismatch
+        // on the console (once per function and shape); a function the script
+        // built is compared with its own types, quietly.
+        cell_t N_FnCheckCall(IPluginContext* ctx, const cell_t* params)
+        {
+            const Function* fn = FnOf(ctx, params[1]);
+            if (!fn)
+                return 0;
+            const cell_t count = params[4];
+            if (count < 0 || count > 32)
+                return ctx->ThrowNativeError("Invalid parameter count %d", count);
+            cell_t* list = nullptr;
+            ctx->LocalToPhysAddr(params[3], &list);
+
+            std::vector<Source2ModType> types(static_cast<size_t>(count));
+            for (cell_t i = 0; i < count; ++i)
+                types[i] = static_cast<Source2ModType>(list[i]);
+            const auto ret = static_cast<Source2ModType>(params[2]);
+
+            if (fn->described)
+                return fn->described->CheckCall(ret, types.data(), static_cast<int>(count));
+
+            if (static_cast<Source2ModType>(fn->returnType) != ret || fn->params.size() != types.size())
+                return 0;
+            for (size_t i = 0; i < types.size(); ++i)
+                if (static_cast<Source2ModType>(fn->params[i]) != types[i])
+                    return 0;
+            return 1;
+        }
+
         // GetName(buffer, maxlen): the gamedata name, "" for one the script built.
         cell_t N_FnGetName(IPluginContext* ctx, const cell_t* params)
         {
@@ -945,6 +976,7 @@ namespace sourcepawn
             { "Source2ModFunction.GetParamType", N_FnGetParamType },
             { "Source2ModFunction.IsVirtual.get", N_FnIsVirtual },
             { "Source2ModFunction.IsMember.get", N_FnIsMember },
+            { "Source2ModFunction.CheckCall", N_FnCheckCall },
             { "Source2ModFunction.GetName", N_FnGetName },
             { "Source2ModFunction.BypassHooks.get", N_FnGetBypassHooks },
             { "Source2ModFunction.BypassHooks.set", N_FnSetBypassHooks },

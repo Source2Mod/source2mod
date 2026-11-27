@@ -286,6 +286,100 @@ namespace sourcepawn
             return f && std::fflush(f->file) == 0;
         }
 
+        // ---- binary access: items of 1, 2 or 4 bytes, little-endian, one per cell.
+        // 1- and 2-byte items read as unsigned (SourceMod's File.Read does the
+        // same); a write keeps the low bytes of each cell.
+
+        bool ValidItemSize(cell_t size)
+        {
+            return size == 1 || size == 2 || size == 4;
+        }
+
+        bool ReadItem(FILE* file, cell_t size, cell_t& out)
+        {
+            uint8_t bytes[4] = {};
+            if (std::fread(bytes, 1, static_cast<size_t>(size), file) != static_cast<size_t>(size))
+                return false;
+            uint32_t value = 0;
+            for (cell_t i = 0; i < size; ++i)
+                value |= static_cast<uint32_t>(bytes[i]) << (8 * i);
+            out = static_cast<cell_t>(value);
+            return true;
+        }
+
+        bool WriteItem(FILE* file, cell_t size, cell_t value)
+        {
+            uint8_t bytes[4];
+            const auto v = static_cast<uint32_t>(value);
+            for (cell_t i = 0; i < size; ++i)
+                bytes[i] = static_cast<uint8_t>(v >> (8 * i));
+            return std::fwrite(bytes, 1, static_cast<size_t>(size), file) == static_cast<size_t>(size);
+        }
+
+        // Read(any[] items, int count, int size) -> items read, -1 on a bad handle
+        cell_t N_FileRead(IPluginContext* ctx, const cell_t* params)
+        {
+            FileObj* f = FileOf(ctx, params[1]);
+            if (!f)
+                return -1;
+            const cell_t count = params[3], size = params[4];
+            if (!ValidItemSize(size))
+                return ctx->ThrowNativeError("Invalid item size %d (1, 2 or 4)", size);
+            if (count < 0)
+                return ctx->ThrowNativeError("Invalid item count %d", count);
+            cell_t* items = nullptr;
+            if (ctx->LocalToPhysAddr(params[2], &items) != SP_ERROR_NONE)
+                return -1;
+            cell_t read = 0;
+            while (read < count && ReadItem(f->file, size, items[read]))
+                ++read;
+            return read;
+        }
+
+        // Write(const any[] items, int count, int size)
+        cell_t N_FileWrite(IPluginContext* ctx, const cell_t* params)
+        {
+            FileObj* f = FileOf(ctx, params[1]);
+            if (!f)
+                return 0;
+            const cell_t count = params[3], size = params[4];
+            if (!ValidItemSize(size))
+                return ctx->ThrowNativeError("Invalid item size %d (1, 2 or 4)", size);
+            if (count < 0)
+                return ctx->ThrowNativeError("Invalid item count %d", count);
+            cell_t* items = nullptr;
+            if (ctx->LocalToPhysAddr(params[2], &items) != SP_ERROR_NONE)
+                return 0;
+            for (cell_t i = 0; i < count; ++i)
+                if (!WriteItem(f->file, size, items[i]))
+                    return 0;
+            return 1;
+        }
+
+        // ReadInt8/16/32(int &value): the size is the native's own.
+        template <cell_t Size>
+        cell_t N_FileReadInt(IPluginContext* ctx, const cell_t* params)
+        {
+            FileObj* f = FileOf(ctx, params[1]);
+            cell_t* out = nullptr;
+            if (!f || ctx->LocalToPhysAddr(params[2], &out) != SP_ERROR_NONE)
+                return 0;
+            cell_t value = 0;
+            if (!ReadItem(f->file, Size, value))
+                return 0;
+            if (params[0] >= 3 && params[3] && Size < 4)  // signed
+                value = Size == 1 ? static_cast<int8_t>(value) : static_cast<int16_t>(value);
+            *out = value;
+            return 1;
+        }
+
+        template <cell_t Size>
+        cell_t N_FileWriteInt(IPluginContext* ctx, const cell_t* params)
+        {
+            FileObj* f = FileOf(ctx, params[1]);
+            return f && WriteItem(f->file, Size, params[2]);
+        }
+
         // ---- Source2ModKeyValues ---------------------------------------------------------
 
         /// The tree and a cursor into it: the nodes from the root down. Only
@@ -799,6 +893,14 @@ namespace sourcepawn
             { "Source2ModFile.Seek", N_FileSeek },
             { "Source2ModFile.Position", N_FilePosition },
             { "Source2ModFile.Flush", N_FileFlush },
+            { "Source2ModFile.Read", N_FileRead },
+            { "Source2ModFile.Write", N_FileWrite },
+            { "Source2ModFile.ReadInt8", N_FileReadInt<1> },
+            { "Source2ModFile.ReadInt16", N_FileReadInt<2> },
+            { "Source2ModFile.ReadInt32", N_FileReadInt<4> },
+            { "Source2ModFile.WriteInt8", N_FileWriteInt<1> },
+            { "Source2ModFile.WriteInt16", N_FileWriteInt<2> },
+            { "Source2ModFile.WriteInt32", N_FileWriteInt<4> },
             { "Source2ModKeyValues.Source2ModKeyValues", N_KvNew },
             { "Source2ModKeyValues.LoadFromFile", N_KvLoadFromFile },
             { "Source2ModKeyValues.LoadFromString", N_KvLoadFromString },

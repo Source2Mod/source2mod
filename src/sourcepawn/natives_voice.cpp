@@ -7,6 +7,9 @@
 
 #include "core/game/voice.h"
 
+#include <engine2/ivengineserver2.h>
+#include <interfaces/interfaces.h>
+
 using namespace SourcePawn;
 
 namespace sourcepawn
@@ -38,6 +41,17 @@ namespace sourcepawn
             return 0;
         }
 
+        // SetClientProximity(receiver, sender, useProximity): whether the
+        // receiver hears the sender only within proximity range, instead of
+        // over the whole map. The engine's own per-client bit; not merged
+        // between plugins like the listen overrides.
+        cell_t N_SetClientProximity(IPluginContext* ctx, const cell_t* params)
+        {
+            if (!g_pEngineServer)
+                return 0;
+            return g_pEngineServer->SetClientProximity(CPlayerSlot(params[1]), CPlayerSlot(params[2]), params[3] != 0);
+        }
+
         cell_t N_GetListenOverride(IPluginContext*, const cell_t* params)
         {
             return static_cast<cell_t>(voice::voiceManager.GetListenOverride(CPlayerSlot(params[1]), CPlayerSlot(params[2])));
@@ -54,6 +68,7 @@ namespace sourcepawn
             { "Source2ModVoice.SetListenOverride", N_SetListenOverride },
             { "Source2ModVoice.GetListenOverride", N_GetListenOverride },
             { "Source2ModVoice.IsSelfMuted", N_IsSelfMuted },
+            { "Source2ModVoice.SetClientProximity", N_SetClientProximity },
             { nullptr, nullptr },
         };
     }
