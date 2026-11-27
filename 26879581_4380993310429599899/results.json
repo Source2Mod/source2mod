@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-24T06:16:25+00:00",
+  "generated_at": "2026-11-27T20:47:19+00:00",
   "build": {
     "buildid": "26879581",
     "linux_manifest": "4380993310429599899",
@@ -1860,16 +1860,14 @@
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 104,
-        "status": "changed",
-        "detail": "CSource2Server changed from 103 to 104 functions -- check the index"
+        "status": "ok"
       },
       "linux": {
         "value": 20,
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 105,
-        "status": "changed",
-        "detail": "CSource2Server changed from 104 to 105 functions -- check the index"
+        "status": "ok"
       }
     },
     {
@@ -1880,16 +1878,14 @@
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 104,
-        "status": "changed",
-        "detail": "CSource2Server changed from 103 to 104 functions -- check the index"
+        "status": "ok"
       },
       "linux": {
         "value": 42,
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 105,
-        "status": "changed",
-        "detail": "CSource2Server changed from 104 to 105 functions -- check the index"
+        "status": "ok"
       }
     },
     {
@@ -1900,16 +1896,32 @@
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 104,
-        "status": "changed",
-        "detail": "CSource2Server changed from 103 to 104 functions -- check the index"
+        "status": "ok"
       },
       "linux": {
         "value": 43,
         "class": "CSource2Server",
         "library": "server",
         "vtable_size": 105,
-        "status": "changed",
-        "detail": "CSource2Server changed from 104 to 105 functions -- check the index"
+        "status": "ok"
+      }
+    },
+    {
+      "name": "ISource2Server::ServerHibernationUpdate",
+      "kind": "offset",
+      "windows": {
+        "value": 23,
+        "class": "CSource2Server",
+        "library": "server",
+        "vtable_size": 104,
+        "status": "ok"
+      },
+      "linux": {
+        "value": 23,
+        "class": "CSource2Server",
+        "library": "server",
+        "vtable_size": 105,
+        "status": "ok"
       }
     },
     {

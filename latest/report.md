@@ -1,20 +1,14 @@
 # Gamedata validation
 
-CS2 build **26879581** · Linux manifest `4380993310429599899` · Windows manifest `319757798029483889` · 2026-11-24T06:16:25+00:00
+CS2 build **26879581** · Linux manifest `4380993310429599899` · Windows manifest `319757798029483889` · 2026-11-27T20:47:19+00:00
 
 | | Windows | Linux |
 |---|---|---|
 | Signatures | 🟢 75 | 🟢 75 |
-| Offsets | 🟢 45 🟡 3 ⚪ 2 | 🟢 45 🟡 3 ⚪ 2 |
+| Offsets | 🟢 49 ⚪ 2 | 🟢 49 ⚪ 2 |
 
-## Needs attention
+## Everything resolves
 
-- 🟡 **ISource2Server::GameFrame** (windows): CSource2Server changed from 103 to 104 functions -- check the index
-- 🟡 **ISource2Server::GameFrame** (linux): CSource2Server changed from 104 to 105 functions -- check the index
-- 🟡 **ISource2Server::GameServerSteamAPIActivated** (windows): CSource2Server changed from 103 to 104 functions -- check the index
-- 🟡 **ISource2Server::GameServerSteamAPIActivated** (linux): CSource2Server changed from 104 to 105 functions -- check the index
-- 🟡 **ISource2Server::GameServerSteamAPIDeactivated** (windows): CSource2Server changed from 103 to 104 functions -- check the index
-- 🟡 **ISource2Server::GameServerSteamAPIDeactivated** (linux): CSource2Server changed from 104 to 105 functions -- check the index
 
 <details><summary>All entries (Windows, Linux)</summary>
 
@@ -137,9 +131,10 @@ CS2 build **26879581** · Linux manifest `4380993310429599899` · Windows manife
 - 🟢🟢 `ISource2GameClients::ClientVoice` — W 27/46 · L 27/46
 - 🟢🟢 `ISource2GameClients::OnClientConnected` — W 11/46 · L 11/46
 - 🟢🟢 `ISource2GameEntities::CheckTransmit` — W 12/18 · L 13/21
-- 🟡🟡 `ISource2Server::GameFrame` — W 20/104 · L 20/105
-- 🟡🟡 `ISource2Server::GameServerSteamAPIActivated` — W 42/104 · L 42/105
-- 🟡🟡 `ISource2Server::GameServerSteamAPIDeactivated` — W 43/104 · L 43/105
+- 🟢🟢 `ISource2Server::GameFrame` — W 20/104 · L 20/105
+- 🟢🟢 `ISource2Server::GameServerSteamAPIActivated` — W 42/104 · L 42/105
+- 🟢🟢 `ISource2Server::GameServerSteamAPIDeactivated` — W 43/104 · L 43/105
+- 🟢🟢 `ISource2Server::ServerHibernationUpdate` — W 23/104 · L 23/105
 - 🟢🟢 `LegacyGameEventListener`
 - 🟢🟢 `UTIL::CreateEntityByName`
 - 🟢🟢 `UTIL::Remove`
