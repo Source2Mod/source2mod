@@ -64,3 +64,4 @@ Plugin API 13: ISource2ModAPI::SetFailState for C++ plugins; nothing a plugin do
 Plugins load in alphabetical order, upper and lower case alike (anti_dlc, AntiCheat, Core, customhud_manager, ...), the same on every server, instead of whatever order the directory lists them in.
 custom_hud_layout name tables capped at 4096 names / 32 KiB each (SDK 9a22775): a plugin that makes up a class per value gets one log line instead of an engine FATAL in PackEntity.
 CS2 1.42.0.1: a new ISource2Server virtual (s2sdk#128) moved GameFrame and the SteamAPI hooks one slot; the old gamedata index hooked ApplyGameSettings and crashed every map start. SetDialogVariableString (Linux) and GetNavMeshData (Windows) signatures fixed.
+Plugin API 14 (g_iPluginId), the rest of the SourcePawn parity natives, the ServerHibernationUpdate hook point, SourcePawnHotReloadEnabled / NativeHotReloadEnabled in core.json.
