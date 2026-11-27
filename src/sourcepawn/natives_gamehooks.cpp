@@ -230,6 +230,7 @@ namespace sourcepawn
         S2M_CTX(ClientSlotContext, false)
         S2M_CTX(EmptyContext, false)
         S2M_CTX(LoadEventsFromFileContext, false)
+        S2M_CTX(ServerHibernationContext, false)
 #undef S2M_CTX
 
         template <typename C>
@@ -365,6 +366,7 @@ namespace sourcepawn
                 S2M_POINT(GameServerSteamAPIDeactivated, EmptyContext)
                 S2M_POINT(LoadEventsFromFile, LoadEventsFromFileContext)
                 S2M_POINT(ClientFullyConnect, ClientSlotContext)
+                S2M_POINT(ServerHibernationUpdate, ServerHibernationContext)
 #undef S2M_POINT
             default:
                 return 0;
@@ -599,6 +601,7 @@ namespace sourcepawn
 
         S2M_CTX_STRING(LoadEventsFromFileContext, GetFilename, c->filename)
         S2M_CTX_CELL(LoadEventsFromFileContext, searchAll, c->searchAll)
+        S2M_CTX_CELL(ServerHibernationContext, hibernating, c->hibernating)
 
 
         S2M_CTX_ENTITY(TakeDamageContext, entity, c->entity)
@@ -1207,6 +1210,7 @@ namespace sourcepawn
             { "ClientSlotContext.slot.get", N_ClientSlotContext_slot },
             { "LoadEventsFromFileContext.GetFilename", N_LoadEventsFromFileContext_GetFilename },
             { "LoadEventsFromFileContext.searchAll.get", N_LoadEventsFromFileContext_searchAll },
+            { "ServerHibernationContext.hibernating.get", N_ServerHibernationContext_hibernating },
             { "TakeDamageContext.entity.get", N_TakeDamageContext_entity },
             { "TakeDamageContext.info.get", N_TakeDamageContext_info },
             { "TakeDamageContext.damageResult.get", N_TakeDamageContext_damageResult },

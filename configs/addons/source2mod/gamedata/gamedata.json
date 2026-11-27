@@ -876,6 +876,12 @@
       "linux": 43
     }
   },
+  "ISource2Server::ServerHibernationUpdate": {
+    "offsets": {
+      "windows": 23,
+      "linux": 23
+    }
+  },
   "LegacyGameEventListener": {
     "signatures": {
       "library": "server",

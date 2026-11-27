@@ -176,6 +176,7 @@ namespace virtualhooks
         KHOOK_NEW(m_hOnClientConnected, &ISource2GameClients::OnClientConnected, this, &Virtuals::Hook_OnClientConnectedPre, &Virtuals::Hook_OnClientConnected),
         KHOOK_NEW(m_hSteamAPIActivated, &ISource2Server::GameServerSteamAPIActivated, this, &Virtuals::Hook_GameServerSteamAPIActivatedPre, &Virtuals::Hook_GameServerSteamAPIActivated),
         KHOOK_NEW(m_hSteamAPIDeactivated, &ISource2Server::GameServerSteamAPIDeactivated, this, &Virtuals::Hook_GameServerSteamAPIDeactivated, &Virtuals::Hook_GameServerSteamAPIDeactivatedPost),
+        KHOOK_NEW(m_hServerHibernationUpdate, &ISource2Server::ServerHibernationUpdate, this, &Virtuals::Hook_ServerHibernationUpdatePre, &Virtuals::Hook_ServerHibernationUpdate),
         // PostEventAbstract is overloaded, so the member function pointer has to be disambiguated explicitly.
         KHOOK_NEW(m_hPostEventAbstract, static_cast<void (IGameEventSystem::*)(CSplitScreenSlot, bool, int, const uint64*, NetMessageInfo_t*, const CNetMessage*, unsigned long, NetChannelBufType_t)>(&IGameEventSystem::PostEventAbstract), this, &Virtuals::Hook_PostEventAbstract, nullptr),
         KHOOK_NEW(m_hOnServerGamePostSimulate, &IGameSystem::OnServerGamePostSimulate, this, nullptr, &Virtuals::Hook_OnServerGamePostSimulate),
@@ -227,6 +228,7 @@ namespace virtualhooks
         ResolveIndex(m_hOnClientConnected, "ISource2GameClients::OnClientConnected");
         ResolveIndex(m_hSteamAPIActivated, "ISource2Server::GameServerSteamAPIActivated");
         ResolveIndex(m_hSteamAPIDeactivated, "ISource2Server::GameServerSteamAPIDeactivated");
+        ResolveIndex(m_hServerHibernationUpdate, "ISource2Server::ServerHibernationUpdate");
         ResolveIndex(m_hPostEventAbstract, "IGameEventSystem::PostEventAbstract");
         ResolveIndex(m_hOnServerGamePostSimulate, "IGameSystem::OnServerGamePostSimulate");
         ResolveIndex(m_hLoadEventsFromFile, "IGameEventManager2::LoadEventsFromFile");
@@ -263,6 +265,7 @@ namespace virtualhooks
         m_hOnClientConnected->Add(g_pSource2GameClients);
         m_hSteamAPIActivated->Add(g_pSource2Server);
         m_hSteamAPIDeactivated->Add(g_pSource2Server);
+        m_hServerHibernationUpdate->Add(g_pSource2Server);
         m_hPostEventAbstract->Add(shared::g_pGameEventSystem);
         m_hCheckTransmit->Add(g_pSource2GameEntities);
 
@@ -330,6 +333,8 @@ namespace virtualhooks
             m_hSteamAPIActivated->Remove(g_pSource2Server);
         if (m_hSteamAPIDeactivated)
             m_hSteamAPIDeactivated->Remove(g_pSource2Server);
+        if (m_hServerHibernationUpdate)
+            m_hServerHibernationUpdate->Remove(g_pSource2Server);
         if (m_hPostEventAbstract)
             m_hPostEventAbstract->Remove(shared::g_pGameEventSystem);
         if (m_hCheckTransmit)
@@ -368,6 +373,7 @@ namespace virtualhooks
         delete m_hOnClientConnected;
         delete m_hSteamAPIActivated;
         delete m_hSteamAPIDeactivated;
+        delete m_hServerHibernationUpdate;
         delete m_hPostEventAbstract;
         delete m_hOnServerGamePostSimulate;
         delete m_hLoadEventsFromFile;
@@ -391,6 +397,7 @@ namespace virtualhooks
         m_hOnClientConnected = nullptr;
         m_hSteamAPIActivated = nullptr;
         m_hSteamAPIDeactivated = nullptr;
+        m_hServerHibernationUpdate = nullptr;
         m_hPostEventAbstract = nullptr;
         m_hOnServerGamePostSimulate = nullptr;
         m_hLoadEventsFromFile = nullptr;
@@ -758,6 +765,19 @@ namespace virtualhooks
     {
         EmptyContext ctx;
         hooks::hooksManager.Dispatch(HookPointId::GameServerSteamAPIDeactivated, ctx, true);
+        return { KHook::Action::Ignore };
+    }
+
+    KHook::Return<void> Virtuals::Hook_ServerHibernationUpdatePre(ISource2Server* pThis, bool bHibernating)
+    {
+        ServerHibernationContext ctx{ bHibernating };
+        return { PreAction(hooks::hooksManager.Dispatch(HookPointId::ServerHibernationUpdate, ctx, false)) };
+    }
+
+    KHook::Return<void> Virtuals::Hook_ServerHibernationUpdate(ISource2Server* pThis, bool bHibernating)
+    {
+        ServerHibernationContext ctx{ bHibernating };
+        hooks::hooksManager.Dispatch(HookPointId::ServerHibernationUpdate, ctx, true);
         return { KHook::Action::Ignore };
     }
 

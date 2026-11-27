@@ -330,6 +330,7 @@ namespace hooks
         add(HookPointId::GameServerSteamAPIDeactivated, new PointList<EmptyContext>());
         add(HookPointId::LoadEventsFromFile, new PointList<LoadEventsFromFileContext>());
         add(HookPointId::ClientFullyConnect, new PointList<ClientSlotContext>());
+        add(HookPointId::ServerHibernationUpdate, new PointList<ServerHibernationContext>());
     }
 
     const char* HooksManager::PointName(HookPointId point)
@@ -348,6 +349,7 @@ namespace hooks
         case HookPointId::GameServerSteamAPIDeactivated: return "GameServerSteamAPIDeactivated";
         case HookPointId::LoadEventsFromFile: return "LoadEventsFromFile";
         case HookPointId::ClientFullyConnect: return "ClientFullyConnect";
+        case HookPointId::ServerHibernationUpdate: return "ServerHibernationUpdate";
         default: return virtualpoints::Is(point) ? virtualpoints::Name(point) : "?";
         }
     }
@@ -363,7 +365,7 @@ namespace hooks
         bool IsEngine(HookPointId p)
         {
             return static_cast<int>(p) >= static_cast<int>(HookPointId::GameFrame)
-                && static_cast<int>(p) <= static_cast<int>(HookPointId::ClientFullyConnect);
+                && static_cast<int>(p) <= static_cast<int>(HookPointId::ServerHibernationUpdate);
         }
 
         // The owner of a handler from the point's context type.
@@ -430,6 +432,7 @@ namespace hooks
         case HookPointId::GameServerSteamAPIActivated:
         case HookPointId::GameServerSteamAPIDeactivated: return AddTo<EmptyContext>(list, owner, handler, post, target, filter);
         case HookPointId::LoadEventsFromFile: return AddTo<LoadEventsFromFileContext>(list, owner, handler, post, target, filter);
+        case HookPointId::ServerHibernationUpdate: return AddTo<ServerHibernationContext>(list, owner, handler, post, target, filter);
         default: return 0;
         }
     }
