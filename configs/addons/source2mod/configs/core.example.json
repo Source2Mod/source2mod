@@ -1,7 +1,8 @@
 ﻿{
   "PublicChatTrigger": [ "!" ],
   "SilentChatTrigger": [ "/" ],
-  "PluginHotReloadEnabled": true,
+  "SourcePawnHotReloadEnabled": true,
+  "NativeHotReloadEnabled": true,
   "PluginAutoLoadEnabled": true,
   "ConfigHotReloadEnabled": true,
   "UnlockConCommands": true,

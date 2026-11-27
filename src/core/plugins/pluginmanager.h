@@ -160,6 +160,7 @@ public:
     int m_nextId = 1;
 public:
     bool ReloadPluginByPath(const std::string& fullPath);
+    bool HotReloadAllowed(const std::string& fullPath) const;
 private:
 
     std::thread m_watcherThread;

@@ -826,9 +826,26 @@ namespace
     };
 }
 
+// The watcher's change goes through when hot reload is on for the plugin's
+// type (core.json SourcePawnHotReloadEnabled / NativeHotReloadEnabled).
+bool PluginManager::HotReloadAllowed(const std::string& fullPath) const
+{
+    const auto normalized = std::filesystem::weakly_canonical(fullPath).string();
+    for (const auto& p : m_plugins)
+    {
+        if (std::filesystem::weakly_canonical(p->path).string() != normalized)
+            continue;
+        const bool allowed = p->script ? coreconfig::coreConfig.SourcePawnHotReloadEnabled : coreconfig::coreConfig.NativeHotReloadEnabled;
+        if (!allowed)
+            FP_INFO("{} changed; hot reload of {} plugins is off in core.json", p->path, p->script ? "SourcePawn" : "native");
+        return allowed;
+    }
+    return false;
+}
+
 void PluginManager::StartFileWatcher()
 {
-    if (!coreconfig::coreConfig.PluginHotReloadEnabled)
+    if (!coreconfig::coreConfig.SourcePawnHotReloadEnabled && !coreconfig::coreConfig.NativeHotReloadEnabled)
         return;
 
     m_stopWatcher = false;
@@ -849,7 +866,8 @@ void PluginManager::StartFileWatcher()
             // buffer: the reload must not run inside GameFrame.
             scheduler::schedulerManager.NextFrame(0, [this, fullPath]()
             {
-                RequestReload(fullPath);
+                if (HotReloadAllowed(fullPath))
+                    RequestReload(fullPath);
             });
         };
 

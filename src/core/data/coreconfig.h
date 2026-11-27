@@ -54,7 +54,10 @@ namespace coreconfig
 
         std::vector<std::string> PublicChatTrigger = { std::string("!") };
         std::vector<std::string> SilentChatTrigger = { std::string("/") };
-        bool PluginHotReloadEnabled = true;
+        /// A changed .smx of a loaded plugin is reloaded: SourcePawn scripts,
+        /// native (C++) plugins. The plugins folder is watched while either is on.
+        bool SourcePawnHotReloadEnabled = true;
+        bool NativeHotReloadEnabled = true;
         bool PluginAutoLoadEnabled = true;
         /// Configs (core.json, permissions.json, plugins' configs) reload
         /// when their file changes on disk.

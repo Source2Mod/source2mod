@@ -83,7 +83,11 @@ namespace coreconfig
     {
         PublicChatTrigger = data.value("PublicChatTrigger", PublicChatTrigger);
         SilentChatTrigger = data.value("SilentChatTrigger", SilentChatTrigger);
-        PluginHotReloadEnabled = data.value("PluginHotReloadEnabled", PluginHotReloadEnabled);
+        // The two hot reloads, by plugin type. PluginHotReloadEnabled, the one
+        // switch older core.json files have, still turns both off when false.
+        const bool legacyHotReload = data.value("PluginHotReloadEnabled", true);
+        SourcePawnHotReloadEnabled = legacyHotReload && data.value("SourcePawnHotReloadEnabled", SourcePawnHotReloadEnabled);
+        NativeHotReloadEnabled = legacyHotReload && data.value("NativeHotReloadEnabled", NativeHotReloadEnabled);
         PluginAutoLoadEnabled = data.value("PluginAutoLoadEnabled", PluginAutoLoadEnabled);
         ConfigHotReloadEnabled = data.value("ConfigHotReloadEnabled", ConfigHotReloadEnabled);
         UnlockConCommands = data.value("UnlockConCommands", UnlockConCommands);
@@ -116,7 +120,8 @@ namespace coreconfig
             const CoreConfig before = *this;
             Apply(data);
 
-            if (PluginHotReloadEnabled != before.PluginHotReloadEnabled || PluginAutoLoadEnabled != before.PluginAutoLoadEnabled ||
+            if (SourcePawnHotReloadEnabled != before.SourcePawnHotReloadEnabled || NativeHotReloadEnabled != before.NativeHotReloadEnabled ||
+                PluginAutoLoadEnabled != before.PluginAutoLoadEnabled ||
                 ConfigHotReloadEnabled != before.ConfigHotReloadEnabled || UnlockConCommands != before.UnlockConCommands ||
                 UnlockConVars != before.UnlockConVars || CrashHandlerEnabled != before.CrashHandlerEnabled ||
                 CrashDiscordWebhook != before.CrashDiscordWebhook || GeoIPDatabase != before.GeoIPDatabase ||
